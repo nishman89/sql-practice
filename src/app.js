@@ -21,6 +21,10 @@ document.addEventListener('click',e=>{ const m=$('#mobile-menu'); if (m.open && 
 /* ---------- Databases ---------- */
 let SQL, nw, sb;
 function freshNorthwind(){ if (nw) nw.close(); nw=new SQL.Database(b64ToBytes(NW_B64)); addFns(nw); }
+/* The Customers and Orders tables from Creating tables, for the lessons that build on them (db:'mydb'). Runs are always rolled back. */
+let my;
+function freshMyDb(){ if (my) my.close(); my=new SQL.Database(); addFns(my); my.exec(MYDB_SEED); }
+const lessonDb = () => LESSONS[curLesson].db==='mydb' ? my : nw;
 function freshSandbox(bytes){ if (sb) sb.close(); sb = bytes ? new SQL.Database(bytes) : new SQL.Database(); addFns(sb); }
 function persistSandbox(){ try { P.sandbox = bytesToB64(sb.export()); addFns(sb); save(); } catch(e){} }
 
@@ -249,7 +253,7 @@ function route(){
   if (view!=='quiz') stopTimer();
   current={view,lesson:lid};
   VIEWS.forEach(v=>$('#v-'+v).classList.toggle('on', v===view));
-  const section = view==='free'?'free' : view==='dialects'?'dialects' : view==='intro'||view==='install'?'intro' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
+  const section = view==='free'?'free' : view==='dialects'?'dialects' : view==='intro'?'intro' : view==='install'?'install' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
   $$('[data-nav]').forEach(b=>{ if (b.dataset.nav===section) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   $('#pathHero').hidden = view!=='path'; $('#main').classList.toggle('on-path', view==='path');
   if (lid){ P.last=lid; save(); }
@@ -676,6 +680,7 @@ function openLesson(id){
   const L=LESSONS[id];
   if (curLesson!==id){ curLesson=id; const saved=(P.tab||{})[id]; curTab = saved!=null ? saved : (L.checkpoint?0:'learn'); }
   $('#lTitle').textContent=L.title; $('#lSummary').textContent=L.summary;
+  $('#lStrip').hidden = L.db==='mydb'; $('#lMyDb').hidden = L.db!=='mydb';
   const lc=$('#lCmds'); lc.innerHTML=''; if (L.cmds && L.cmds.length) lc.append(h('span',{class:'cmds-label'},'Commands'), ...L.cmds.map(c=>h('code',{},c)));
   renderLessonTabs(); renderLessonBody();
 }
@@ -737,14 +742,14 @@ function drawReveal(){
 function nextUnsolved(after){ const L=LESSONS[curLesson]; for (let k=1;k<=L.ex.length;k++){ const j=(after+k)%L.ex.length; if (!P.exDone[curLesson+'.'+j]) return j; } return null; }
 function runLesson(){
   // Lessons that change data (INSERT, UPDATE, DELETE) undo every run, so Northwind stays as it was
-  const rep = LESSONS[curLesson].rollback ? runSafe(lEd.value) : runScript(nw, lEd.value, 'nw'); const out=$('#lOut'); renderReport(out, rep);
+  const rep = LESSONS[curLesson].rollback ? runSafe(lEd.value, lessonDb()) : runScript(nw, lEd.value, 'nw'); const out=$('#lOut'); renderReport(out, rep);
   if (rep.ran.some(s=>/^(CREATE|DROP|ALTER)\s+TABLE\b/i.test(s))) nwModel=null;
   if (curTab==='learn' || rep.error) return;
   const L=LESSONS[curLesson], i=curTab, ex=L.ex[i];
   const last=rep.results[rep.results.length-1];
   let v;
   if (!last) v={ok:false,msg:'Run a SELECT query so there\'s a result to check.'};
-  else { try { v=compare(nw,ex,last); } catch(e){ v={ok:false,msg:'Couldn\'t check this answer.',tip:e.message}; } }
+  else { try { v=compare(lessonDb(),ex,last); } catch(e){ v={ok:false,msg:'Couldn\'t check this answer.',tip:e.message}; } }
   const box=h('div',{class:'verdict '+(v.ok?'good':'bad'),role:'status','data-testid':'verdict','data-correct':String(v.ok)});
   if (v.ok){
     const was=lessonDone(curLesson);
@@ -818,7 +823,7 @@ new ResizeObserver(setMast).observe($('.mast'));
 async function boot(){
   try { SQL = await initSqlJs({}); }
   catch(e){ $('#boot').innerHTML='<div><p><strong>The database engine didn\'t start.</strong></p><p>Reload the page to try again.</p></div>'; return; }
-  freshNorthwind();
+  freshNorthwind(); freshMyDb();
   if (P.sandbox){ try { freshSandbox(b64ToBytes(P.sandbox)); } catch(e){ freshSandbox(); } } else freshSandbox();
   $('#boot').remove();
   drawLesson();

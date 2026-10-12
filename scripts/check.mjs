@@ -15,20 +15,21 @@ const initSqlJs = require('sql.js/dist/sql-asm-memory-growth.js');
 const ctx = vm.createContext({ console, atob, btoa });
 vm.runInContext(
   read('src/engine.js') + '\n' + read('src/content/lessons.js') + '\n' + read('src/content/quizzes.js') + '\n' + read('src/content/dialects.js') + '\n' + read('src/content/intro.js') +
-  '\nglobalThis.X = { UNITS, LESSONS, PATH, QUIZZES, QUIZ_SETTINGS, DIALECTS, FLAVOURS_CHECK, runScript, compare, expected, addFns };',
+  '\nglobalThis.X = { UNITS, LESSONS, PATH, QUIZZES, QUIZ_SETTINGS, DIALECTS, FLAVOURS_CHECK, MYDB_SEED, runScript, compare, expected, addFns };',
   ctx, { filename: 'content' });
-const { UNITS, LESSONS, QUIZZES, QUIZ_SETTINGS, DIALECTS, FLAVOURS_CHECK, runScript, compare, expected, addFns } = ctx.X;
+const { UNITS, LESSONS, QUIZZES, QUIZ_SETTINGS, DIALECTS, FLAVOURS_CHECK, MYDB_SEED, runScript, compare, expected, addFns } = ctx.X;
 
 const SQL = await initSqlJs();
-const db = new SQL.Database(fs.readFileSync(path.join(root, 'data/northwind.db')));
-addFns(db);
+const nwdb = new SQL.Database(fs.readFileSync(path.join(root, 'data/northwind.db')));
+addFns(nwdb);
+const makeMyDb = () => { const d = new SQL.Database(); addFns(d); d.exec(MYDB_SEED); return d; };
 
 const errors = [], warnings = [];
 const fail = (where, msg) => errors.push(`${where}: ${msg}`);
 const warn = (where, msg) => warnings.push(`${where}: ${msg}`);
 const unescape = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 
-function checkTask(where, t, fields) {
+function checkTask(where, t, fields, db = nwdb) {
   for (const f of fields) if (typeof t[f] !== 'string' || !t[f].trim()) fail(where, `"${f}" is missing`);
   if (typeof t.sol !== 'string') return 0;
   let exp;
@@ -55,14 +56,17 @@ for (const u of UNITS) for (const id of u.lessons) {
     L.check.forEach((q, i) => { if (!(q.q && Array.isArray(q.a) && q.a[q.c] != null && q.why)) fail(`${id}, check question ${i + 1}`, 'needs q, a (options), a valid c and why'); });
   } else if (!Array.isArray(L.ex) || !L.ex.length) { fail(id, 'needs at least one exercise in "ex" (or check questions in "check")'); continue; }
   if (!L.checkpoint && !L.learn) fail(id, 'needs "learn" content (or checkpoint: true)');
-  (L.ex || []).forEach((ex, i) => { exercises += checkTask(`${id}, exercise ${i + 1}`, ex, ['p', 'hint', 'sol']); });
+  const db = L.db === 'mydb' ? makeMyDb() : nwdb;   // lessons built on the Creating tables example get a fresh copy
+  (L.ex || []).forEach((ex, i) => { exercises += checkTask(`${id}, exercise ${i + 1}`, ex, ['p', 'hint', 'sol'], db); });
   // Run the lesson's examples in order, as a learner would (one can rely on an earlier one), then undo them all
   db.run('SAVEPOINT ex');
   let n = 0;
   for (const m of (L.learn || '').matchAll(/<pre class="ex"([^>]*)>([\s\S]*?)<\/pre>/g)) {
     if (m[1].includes('data-norun')) continue;
     examples++; n++;
+    if (L.rollback) db.run('SAVEPOINT one');   // these lessons start every run from a fresh copy
     const rep = runScript(db, unescape(m[2]), 'nw');
+    if (L.rollback) { db.run('ROLLBACK TO one'); db.run('RELEASE one'); }
     const meantToFail = m[1].includes('data-expect-error');
     if (rep.error && !meantToFail) fail(`${id}, example ${n}`, `gives an error: ${rep.error.message}`);
     if (!rep.error && meantToFail) fail(`${id}, example ${n}`, 'is marked CERR (meant to fail) but ran without an error');
@@ -107,9 +111,9 @@ DIALECTS.forEach((r, i) => {
   for (const f of ['group', 'task', 'mysql', 'tsql', 'lab']) if (!r[f]) fail(where, `"${f}" is missing`);
   if (r.try) {
     tries++;
-    db.run('SAVEPOINT tr');
-    const rep = runScript(db, r.try, 'nw');
-    db.run('ROLLBACK TO tr'); db.run('RELEASE tr');
+    nwdb.run('SAVEPOINT tr');
+    const rep = runScript(nwdb, r.try, 'nw');
+    nwdb.run('ROLLBACK TO tr'); nwdb.run('RELEASE tr');
     if (rep.error) fail(where, `its "Try it" example gives an error: ${rep.error.message}`);
   }
 });

@@ -136,10 +136,10 @@ function refreshAnswered(){
   $$('.qnav button').forEach((b,k)=>b.classList.toggle('ans', answered(k)));
 }
 function goQ(k){ if (k<0||k>=QZ.questions.length) return; saveCurrent(); QZ.i=k; renderQuiz(); $('.qnav').scrollIntoView({block:'nearest'}); }
-function runSafe(sql){
-  nw.run('SAVEPOINT quiz_run');
-  try { return runScript(nw, sql, 'nw'); }
-  finally { nw.run('ROLLBACK TO quiz_run'); nw.run('RELEASE quiz_run'); }
+function runSafe(sql, db = nw){
+  db.run('SAVEPOINT quiz_run');
+  try { return runScript(db, sql, db===nw ? 'nw' : 'mydb'); }
+  finally { db.run('ROLLBACK TO quiz_run'); db.run('RELEASE quiz_run'); }
 }
 function markQuery(q, sql){
   if (!isAnsweredFor('query', sql)) return {state:'blank', msg:'Not answered.'};
