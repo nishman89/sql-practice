@@ -301,7 +301,7 @@ ${C("SELECT COUNT(*) AS 'Number of Customers'\nFROM Customers\nWHERE City = 'Par
 <h3>Apostrophes inside text</h3>
 <p>A single quote marks where text starts and ends, so a value that contains one needs it doubled: <code>''</code>.</p>
 ${C("SELECT ProductID, ProductName\nFROM Products\nWHERE ProductName = 'Sir Rodney''s Scones';")}
-${DIFF({title:'Quotes in each dialect', sqlite:"WHERE City = 'London'", mysql:"WHERE City = 'London'", tsql:"WHERE City = 'London'", note:'Single quotes for text work in all three. MySQL also accepts double quotes around text, but in SQLite and T-SQL double quotes mean a <em>name</em>, so stick to single quotes. T-SQL sometimes puts <code>N</code> in front (<code>N\'London\'</code>) for text in other alphabets.'})}`,
+${DIFF({title:'Quotes in each dialect', sqlite:"-- text values\nWHERE City = 'London'\n-- names with spaces\n\"Order Details\"", mysql:"-- text values\nWHERE City = 'London'      -- or \"London\"\n-- names with spaces\n`Order Details`", tsql:"-- text values\nWHERE City = 'London'      -- or N'London'\n-- names with spaces\n[Order Details]            -- or \"Order Details\"", note:'Single quotes for text work in all three, so stick to them. MySQL also accepts double quotes around text, but in SQLite and T-SQL double quotes mean a <em>name</em>. T-SQL puts <code>N</code> in front of text in other alphabets.'})}`,
     ex:[
       {p:'How many employees have a home city of London?', hint:'COUNT(*) with a WHERE clause on City. Text values go in single quotes.', sol:"SELECT COUNT(*)\nFROM Employees\nWHERE City = 'London';"},
       {p:'Which employee holds the title of Doctor? Return at least their first and last name.', hint:'Look at the TitleOfCourtesy column. Doctor is stored as Dr. with a full stop.', sol:"SELECT FirstName, LastName\nFROM Employees\nWHERE TitleOfCourtesy = 'Dr.';"},
@@ -373,7 +373,7 @@ ${C('SELECT COUNT(DISTINCT Country) AS \'Countries\'\nFROM Customers;')}
 ${C("SELECT CompanyName, City\nFROM Customers\nWHERE Country = 'France'\nORDER BY CompanyName DESC\nLIMIT 3;")}
 <p>Add <code>OFFSET</code> to skip rows first, which is how pages of results work:</p>
 ${C("SELECT ProductName\nFROM Products\nORDER BY ProductName\nLIMIT 5 OFFSET 10;")}
-${DIFF({title:'Limiting rows in each dialect', sqlite:'SELECT … ORDER BY UnitPrice DESC LIMIT 5', mysql:'SELECT … ORDER BY UnitPrice DESC LIMIT 5', tsql:'SELECT TOP 5 … ORDER BY UnitPrice DESC', note:'T-SQL puts <code>TOP</code> straight after <code>SELECT</code>. For paging it uses <code>ORDER BY … OFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY</code>.'})}
+${DIFF({title:'Limiting rows in each dialect', sqlite:'-- first 5 rows\nSELECT … ORDER BY UnitPrice DESC LIMIT 5\n-- skip 10, then 5\nSELECT … ORDER BY UnitPrice DESC LIMIT 5 OFFSET 10', mysql:'-- first 5 rows\nSELECT … ORDER BY UnitPrice DESC LIMIT 5\n-- skip 10, then 5\nSELECT … ORDER BY UnitPrice DESC LIMIT 5 OFFSET 10\nSELECT … ORDER BY UnitPrice DESC LIMIT 10, 5', tsql:'-- first 5 rows\nSELECT TOP 5 … ORDER BY UnitPrice DESC\n-- skip 10, then 5\nSELECT … ORDER BY UnitPrice DESC\n    OFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY', note:'T-SQL puts <code>TOP</code> straight after <code>SELECT</code>, and paging needs an <code>ORDER BY</code>. MySQL\'s short form <code>LIMIT 10, 5</code> means skip 10, then take 5: the opposite order to how it reads.'})}
 ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> rows, not the top ones. Sort first.')}`,
     ex:[
       {p:'List each country that has at least one supplier, once each.', hint:'SELECT DISTINCT Country FROM Suppliers', sol:'SELECT DISTINCT Country\nFROM Suppliers;'},
@@ -416,20 +416,35 @@ ${DIFF({title:'Regular expressions in each dialect', sqlite:'~No REGEXP built in
       {p:'List the products whose name starts with a vowel.', hint:"GLOB '[AEIOU]*'", sol:"SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*';"}
     ]},
 
-  concat:{title:'Concatenation', summary:'Join text together and give columns readable names.', cmds:['CONCAT()','||','AS'],
+  concat:{title:'Concatenation', summary:'Join text together, cope with missing values, and give columns readable names.', cmds:['CONCAT()','CONCAT_WS()','||','AS'],
     learn:`
 <p><code>CONCAT</code> joins values into one piece of text. Anything in quotes, such as <code>', '</code>, is added as written.</p>
 ${C("SELECT CompanyName AS 'Company Name',\n       CONCAT(City, ', ', Country) AS 'Location'\nFROM Customers;")}
 <p>An alias (<code>AS</code>) is a temporary label for a column. It changes the column heading in your result, not anything in the database. Put it in quotes if it has spaces.</p>
 ${C("SELECT CONCAT(FirstName, ' ', LastName) AS 'Full Name', Title\nFROM Employees;")}
-<p>SQLite also joins text with the <code>||</code> operator:</p>
+<h3>Three ways to join text</h3>
+<p>SQLite also has the <code>||</code> operator, which joins two values:</p>
 ${C("SELECT FirstName || ' ' || LastName AS 'Full Name'\nFROM Employees;")}
-${TIP('Don\'t use <code>+</code> to join text: in SQLite it adds numbers, so <code>\'Nancy\' + \'Davolio\'</code> gives 0.')}
-${DIFF({title:'Joining text in each dialect', sqlite:"FirstName || ' ' || LastName", mysql:"CONCAT(FirstName, ' ', LastName)", tsql:"FirstName + ' ' + LastName", note:'<code>CONCAT()</code> works in all three.'})}`,
+<p>And <code>CONCAT_WS</code> ("with separator"), which puts the same separator between every value, so you only type it once:</p>
+${C("SELECT CONCAT_WS(', ', Address, City, Country) AS 'Address'\nFROM Customers;")}
+${TIP('Don\'t use <code>+</code> to join text in SQLite or MySQL: it adds numbers, so <code>\'Nancy\' + \'Davolio\'</code> gives 0. (T-SQL is different, see below.)')}
+<h3>When a value is missing</h3>
+<p>A missing value is <code>NULL</code> (more in <a href="#/lesson/nulls">Working with NULL values</a>). Customers in Germany have no <code>Region</code>, and the three ways of joining text treat that differently:</p>
+${C("SELECT CompanyName || ', ' || Region          AS 'Using ||',\n       CONCAT(CompanyName, ', ', Region)      AS 'Using CONCAT',\n       CONCAT_WS(', ', CompanyName, Region)  AS 'Using CONCAT_WS'\nFROM Customers\nWHERE Country = 'Germany';")}
+<p><code>||</code> gives NULL as soon as one value is missing. <code>CONCAT</code> treats the missing value as empty, leaving a stray comma. <code>CONCAT_WS</code> skips it, separator and all.</p>
+<h3>In each dialect</h3>
+${DIFF({title:'Joining text in each dialect', sqlite:"FirstName || ' ' || LastName\nCONCAT(FirstName, ' ', LastName)\nCONCAT_WS(' ', FirstName, LastName)", mysql:"CONCAT(FirstName, ' ', LastName)\nCONCAT_WS(' ', FirstName, LastName)\n-- no operator: || means OR, + adds numbers", tsql:"FirstName + ' ' + LastName\nCONCAT(FirstName, ' ', LastName)\nCONCAT_WS(' ', FirstName, LastName)   -- SQL Server 2017+", note:'<code>CONCAT()</code> and <code>CONCAT_WS()</code> work in all three. What differs is the operator: <code>||</code> in SQLite, <code>+</code> in T-SQL, and none at all in MySQL.'})}
+<div class="tbl-wrap"><table class="mini dialect-matrix"><tr><th>When one value is NULL…</th><th>🪶 SQLite</th><th>🐬 MySQL</th><th>🪟 T-SQL</th></tr>
+<tr><td>The operator (<code>||</code> or <code>+</code>)</td><td><code>||</code> gives NULL</td><td>(no operator)</td><td><code>+</code> gives NULL</td></tr>
+<tr><td><code>CONCAT()</code></td><td>Treats it as empty</td><td><strong>Gives NULL</strong></td><td>Treats it as empty</td></tr>
+<tr><td><code>CONCAT_WS()</code></td><td>Skips it</td><td>Skips it</td><td>Skips it</td></tr></table></div>
+${TIP('<code>CONCAT_WS</code> behaves the same everywhere, so it\'s the safest choice when some values might be missing.')}`,
+
     ex:[
       {p:'Join each employee\'s first name and last name, a colon and their home phone, like Nancy Davolio: (206) 555-9857. Alias the column Employee Name and Contact Number.', hint:"CONCAT(FirstName, ' ', LastName, ': ', HomePhone)", sol:"SELECT CONCAT(FirstName, ' ', LastName, ': ', HomePhone) AS 'Employee Name and Contact Number'\nFROM Employees;"},
       {p:'Label every supplier like Exotic Liquids (London, UK). Alias the column Supplier.', hint:"CONCAT(CompanyName, ' (', City, ', ', Country, ')')", sol:"SELECT CONCAT(CompanyName, ' (', City, ', ', Country, ')') AS 'Supplier'\nFROM Suppliers;"},
       {p:'For every customer, build a line like Maria Anders at Alfreds Futterkiste. Alias it Contact.', hint:"ContactName, then ' at ', then CompanyName.", sol:"SELECT CONCAT(ContactName, ' at ', CompanyName) AS 'Contact'\nFROM Customers;"}
+      ,{p:'Show each customer\'s CompanyName and one Address line made of Address, City, Region and PostalCode, with \', \' between them, skipping any that are missing.', hint:"CONCAT_WS(', ', Address, City, Region, PostalCode) skips NULLs, separator and all.", sol:"SELECT CompanyName, CONCAT_WS(', ', Address, City, Region, PostalCode) AS 'Address'\nFROM Customers;"}
     ]},
 
   arithmetic:{title:'Arithmetic operators', summary:'Do maths on your columns as the rows come back: calculate, round and work out percentages.', cmds:['+','-','*','/','%','ROUND()','ABS()','CEIL()','FLOOR()'],
@@ -520,6 +535,10 @@ ${TIP('<strong>The rule:</strong> every column in <code>SELECT</code> should be 
 ${C("SELECT Country, COUNT(*) AS 'Customers'\nFROM Customers\nGROUP BY Country\nORDER BY COUNT(*) DESC;")}
 <p>Rows are filtered by <code>WHERE</code> before they're grouped, so this counts only discontinued products in each category:</p>
 ${C("SELECT CategoryID, COUNT(*) AS 'Discontinued'\nFROM Products\nWHERE Discontinued = 1\nGROUP BY CategoryID;")}
+<h3>Joining a group's values into a list</h3>
+<p>Instead of counting a group's rows, you can join their values into one piece of text, separated by commas. Here, every product in each category:</p>
+${C("SELECT CategoryID, group_concat(ProductName, ', ') AS 'Products'\nFROM Products\nGROUP BY CategoryID;")}
+${DIFF({title:'Joining a group\'s values in each dialect', sqlite:"group_concat(ProductName, ', ')\nstring_agg(ProductName, ', ')", mysql:"GROUP_CONCAT(ProductName SEPARATOR ', ')", tsql:"STRING_AGG(ProductName, ', ')   -- SQL Server 2017+", note:'This is one of the most different features between dialects: each has its own function name, and MySQL writes the separator with the word <code>SEPARATOR</code>.'})}
 ${DIFF({title:'Selecting a column that isn\'t grouped or aggregated', sqlite:'~Runs, but shows a value from any row in the group', mysql:'~Error by default (ONLY_FULL_GROUP_BY, MySQL 5.7 and later)', tsql:'~Error: the column is invalid in the select list', note:'<code>GROUP BY</code> itself works the same in all three. Following the rule above keeps your queries working in every dialect.'})}`,
     ex:[
       {p:'How many products are there in each category? Show CategoryID and the count.', hint:'GROUP BY CategoryID with COUNT(*).', sol:'SELECT CategoryID, COUNT(*)\nFROM Products\nGROUP BY CategoryID;'},
@@ -564,7 +583,7 @@ ${C('SELECT CompanyName\nFROM Customers\nWHERE Region = NULL;')}
 <h3>Replacing NULLs</h3>
 <p><code>COALESCE</code> returns the first value that isn't NULL, so it's a neat way to show a placeholder. <code>IFNULL(x, y)</code> does the same with two values.</p>
 ${C("SELECT CompanyName, COALESCE(Fax, 'No fax') AS 'Fax'\nFROM Customers;")}
-${DIFF({title:'Replacing NULLs in each dialect', sqlite:"IFNULL(Fax, 'No fax')", mysql:"IFNULL(Fax, 'No fax')", tsql:"ISNULL(Fax, 'No fax')", note:'<code>COALESCE()</code> works the same in all three.'})}`,
+${DIFF({title:'Replacing NULLs in each dialect', sqlite:"COALESCE(Fax, Phone, 'No number')\nIFNULL(Fax, 'No fax')", mysql:"COALESCE(Fax, Phone, 'No number')\nIFNULL(Fax, 'No fax')", tsql:"COALESCE(Fax, Phone, 'No number')\nISNULL(Fax, 'No fax')", note:'<code>COALESCE()</code> works the same in all three and takes any number of values, so it\'s the one to learn. The two-value shortcut is <code>IFNULL</code> in SQLite and MySQL, and <code>ISNULL</code> in T-SQL.'})}`,
     ex:[
       {p:'List the countries that have region codes in the Customers table, with a count of customers per country.', hint:'WHERE Region IS NOT NULL, then GROUP BY Country.', sol:"SELECT Country, COUNT(*) AS 'No. of Customers'\nFROM Customers\nWHERE Region IS NOT NULL\nGROUP BY Country\nORDER BY COUNT(*) DESC;"},
       {p:'Which orders haven\'t been shipped yet? Show the OrderID and OrderDate.', hint:'An unshipped order has no ShippedDate.', sol:'SELECT OrderID, OrderDate\nFROM Orders\nWHERE ShippedDate IS NULL;'},
@@ -844,7 +863,7 @@ ${DIFF({title:'The same date jobs in each dialect', sqlite:"strftime('%Y', Order
 <tr><td>Cut text</td><td><code>substr(s, start, length)</code>; <code>substr(s, -3)</code> for the last 3 characters</td></tr>
 <tr><td>Change case</td><td><code>upper(s)</code>, <code>lower(s)</code></td></tr>
 <tr><td>Replace and trim</td><td><code>replace(s, 'a', 'b')</code>, <code>trim(s)</code></td></tr></table>
-${DIFF({title:'Text functions in each dialect', sqlite:"length(s)\ninstr(s, ' ')\nsubstr(s, 1, 3)", mysql:"LENGTH(s)\nLOCATE(' ', s)\nLEFT(s, 3)", tsql:"LEN(s)\nCHARINDEX(' ', s)\nLEFT(s, 3)", note:'Watch the argument order: <code>instr</code> takes the text first; <code>LOCATE</code> and <code>CHARINDEX</code> take the thing to find first.'})}
+${DIFF({title:'Text functions in each dialect', sqlite:"length(s)                 -- length\ninstr(s, ' ')             -- find\nsubstr(s, 2, 3)           -- cut out\nsubstr(s, 1, 3)           -- first 3\nsubstr(s, -3)             -- last 3\nupper(s), lower(s), trim(s), replace(s, 'a', 'b')", mysql:"LENGTH(s)\nLOCATE(' ', s)\nSUBSTRING(s, 2, 3)\nLEFT(s, 3)\nRIGHT(s, 3)\nUPPER(s), LOWER(s), TRIM(s), REPLACE(s, 'a', 'b')", tsql:"LEN(s)\nCHARINDEX(' ', s)\nSUBSTRING(s, 2, 3)\nLEFT(s, 3)\nRIGHT(s, 3)\nUPPER(s), LOWER(s), TRIM(s), REPLACE(s, 'a', 'b')", note:'Watch the argument order: <code>instr</code> takes the text first; <code>LOCATE</code> and <code>CHARINDEX</code> take the thing to find first. SQLite also accepts <code>substring()</code>. Joining text is in <a href="#/lesson/concat">Concatenation</a>.'})}
 <p>Functions nest. This finds the space in a UK postcode and keeps everything before it:</p>
 ${C("SELECT PostalCode,\n       substr(PostalCode, 1, instr(PostalCode, ' ') - 1) AS 'Post Code Region'\nFROM Customers\nWHERE Country = 'UK';")}`,
     ex:[
