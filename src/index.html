@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SQL practice lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/*__CSS__*/
+</style>
+</head>
+<body>
+<header class="mast" data-testid="site-header">
+  <div class="mast-in">
+    <div class="brand"><a href="#/path" class="bname" data-testid="home-logo">SQL practice lab</a><small>Runs in your browser. Nothing to install.</small></div>
+    <nav class="steps" aria-label="Main" data-testid="main-nav">
+      <button data-go="path" data-testid="nav-path">Learning path</button>
+      <button data-go="quiz" data-testid="nav-quiz">Query quiz</button>
+      <button data-go="free" data-testid="nav-free">Free practice</button>
+    </nav>
+    <button class="theme-btn" id="themeBtn" data-testid="theme-toggle" aria-label="Switch light or dark theme" title="Switch theme">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+  <nav class="crumbs" id="crumbs" aria-label="Breadcrumb" data-testid="breadcrumb" hidden></nav>
+  <div class="loading" id="boot"><div><div class="spinner"></div>Starting the database engine…</div></div>
+
+  <!-- 1. ERD -->
+  <section class="view" id="v-erd" aria-labelledby="h-erd">
+    <div class="erd-intro">
+      <div class="prose">
+        <h1 id="h-erd" class="dot">What's an ERD</h1>
+        <p class="lede">An entity relationship diagram is a map of a database. Each box is a table, and each line shows how two tables connect.</p>
+        <p>Before writing any SQL against a database you haven't seen, look at its ERD. It tells you which tables exist, what columns they hold, and which columns you can use to join them together.</p>
+        <p>The diagram on the right is the database you'll build in step 2: a <code>Customers</code> table and an <code>Orders</code> table, linked by <code>customer_id</code>.</p>
+      </div>
+      <figure class="figure" style="margin:0">
+        <div id="erdLessonFig"></div>
+        <figcaption>Hover either table to trace the relationship.</figcaption>
+      </figure>
+    </div>
+
+    <div class="rule"></div>
+    <h2 class="dot">The four parts</h2>
+    <div class="parts">
+      <div class="part"><b>Entity</b><p>A table, drawn as a box with its name in the header. <code>Customers</code> and <code>Orders</code> are entities.</p></div>
+      <div class="part"><b>Attribute</b><p>A column, listed inside the box with its data type on the right, such as <code>customer_name VARCHAR(255)</code>.</p></div>
+      <div class="part"><b>Primary key <span class="badge pk">PK</span></b><p>The column that uniquely identifies each row. No two customers can share a <code>customer_id</code>, and it can't be empty.</p></div>
+      <div class="part"><b>Foreign key <span class="badge fk">FK</span></b><p>A column that holds another table's primary key. <code>Orders.customer_id</code> points at the customer who placed the order.</p></div>
+    </div>
+
+    <div class="rule"></div>
+    <h2 class="dot">Reading the lines</h2>
+    <div class="prose">
+      <p>Each end of a relationship line carries a symbol, called crow's foot notation. The symbol next to a table says how many rows of <em>that</em> table can match one row at the other end.</p>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="prose">
+      <p>Read the example in both directions. Starting from <code>Customers</code>: one customer has <strong>zero or many</strong> orders, because a new customer may not have ordered yet. Starting from <code>Orders</code>: each order belongs to <strong>zero or one</strong> customer. It's "zero or one" because <code>Orders.customer_id</code> allows NULL. If that column were <code>NOT NULL</code>, the circle would become a second bar, meaning every order must have exactly one customer.</p>
+    </div>
+
+    <div class="rule"></div>
+    <h2 class="dot">Three kinds of relationship</h2>
+    <div class="rels">
+      <article><h3>One to many</h3><p>The most common. One customer, many orders. The foreign key always lives on the "many" side, in <code>Orders</code>.</p></article>
+      <article><h3>One to one</h3><p>Each row matches at most one row in the other table, for example a user and their profile settings. Often merged into one table.</p></article>
+      <article><h3>Many to many</h3><p>An order holds many products, and a product appears on many orders. You can't link them directly, so a junction table sits in between. In Northwind that's <code>Order Details</code>.</p></article>
+    </div>
+
+    <div class="rule"></div>
+    <h2 class="dot">Check yourself</h2>
+    <form class="quiz" id="erdQuiz" onsubmit="return false" data-testid="check-yourself"></form>
+    <p style="margin-top:24px"><button class="btn primary" data-go="build">Create these tables yourself</button></p>
+  </section>
+
+  <!-- 2. Build -->
+  <section class="view" id="v-build" aria-labelledby="h-build">
+    <h1 id="h-build" class="dot">Create tables and connect them</h1>
+    <p class="lede">Build the <code>Customers</code> and <code>Orders</code> tables step by step. The diagram of your database redraws itself from your tables after every run, the same way MySQL Workbench reverse engineers a database.</p>
+    <div class="bench" style="margin-top:24px">
+      <div>
+        <ol class="tasklist" id="buildTabs" aria-label="Steps"></ol>
+        <div class="step-card" id="stepCard"></div>
+        <div class="editor-wrap" id="buildEditor"></div>
+        <div class="out" id="buildOut" data-testid="build-results"></div>
+        <details class="dialect">
+          <summary>Which SQL is this?</summary>
+          <p>The lab runs SQLite inside your browser. The lesson's MySQL scripts work as written because the lab translates the few MySQL-only parts for you, and tells you when it does:</p>
+          <table>
+            <tr><th>You write (MySQL)</th><th>The lab runs</th></tr>
+            <tr><td><code>INT NOT NULL AUTO_INCREMENT PRIMARY KEY</code></td><td><code>INTEGER PRIMARY KEY AUTOINCREMENT</code></td></tr>
+            <tr><td><code>CREATE DATABASE</code>, <code>USE</code></td><td>Skipped: you already have a database</td></tr>
+            <tr><td><code>DROP DATABASE</code></td><td>Drops all your tables so you can start again</td></tr>
+            <tr><td><code>ALTER TABLE t ADD a INT, b INT</code></td><td>One <code>ADD COLUMN</code> per column</td></tr>
+            <tr><td><code>SHOW TABLES</code>, <code>DESCRIBE t</code></td><td>Equivalent queries on the schema</td></tr>
+          </table>
+          <p>Stored procedures and adding a foreign key with <code>ALTER TABLE</code> aren't available in SQLite. Practise those in MySQL Workbench.</p>
+        </details>
+      </div>
+      <div class="side-sticky">
+        <div class="panel">
+          <div class="panel-h"><h3>Your database</h3><button class="btn small" id="resetSandbox" data-testid="build-start-again">Start again</button></div>
+          <div class="erd-scroll" id="buildErd" data-testid="build-erd"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Map -->
+  <section class="view" id="v-map" aria-labelledby="h-map">
+    <h1 id="h-map" class="dot">The Northwind database</h1>
+    <p class="lede">Northwind is a sample database for a small food trading company: who bought what, who sold it, who supplied it and how it was shipped. All the practice queries in step 4 run against it.</p>
+    <div style="margin-top:24px">
+      <div class="panel">
+        <div class="panel-h">
+          <h3>Entity relationship diagram</h3>
+          <div class="map-tools"><span style="font-size:.88rem;color:var(--muted)">Hover to trace links. Select a table to look inside.</span></div>
+        </div>
+        <div class="erd-scroll" id="mapErd" style="max-height:none" data-testid="northwind-erd"></div>
+      </div>
+      <section class="panel" style="margin-top:20px" aria-live="polite"><div class="panel-b detail" id="mapDetail" data-testid="table-detail"></div></section>
+    </div>
+  </section>
+
+  <!-- Path -->
+  <section class="view" id="v-path" aria-labelledby="h-path"></section>
+
+  <!-- Query lesson -->
+  <section class="view" id="v-lesson">
+    <div class="lesson-grid">
+      <div class="lesson-main">
+        <h1 id="lTitle" class="dot" data-testid="lesson-title"></h1>
+        <p class="lede" id="lSummary"></p>
+        <div class="ltabs" role="tablist" id="lTabs" data-testid="lesson-tabs"></div>
+        <div id="lBody" data-testid="lesson-body"></div>
+      </div>
+      <div class="lesson-side">
+        <div class="tables-strip" id="lStrip"></div>
+        <div class="editor-wrap" id="lEditor"></div>
+        <div class="out" id="lOut" data-testid="lesson-results"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Free practice -->
+  <section class="view" id="v-free" aria-labelledby="h-free">
+    <h1 id="h-free" class="dot">Free practice</h1>
+    <p class="lede">Write any query against Northwind. Nothing is marked here, so explore. Changes you make to the data last until you reload the page.</p>
+    <div class="ex-actions"><button class="btn small" type="button" id="freeErd" data-testid="free-open-erd">Open the Northwind ERD</button><button class="btn small" type="button" id="freeRestore" data-testid="restore-northwind">Restore Northwind</button></div>
+    <div class="tables-strip" id="fStrip"></div>
+    <div class="editor-wrap" id="fEditor"></div>
+    <div class="out" id="fOut" data-testid="free-results"></div>
+  </section>
+  <!-- Query quiz -->
+  <section class="view" id="v-quizzes" aria-labelledby="h-quizzes"></section>
+  <section class="view" id="v-quiz" aria-labelledby="h-quiz"></section>
+  <div id="lessonFoot"></div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Built by scripts/build.mjs: the placeholders below are replaced with sql.js, the Northwind database and the app code -->
+<script>/*__SQLJS__*/</script>
+<script>
+const NW_B64 = "__NWDB__";
+(function(){
+"use strict";
+/*__ENGINE__*/
+/*__CONTENT__*/
+/*__APP__*/
+boot();
+})();
+</script>
+</body>
+</html>
