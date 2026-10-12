@@ -20,7 +20,7 @@ tablets and phones.
 | Page | What it does |
 |---|---|
 | **Learning path** (home) | Every unit and lesson as a route. Finished lessons are ticked, the next lesson is highlighted and checkpoints are shown as diamonds. The **Continue** card shows the next unfinished lesson and a trail of progress across the whole path. |
-| **Capstone project** | The last lesson on the path, from the Sparta Global SQL project brief: create Course and Spartan tables, add data, draw an ERD of an improved design, then answer nine Northwind questions, in the learner's **own** SQL Server, MySQL or SQLite (it links to the install guides first; in SQLite, question 2.9 uses a view instead of a stored procedure). Each question shows the result to check against and the lesson to revise, with 🐬 / 🪟 reminders, a tick-off checklist that completes the lesson, and a Print or save as PDF button. Model answers stay with trainers. |
+| **Capstone project** | The last lesson on the path, from the Sparta Global SQL project brief: create Course and Spartan tables, add data, draw an ERD of an improved design, then answer ten Northwind questions (including creating an index), plus an **optional** Exercise 3 of five advanced questions (window functions, `WITH`, temporary tables, pivoting), in the learner's **own** SQL Server, MySQL or SQLite (it links to the install guides first; in SQLite, question 2.9 uses a view instead of a stored procedure). Each question shows the result to check against and the lesson to revise, with 🐬 / 🪟 reminders, a tick-off checklist that completes the lesson, and a Print or save as PDF button. Model answers stay with trainers. |
 | **Install on your computer** | Step-by-step guides for practising outside the browser, linked from the home page and the Introduction: 🪟 SQL Server with Docker and VS Code (Windows and Mac, using the `kcornwall/sqlnorthwind` image), 🪟 SQL Server on Windows with SSMS, 🐬 MySQL on Windows, 🐬 MySQL on Mac, 🐬 MySQL with Docker, and 🪶 SQLite with DB Browser for SQLite (using the same Northwind file as this site). Every command has a Copy button, and both the MySQL Northwind script and the SQLite `northwind.db` are downloadable from the page. |
 | **Introduction** (header tab) | How the site works: how it's organised, what's inside a lesson, how answers are marked, the **Show Northwind ERD** button, the dialect icons and where progress is saved. |
 | **What's a database** | The first lesson: what a database and a DBMS are, why not a spreadsheet, tables, rows, columns, primary and foreign keys, data types, NoSQL, and what SQL does (DDL, DML and CRUD), with a labelled example table and three **Check yourself** questions. |
@@ -38,7 +38,7 @@ tablets and phones.
 
 | Unit | Lessons |
 |---|---|
-| **1. Foundations** | What's a database · SQL flavours · Entity relationship diagrams · Data types · Types of SQL command · Creating tables · Inserting, updating and deleting data |
+| **1. Foundations** | What's a database · SQL flavours · Entity relationship diagrams · Data types · Types of SQL command · Creating tables · Inserting, updating and deleting data · Normalisation: 1NF to 3NF |
 | **2. Introduction to querying** | Meet Northwind · Simple queries · Operators · Sorting data · Removing duplicates and limiting results · Wildcards · Concatenation · Arithmetic operators · *Checkpoint* |
 | **3. Summarising data** | Aggregate functions · GROUP BY · HAVING · Working with NULL values · *Checkpoint* |
 | **4. Combining tables** | Introduction to joins · Inner joins · Left joins · Table aliases and multiple joins · *Checkpoint* |
@@ -47,12 +47,13 @@ tablets and phones.
 | **7. Advanced topics** | Window functions · Ranking functions · Comparing rows · Window frames · Statistical functions · Common table expressions · Temporary tables · Pivoting · Performance tuning · *Checkpoint* |
 | **8. Capstone project** | Capstone project (in the learner's own SQL Server or MySQL) |
 
-46 lessons, 132 exercises and 123 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
+47 lessons, 132 exercises and 126 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
-exercises. **Data types**, **Types of SQL command** (DDL, DML, DQL, DCL and TCL, with `DELETE` vs `TRUNCATE` vs `DROP`) and
+exercises. **Data types**, **Types of SQL command** (DML, DDL, DCL and TCL as in the course slides, `DELETE` vs `TRUNCATE` vs `DROP`, and which groups the course covers) and
 **Inserting, updating and deleting data** build on the `Customers` and `Orders` tables from Creating tables (the same names
 as the course notes; customers Nish Mandal, Cathy French and Rich Gurney, with Phil Windridge added and Rich deleted in
-Inserting data). Data types starts with the script that creates and fills them, and every run starts from a fresh copy, so learners can't break anything. **Introduction to joins** uses Venn diagrams and two small made-up tables (students and courses, built with
+Inserting data). Data types starts with the script that creates and fills them, and every run starts from a fresh copy, so learners can't break anything. **Normalisation: 1NF to 3NF** ends Unit 1, taking an order sheet from one big table to 3NF, with the update, insert
+and delete anomalies it fixes. **Introduction to joins** uses Venn diagrams and two small made-up tables (students and courses, built with
 `WITH` so they run here) to show inner, left, right, full outer and cross joins, and why to avoid `RIGHT JOIN`. **Introduction to subqueries** does the same for subqueries with a small made-up café
 (products and sales): an inside-out diagram, what a subquery can return (one value, a list or a table), where it can
 go, correlated subqueries and `EXISTS`.
@@ -79,7 +80,7 @@ columns are fine, and row order only matters when the exercise asks for it (for 
 
 | Quiz | Questions | Time limits | You answer by |
 |---|---|---|---|
-| **Unit 1 quiz** | 10 multiple-choice | 15 min, 20 min or none | Selecting ONE option |
+| **Unit 1 quiz** | 12 multiple-choice | 15 min, 20 min or none | Selecting ONE option |
 | **Unit 2–7 quizzes** | 8 each (units 4, 5 and 6 have 9): multiple-choice plus 3 queries | 20 min, 30 min or none | Both |
 | **Query quiz** | 28, one for every topic on the path | 60 min, 75 min or none | Writing a query |
 | **Multiple-choice quiz** | 40, across all six units | 60 min, 75 min or none | Selecting ONE option |
@@ -133,7 +134,7 @@ showing the SQLite way:
 - **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Home** (the learning path), **Introduction**, **SQL dialects**, **Install**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
-- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 46").
+- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 47").
 - **SQL dialects** – the header tab with the MySQL / T-SQL / SQLite comparison, available from every page.
 - **Home** – the header's first link, the logo, the breadcrumb on every page and a button in every lesson's footer all go
   back to the home page (the learning path).
