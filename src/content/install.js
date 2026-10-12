@@ -3,19 +3,21 @@
 const CMD = s => `<pre class="cmd">${esc(s)}</pre>`;
 const OS = (...names) => names.map(n => `<span class="os-tag">${n}</span>`).join('');
 const MYSQL_SCRIPT = 'downloads/MySQLNorthwindDatabase.sql';
+const SQLITE_DB = 'downloads/northwind.db';
 const MS_NORTHWIND = 'https://raw.githubusercontent.com/microsoft/sql-server-samples/master/samples/databases/northwind-pubs/instnwnd.sql';
 
 const INSTALL_INTRO = `
-<p class="lede">This site runs SQLite in your browser, so you don't need to install anything to do the lessons. To practise the way you will at work, with 🪟 SQL Server (T-SQL) or 🐬 MySQL, set one up on your own computer using one of the guides below.</p>
+<p class="lede">This site runs SQLite in your browser, so you don't need to install anything to do the lessons. To practise on your own computer, set up 🪟 SQL Server (T-SQL), 🐬 MySQL or 🪶 SQLite using one of the guides below. You'll need one of them for the <a href="#/lesson/capstone">capstone project</a>.</p>
 <h2 class="dot">Which one to choose</h2>
-<p>Pick the database for the dialect you want to write. <strong>T-SQL is the dialect of Microsoft SQL Server</strong>, so to write T-SQL you install SQL Server. <strong>MySQL</strong> is both the dialect and the database.</p>
+<p>Pick the database for the dialect you want to write. <strong>T-SQL is the dialect of Microsoft SQL Server</strong>, so to write T-SQL you install SQL Server. <strong>MySQL</strong> and <strong>SQLite</strong> are each both the dialect and the database.</p>
 <table class="mini choose"><tr><th>To write…</th><th>Install</th><th>Guide</th></tr>
 <tr><td rowspan="2"><strong>🪟 T-SQL</strong></td><td rowspan="2">Microsoft SQL Server</td><td><strong>SQL Server with Docker and VS Code</strong>: Windows or Mac, with Northwind ready to use. <em>The easiest start, and the only SQL Server option on a Mac.</em></td></tr>
 <tr><td><strong>SQL Server on Windows</strong>: SQL Server Express with SSMS, installed directly on Windows</td></tr>
 <tr><td rowspan="3"><strong>🐬 MySQL</strong></td><td rowspan="3">MySQL</td><td><strong>MySQL on Windows</strong>, with MySQL Workbench</td></tr>
 <tr><td><strong>MySQL on Mac</strong>, with MySQL Workbench</td></tr>
-<tr><td><strong>MySQL with Docker</strong>: no server to install, on Windows or Mac</td></tr></table>
-${TIP('Ask your trainer which database your course uses. The SQL you learn here works in both: the 🪶 🐬 🪟 notes in each lesson show where they differ.')}`;
+<tr><td><strong>MySQL with Docker</strong>: no server to install, on Windows or Mac</td></tr>
+<tr><td><strong>🪶 SQLite</strong></td><td>Nothing to install but an app: a SQLite database is a single file</td><td><strong>SQLite</strong> with DB Browser for SQLite: Windows or Mac, with the same Northwind as this site. <em>The quickest set-up, and the dialect you've practised here.</em></td></tr></table>
+${TIP('Ask your trainer which database your course uses. The SQL you learn here works in all three: the 🪶 🐬 🪟 notes in each lesson show where they differ.')}`;
 
 const INSTALL_OPTIONS = [
   { id:'docker-sqlserver', tab:'🪟 SQL Server with Docker', os:OS('Windows','Mac'), title:'SQL Server with Docker and VS Code',
@@ -153,5 +155,32 @@ ${CMD('docker run -d --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=Passw0rd20
 ${CMD('USE northwind;\nSELECT CompanyName, City, Country\nFROM Customers\nLIMIT 10;')}</li>
 <li><h3>Stopping and starting</h3>
 ${CMD('docker stop mysql\ndocker start mysql')}</li>
-</ol>`}
+</ol>`},
+  { id:'sqlite', tab:'🪶 SQLite', os:OS('Windows','Mac'), title:'SQLite with DB Browser for SQLite',
+    summary:'The same dialect and the same Northwind database as this site, on your own computer. There\'s no server to install: a SQLite database is a single file.',
+    body:`
+<ol class="install-steps">
+<li><h3>Download Northwind</h3>
+<p><a href="${SQLITE_DB}" download data-testid="download-sqlite-northwind">Download northwind.db</a>. It's the exact database this site uses, so every query from the lessons works on it. Save it somewhere easy to find, such as your Documents folder.</p></li>
+<li><h3>Install DB Browser for SQLite</h3>
+<p>Download <a href="https://sqlitebrowser.org/dl/" target="_blank" rel="noopener">DB Browser for SQLite</a>, a free app for opening SQLite files and running queries, and install it. On Windows, choose the standard installer. On a Mac, choose the download that matches your chip (Apple Silicon or Intel) and drag the app into Applications.</p>
+<details class="trouble"><summary>Mac: "cannot be opened because it is from an unidentified developer"</summary>
+<p>Right-click (or Control-click) the app and choose <strong>Open</strong>, then confirm. Or go to System Settings → Privacy &amp; Security and click <strong>Open Anyway</strong>.</p></details></li>
+<li><h3>Open the database</h3>
+<p>Open DB Browser for SQLite, click <strong>Open Database</strong> and choose <code>northwind.db</code>. The <strong>Database Structure</strong> tab lists the tables, and <strong>Browse Data</strong> shows what's in them.</p></li>
+<li><h3>Run your first query</h3>
+<p>Go to the <strong>Execute SQL</strong> tab, type this and press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> (<kbd>Cmd</kbd> + <kbd>Enter</kbd> on a Mac), or the ▶ button:</p>
+${CMD('SELECT CompanyName, City, Country\nFROM Customers\nLIMIT 10;')}
+${TIP('DB Browser keeps your changes (from <code>INSERT</code>, <code>UPDATE</code>, <code>CREATE TABLE</code> and so on) waiting until you click <strong>Write Changes</strong>. Close without writing them and they\'re undone, which is handy when you\'re practising.')}</li>
+<li><h3>Make sure foreign keys are switched on</h3>
+<p>SQLite only checks foreign keys when they're switched on. DB Browser normally does this for you; to check, run:</p>
+${CMD('PRAGMA foreign_keys;')}
+<p>If it returns <code>0</code>, run <code>PRAGMA foreign_keys = ON;</code>, or tick <strong>Foreign keys</strong> in Preferences → Database.</p></li>
+</ol>
+<details class="trouble"><summary>Prefer the command line?</summary>
+<p>Macs come with SQLite already: open Terminal, go to the folder with the file, and run:</p>
+${CMD('sqlite3 northwind.db')}
+<p>On Windows, download the <em>sqlite-tools</em> zip for Windows from <a href="https://www.sqlite.org/download.html" target="_blank" rel="noopener">sqlite.org</a>, unzip it, and run <code>sqlite3.exe northwind.db</code> from that folder. Type <code>.tables</code> to list the tables and <code>.quit</code> to leave.</p></details>
+<details class="trouble"><summary>Prefer VS Code?</summary>
+<p>Install the <strong>SQLite</strong> extension (by alexcvzz) from the Extensions view. Then open the Command Palette (<kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>), run <strong>SQLite: Open Database</strong>, pick <code>northwind.db</code>, and use <strong>SQLite: New Query</strong> to write and run SQL.</p></details>`}
 ];
