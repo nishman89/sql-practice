@@ -46,6 +46,7 @@ after `#`, shows one section, and calls its render function.
 |---|---|---|
 | `#/path` | `v-path` | `renderPath()` |
 | `#/intro` | `v-intro` | `drawIntro()`: `SITE_INTRO` from `src/content/intro.js` |
+| `#/install` | `v-install` | `drawInstall()`: `INSTALL_INTRO` and one tab per entry in `INSTALL_OPTIONS` (`src/content/install.js`); `addCopyButtons()` adds a Copy button to every `pre.cmd` |
 | `#/lesson/databases` | `v-databases` | `drawDatabases()`: lesson text and `renderCheck()` |
 | `#/lesson/flavours` | `v-flavours` | `drawFlavours()`: lesson text, `renderDialectTabs()`, `renderCheck()` |
 | `#/dialects` | `v-dialects` | `renderDialectTabs()` |
@@ -450,7 +451,8 @@ What happens when you run `npm run build` (or when GitHub Actions does it for yo
     │     /*__SQLJS__*/    ← node_modules/sql.js/dist/sql-asm-memory-growth.js
     │     __NWDB__         ← data/northwind.db as base64
     ├── refuses to insert anything containing "</script" (it would end the script early)
-    └── writes dist/index.html
+    ├── writes dist/index.html
+    └── copies public/ into dist/ as it is (downloads such as the MySQL Northwind script)
 
  3. Output: dist/index.html - the whole site. This is what GitHub Pages serves.
 ```
@@ -489,7 +491,9 @@ There is no server. Everything a visitor sees comes from the one file; the only 
 | `src/assets/` | Sparta Global logos (`sparta-logo.png`, `sparta-logo-white.png`) and `favicon.svg`, shared with the ISTQB site | - |
 | `src/engine.js` | Dialect layer, `runScript()`, `friendlyError()`, extra SQL functions, `expected()` and `compare()` | - (no DOM) |
 | `src/content/lessons.js` | `UNITS`, `LESSONS`, `PATH`, and the `C()` / `TIP()` helpers | `esc()` from `engine.js` |
-| `src/content/intro.js` | `DATABASES_LEARN`, `DATABASES_CHECK` | - |
+| `src/content/intro.js` | `DATABASES_LEARN`, `DATABASES_CHECK`, `SITE_INTRO` | - |
+| `src/content/install.js` | `INSTALL_INTRO`, `INSTALL_OPTIONS`, `CMD()` | `TIP()` from `lessons.js` |
+| `public/downloads/MySQLNorthwindDatabase.sql` | The MySQL Northwind script (from the course setup pack; the reserved word `RANK` is quoted so it runs on MySQL 8+) | - |
 | `src/content/dialects.js` | `DIALECTS`, `DIALECT_INFO`, `FLAVOURS_LEARN`, `FLAVOURS_CHECK` | `esc()` from `engine.js` |
 | `src/content/quizzes.js` | `QUIZ_SETTINGS` and `QUIZZES` (the Query quiz and the Multiple-choice quiz) | - |
 | `src/app.js` | Progress, header behaviour (back-to-top, menu), databases, results tables, editor, ERD renderer, routing, path, lessons, Foundations pages, Free practice, boot | engine, content |

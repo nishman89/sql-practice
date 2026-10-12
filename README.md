@@ -20,6 +20,7 @@ tablets and phones.
 | Page | What it does |
 |---|---|
 | **Learning path** (home) | Every unit and lesson as a route. Finished lessons are ticked, the next lesson is highlighted and checkpoints are shown as diamonds. The **Continue** card shows the next unfinished lesson and a trail of progress across the whole path. |
+| **Install on your computer** | Step-by-step guides for practising outside the browser, linked from the home page and the Introduction: 🪟 SQL Server with Docker and VS Code (Windows and Mac, using the `kcornwall/sqlnorthwind` image), 🪟 SQL Server on Windows with SSMS, 🐬 MySQL on Windows, 🐬 MySQL on Mac, and 🐬 MySQL with Docker. Every command has a Copy button, and the MySQL Northwind script is downloadable from the page. |
 | **Introduction** (header tab) | How the site works: how it's organised, what's inside a lesson, how answers are marked, the **Show Northwind ERD** button, the dialect icons and where progress is saved. |
 | **What's a database** | The first lesson: what a database and a DBMS are, why not a spreadsheet, tables, rows, columns, primary and foreign keys, data types, NoSQL, and what SQL does (DDL, DML and CRUD), with a labelled example table and three **Check yourself** questions. |
 | **SQL flavours** | The second lesson: what SQL dialects are, the flavours learners will meet (MySQL, T-SQL, PostgreSQL, Oracle, SQLite), what's the same and what changes, that the course uses SQLite, a tabbed MySQL / T-SQL / SQLite comparison and three **Check yourself** questions. |
@@ -163,6 +164,7 @@ Each page has its own address after the `#`, so you can link straight to it:
 |---|---|
 | Learning path | `…/#/path` |
 | Introduction | `…/#/intro` |
+| Install on your computer | `…/#/install` |
 | SQL dialects | `…/#/dialects` |
 | A lesson | `…/#/lesson/<id>`, e.g. `#/lesson/innerjoin` (ids are in `src/content/lessons.js`) |
 | Quizzes | `…/#/quiz` |
@@ -410,6 +412,7 @@ used twice, or if a multiple-choice question doesn't have exactly four different
 | The Northwind table notes and diagram layout | `NW_NOTES` and `NW_POS` in `src/app.js` |
 | The messages for MySQL / T-SQL syntax | `OTHER_DIALECTS` and `FN_HINTS` in `src/engine.js` |
 | Advice shown with error messages | `friendlyError()` in `src/engine.js` |
+| The install guides | `INSTALL_INTRO` and `INSTALL_OPTIONS` in `src/content/install.js` (one entry per tab; `CMD()` makes a command with a Copy button) |
 | Header, home hero and footer | `src/index.html` (styles under "Header", "Home hero" and "Footer" in `src/styles.css`) |
 
 ---
@@ -426,6 +429,7 @@ nothing to host except that one file.
 ```
 ├── .github/workflows/deploy.yml   Checks, builds and publishes to GitHub Pages
 ├── data/northwind.db              The Northwind sample database (SQLite, ~250 KB)
+├── public/downloads/              Files learners download, copied into the site as they are (the MySQL Northwind script)
 ├── scripts/
 │   ├── build.mjs                  Builds dist/index.html
 │   ├── check.mjs                  Runs every model answer and example; stops the build if one fails
@@ -439,7 +443,8 @@ nothing to host except that one file.
     ├── assets/                    Sparta Global logos and favicon (inlined into the page by the build)
     └── content/
         ├── lessons.js             Units, lessons, examples and exercises
-        ├── intro.js               The What's a database lesson text and its questions
+        ├── intro.js               The What's a database lesson, the Introduction page, and their questions
+        ├── install.js             The Install on your computer guides
         ├── dialects.js            The SQL flavours lesson text and the MySQL / T-SQL / SQLite comparison
         └── quizzes.js             The end-of-unit quizzes, the Query quiz, the Multiple-choice quiz and the pass mark
 ```
@@ -465,8 +470,9 @@ Every important element has a stable hook:
 |---|---|
 | **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` · `nav-intro` · `nav-dialects` · `nav-quiz` · `nav-free` · `back-to-top` · `site-footer` |
 | **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-intro` · `mobile-nav-dialects` · `mobile-nav-quiz` · `mobile-nav-free` |
-| **Home hero** | `hero` · `hero-start` · `hero-intro` · `hero-quiz` · `hero-free` |
-| **Introduction** | `intro-title` · `intro-body` · `intro-card-path` / `-dialects` / `-quizzes` / `-free` · `intro-open-erd` · `intro-start` |
+| **Home hero** | `hero` · `hero-start` · `hero-intro` · `hero-install` · `hero-quiz` · `hero-free` |
+| **Install on your computer** | `install-title` · `install-intro` · `install-guides` · `install-tab-docker-sqlserver` / `-windows-sqlserver` / `-windows-mysql` / `-mac-mysql` / `-docker-mysql` · `install-panel` (with `data-guide`) · `copy-command` · `download-mysql-northwind` |
+| **Introduction** | `intro-title` · `intro-body` · `intro-install-link` · `intro-card-path` / `-dialects` / `-quizzes` / `-free` · `intro-open-erd` · `intro-start` |
 | **Learning path** | `continue-card` · `overall-progress` (with `data-lessons-done` and `data-exercises-done`) · `continue` · `reset-progress` · `unit-1` … `unit-7` · `unit-quiz-1` … `unit-quiz-7` (each unit's quiz button) · `unit-quiz-N-score` · `lesson-<id>` (with `data-status`: `done`, `next`, `started` or `todo`) · `lesson-link-<id>` · `lesson-status-<id>` · `lesson-cmds-<id>` (the command chips) |
 | **Any lesson** | `breadcrumb` · `breadcrumb-path` · `breadcrumb-unit` · `lesson-position` · `lesson-footer` · `lesson-status` (with `data-done`) · `previous-lesson` · `next-lesson` |
 | **What's a database lesson** | `databases-title` · `databases-body` · `databases-see-table` · `databases-check` · `databases-check-question-1` … `-3` (with `data-answer`) · options `databases-check-question-N-option-a` and `…-option-a-input` · `databases-check-question-N-feedback` |
