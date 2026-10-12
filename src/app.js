@@ -257,7 +257,7 @@ function route(){
   if (view==='intro') drawIntro();
   if (view==='flavours') drawFlavours();
   if (view==='dialects') renderDialectTabs($('#dialectsTabs'), 'dialects');
-  if (view==='build') buildEd.sync();
+  if (view==='build'){ buildEd.sync(); drawBuildDiff(); }
   if (view==='lesson') openLesson(lid);
   if (view==='free') fEd.sync();
   if (view==='quizzes') renderQuizList();
@@ -397,6 +397,7 @@ function renderCheck(form, Q, tp, saved, onAnswer){
     if (saved[qi]!=null) mark(saved[qi], true);
   });
 }
+const drawBuildDiff = () => { const el=$('#buildDiff'); if (el && !el.childElementCount) el.innerHTML=BUILD_DIFF(); };
 function drawIntro(){
   const b=$('#introBody'); b.innerHTML=SITE_INTRO;
   const slot=$('[data-intro-erd]',b); if (slot) slot.append(erdButton('intro-open-erd'));
@@ -680,7 +681,7 @@ function renderLessonBody(){
     h('button',{class:'btn small',type:'button',id:'bSol','data-testid':'show-answer',onclick:()=>{ reveal.sol=!reveal.sol; drawReveal(); }},'Show the answer')));
   body.append(h('div',{id:'lReveal'}));
   if (!L.checkpoint && i===0) body.append(h('p',{class:'small'}, 'Stuck? The ', h('button',{type:'button',class:'linkish',onclick:()=>setTab('learn')},'Learn tab'), ' has worked examples. The ', h('button',{type:'button',class:'linkish','data-testid':'exercise-open-erd',onclick:openErd},'Show the Northwind ERD'), ' to see every table and column.'));
-  lEd.value = P.drafts[draftKey()] ?? `-- ${L.checkpoint?'Checkpoint question':'Exercise'} ${i+1}\n\n`;
+  lEd.value = P.drafts[draftKey()] ?? (ex.starter || `-- ${L.checkpoint?'Checkpoint question':'Exercise'} ${i+1}\n\n`);
   lEd.setLabel(`Your answer to ${L.checkpoint?'question':'exercise'} ${i+1}`);
   renderReport($('#lOut'), emptyRep(), {empty:'Run your query. It\'s checked against the expected result automatically.'});
 }

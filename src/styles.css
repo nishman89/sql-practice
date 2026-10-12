@@ -549,3 +549,24 @@ table.dialect-table td.this-col{background:var(--pink-tint)}
 .intro-card span{font-size:.93rem;color:var(--ink-2)}
 .steps-list{padding-left:1.3em;display:grid;gap:8px;margin:8px 0 14px}
 #introBody{max-width:none} #introBody>p,#introBody>ol{max-width:70ch}
+
+/* Same in all three */
+.dsame{display:flex;gap:12px;align-items:flex-start;background:var(--paper);border-radius:12px;box-shadow:var(--shadow);border-left:5px solid var(--ok);padding:10px 14px;margin:6px 0 18px;font-size:.94rem}
+.dsame-icons{flex:none;font-size:1.05rem;letter-spacing:2px}
+
+/* Venn diagrams for joins */
+.venn{width:100%;max-width:220px;height:auto;display:block}
+.venn .vf{fill:var(--pink);opacity:.8}
+.venn .vo{fill:none;stroke:var(--ink);stroke-width:2}
+.venn .vt{font:700 12px var(--f-mono);fill:var(--ink)}
+.venn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));gap:12px;margin:10px 0 22px}
+.venn-card{margin:0;background:var(--paper);border-radius:12px;box-shadow:var(--shadow);padding:10px 12px;display:grid;gap:6px;justify-items:center;text-align:center}
+.venn-card figcaption{display:grid;gap:4px}
+.venn-card b{font-size:.92rem}
+.venn-card code{font-size:.72rem;background:var(--mist-2);overflow-wrap:anywhere}
+.venn-inline{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:center;margin:4px 0 12px}
+.venn-inline .venn{max-width:150px}
+.venn-inline p{margin:0}
+@media (max-width:640px){ .venn-inline{grid-template-columns:110px minmax(0,1fr);gap:10px} .venn-inline .venn{max-width:110px} }
+.build-diff{margin-top:28px}
+.build-diff h2{font-size:1.4rem}

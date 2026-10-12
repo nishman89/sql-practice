@@ -156,10 +156,11 @@
         <div class="step-card" id="stepCard"></div>
         <div class="editor-wrap" id="buildEditor"></div>
         <div class="out" id="buildOut" data-testid="build-results"></div>
-        <details class="dialect">
-          <summary>Which SQL is this?</summary>
-          <p>SQLite. Its main column types are <code>INTEGER</code>, <code>REAL</code> and <code>TEXT</code>, and an <code>INTEGER PRIMARY KEY AUTOINCREMENT</code> column numbers itself. A SQLite database is a single file, so there's no <code>CREATE DATABASE</code> or <code>USE</code>: you just create tables. To see how MySQL and T-SQL write the same things, open <a href="#/dialects">SQL dialects</a>.</p>
-        </details>
+        <div class="build-diff">
+          <h2 class="dot">Creating tables in each dialect</h2>
+          <p>The lessons above use SQLite. Creating tables is where the dialects differ most, so here's how MySQL and T-SQL write the same things. More comparisons are on the <a href="#/dialects">SQL dialects</a> page.</p>
+          <div id="buildDiff" data-testid="build-dialects"></div>
+        </div>
       </div>
       <div class="side-sticky">
         <div class="panel">
