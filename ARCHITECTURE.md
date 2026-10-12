@@ -275,6 +275,10 @@ multiple choice, otherwise it's a query task. A quiz can mix both, as the end-of
 | What's a database | All three Check yourself questions are answered correctly (`P.dbDone`) | `drawDatabases()` |
 | SQL flavours | All three Check yourself questions are answered correctly (`P.flavDone`) | `drawFlavours()` |
 | Capstone project | Every task in its checklist is ticked (`P.capstone`) | `drawCapstone()` |
+
+Any lesson can also be ticked off by hand with **Mark lesson as complete** (`P.markedDone[id]`). `lessonDone(id)` is
+`autoDone(id) || markedDone(id)`, so a hand-marked lesson shows as Done on the path and is skipped by Continue; the
+button disappears once the lesson is complete on its own.
 | What's an ERD | All three Check yourself questions are answered correctly (`P.quizDone`) | `drawLesson()` |
 | Create tables | All six steps pass their checklist (`P.buildDone`) | `BUILD_STEPS`, `renderBuild()`, `runBuild()` |
 | Meet Northwind | Three or more tables have been opened (`P.mapTables`) | `drawMap()` |

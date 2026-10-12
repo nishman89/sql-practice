@@ -51,7 +51,8 @@ tablets and phones.
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
 exercises. **Data types**, **Types of SQL command** (DDL, DML, DQL, DCL and TCL, with `DELETE` vs `TRUNCATE` vs `DROP`) and
 **Inserting, updating and deleting data** build on the `Customers` and `Orders` tables from Creating tables (the same names
-and data as the course notes), and every run starts from a fresh copy, so learners can't break anything. **Introduction to joins** uses Venn diagrams and two small made-up tables (students and courses, built with
+as the course notes; customers Nish Mandal, Cathy French and Rich Gurney, with Phil Windridge added and Rich deleted in
+Inserting data). Data types starts with the script that creates and fills them, and every run starts from a fresh copy, so learners can't break anything. **Introduction to joins** uses Venn diagrams and two small made-up tables (students and courses, built with
 `WITH` so they run here) to show inner, left, right, full outer and cross joins, and why to avoid `RIGHT JOIN`. **Introduction to subqueries** does the same for subqueries with a small made-up café
 (products and sales): an inside-out diagram, what a subquery can return (one value, a list or a table), where it can
 go, correlated subqueries and `EXISTS`.
@@ -129,11 +130,15 @@ showing the SQLite way:
 
 ### Finding your way around
 
-- **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Introduction**, **SQL dialects**, **Install**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
+- **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Home** (the learning path), **Introduction**, **SQL dialects**, **Install**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
 - **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 46").
 - **SQL dialects** – the header tab with the MySQL / T-SQL / SQLite comparison, available from every page.
+- **Home** – the header's first link, the logo, the breadcrumb on every page and a button in every lesson's footer all go
+  back to the home page (the learning path).
+- **Mark lesson as complete** – every lesson's footer has this button for learners who want to tick a lesson off
+  themselves (for example after doing it in class). It counts as complete on the path and can be undone.
 - **Next lesson** – the footer of every lesson links to the previous and next lessons.
 - **Tables** – the buttons above the editor insert a table name at the cursor (`Order Details` comes with the backticks it needs).
 - **Errors** – an error message comes with advice, for example a reminder that text needs single quotes.
@@ -477,14 +482,15 @@ Every important element has a stable hook:
 
 | Page / area | Hooks |
 |---|---|
-| **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` · `nav-intro` · `nav-dialects` · `nav-install` · `nav-quiz` · `nav-free` · `back-to-top` · `site-footer` |
+| **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` (labelled Home) · `nav-intro` · `nav-dialects` · `nav-install` · `nav-quiz` · `nav-free` · `back-to-top` · `site-footer` |
+| **Other pages** (Introduction, Install, SQL dialects, Quizzes, Free practice) | `breadcrumb` · `breadcrumb-home` · `breadcrumb-page` |
 | **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-intro` · `mobile-nav-dialects` · `mobile-nav-install` · `mobile-nav-quiz` · `mobile-nav-free` |
 | **Home hero** | `hero` · `hero-start` · `hero-intro` · `hero-install` · `hero-quiz` · `hero-free` |
 | **Capstone project** | `capstone-title` · `capstone-print` · `capstone-body` · `capstone-before` · `capstone-install-link` · `capstone-q-1-1` … `capstone-q-2-9` · `capstone-checklist` · `capstone-task-setup`, `capstone-task-1-1` … `capstone-task-2-9`, `capstone-task-submit` |
 | **Install on your computer** | `install-title` · `install-intro` · `install-guides` · `install-tab-docker-sqlserver` / `-windows-sqlserver` / `-windows-mysql` / `-mac-mysql` / `-docker-mysql` / `-sqlite` · `install-panel` (with `data-guide`) · `copy-command` · `download-mysql-northwind` · `download-sqlite-northwind` · the chooser grid's option names: `choose-docker-sqlserver`, `choose-windows-sqlserver`, `choose-windows-mysql`, `choose-mac-mysql`, `choose-docker-mysql`, `choose-sqlite` (each opens that guide) |
 | **Introduction** | `intro-title` · `intro-body` · `intro-install-link` · `intro-card-path` / `-dialects` / `-quizzes` / `-free` · `intro-open-erd` · `intro-start` |
 | **Learning path** | `continue-card` · `overall-progress` (with `data-lessons-done` and `data-exercises-done`) · `continue` · `reset-progress` · `unit-1` … `unit-7` · `unit-quiz-1` … `unit-quiz-7` (each unit's quiz button) · `unit-quiz-N-score` · `lesson-<id>` (with `data-status`: `done`, `next`, `started` or `todo`) · `lesson-link-<id>` · `lesson-status-<id>` · `lesson-cmds-<id>` (the command chips) |
-| **Any lesson** | `breadcrumb` · `breadcrumb-path` · `breadcrumb-unit` · `lesson-position` · `lesson-footer` · `lesson-status` (with `data-done`) · `previous-lesson` · `next-lesson` |
+| **Any lesson** | `breadcrumb` · `breadcrumb-home` · `breadcrumb-unit` · `lesson-position` · `lesson-footer` · `lesson-status` (with `data-done`, and `data-manual="true"` when marked complete by hand) · `mark-complete` · `unmark-complete` · `back-home` · `previous-lesson` · `next-lesson` |
 | **What's a database lesson** | `databases-title` · `databases-body` · `databases-see-table` · `databases-check` · `databases-check-question-1` … `-3` (with `data-answer`) · options `databases-check-question-N-option-a` and `…-option-a-input` · `databases-check-question-N-feedback` |
 | **SQL flavours lesson** | `flavours-title` · `flavours-body` · the comparison (prefix `flavours-`, see next row) · `flavours-check` · `flavours-check-question-1` … `-3` (with `data-answer`) · options `flavours-check-question-N-option-a` and `…-option-a-input` · `flavours-check-question-N-feedback` |
 | **Dialect comparison** | On the SQL dialects page the prefix is `dialects-` (`dialects-title`, `dialects-flavours-link`); in the lesson it's `flavours-`. `<prefix>-tabs` · tabs `<prefix>-tab-side`, `-tab-mysql`, `-tab-tsql`, `-tab-lab` (the SQLite tab; with `aria-selected`; Left/Right arrows move between them) · `<prefix>-panel` (with `data-tab`) · rows `<prefix>-row-1` … · on the SQLite tab `<prefix>-try-N` |
