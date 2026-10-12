@@ -27,7 +27,7 @@ tablets and phones.
 | **What's an ERD** | Entities, attributes, primary and foreign keys, crow's foot notation and the three kinds of relationship, with an interactive diagram and three **Check yourself** questions. |
 | **Create tables and connect them** | Six guided steps that build a `Customers` and an `Orders` table, insert data, join them, trigger a foreign key error and add columns. The ERD beside the editor redraws itself from the learner's tables after every run. |
 | **Meet Northwind** | The full Northwind ERD. Select a table to see its columns, its keys, what it links to and its first five rows. |
-| **Lessons** (35) | A **Learn** tab with a short explanation and worked examples, each with a **Run this** button, then one tab per exercise. The editor and results sit alongside. |
+| **Lessons** (36) | A **Learn** tab with a short explanation and worked examples, each with a **Run this** button, then one tab per exercise. The editor and results sit alongside. |
 | **Checkpoints** | The last lesson in units 2–5 and 7. No new teaching: mixed exercises on the whole unit. |
 | **Quizzes** | An **end-of-unit quiz** for each of the 7 units (8 questions each: multiple choice, plus 3 queries to write from unit 2 on), and two final quizzes: the **Query quiz** (28 query-writing tasks, one for every topic, including the advanced ones) and the **Multiple-choice quiz** (40 questions on ERDs, how queries run, filtering, grouping, joins, subqueries, advanced topics and MySQL vs T-SQL). Nothing is marked until you submit. Optional timer, a score for each unit and a full review. |
 | **Free practice** | Run any query against Northwind. Nothing is marked. |
@@ -39,14 +39,18 @@ tablets and phones.
 | **1. Foundations** | What's a database · SQL flavours · Entity relationship diagrams · Creating tables · Meet Northwind |
 | **2. Querying one table** | Simple queries · Operators · Sorting data · Removing duplicates and limiting results · Wildcards · Concatenation · Arithmetic operators · *Checkpoint* |
 | **3. Summarising data** | Aggregate functions · GROUP BY · HAVING · Working with NULL values · *Checkpoint* |
-| **4. Combining tables** | Inner joins · Left joins · Table aliases and multiple joins · *Checkpoint* |
+| **4. Combining tables** | Introduction to joins · Inner joins · Left joins · Table aliases and multiple joins · *Checkpoint* |
 | **5. Subqueries** | Subqueries in WHERE · Subqueries in FROM and SELECT · EXISTS and NOT EXISTS · *Checkpoint* |
 | **6. Going further** | CASE statements · Date and string functions · Views · Stored procedures |
 | **7. Advanced topics** | Window functions · Ranking functions · Comparing rows · Window frames · Statistical functions · Common table expressions · Temporary tables · Pivoting · Performance tuning · *Checkpoint* |
 
-40 lessons, 112 exercises and 92 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
+41 lessons, 117 exercises and 100 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
-exercises.
+exercises. **Introduction to joins** uses Venn diagrams and two small made-up tables (students and courses, built with
+`WITH` so they run here) to show inner, left, right, full outer and cross joins, and why to avoid `RIGHT JOIN`.
+
+Every lesson says how the dialects compare: either a 🪶 🐬 🪟 callout showing the difference, or a short
+**Same in SQLite, MySQL and T-SQL** note. Creating tables ends with a full comparison of the three.
 
 ### How the exercises work
 
@@ -68,7 +72,7 @@ columns are fine, and row order only matters when the exercise asks for it (for 
 | Quiz | Questions | Time limits | You answer by |
 |---|---|---|---|
 | **Unit 1 quiz** | 8 multiple-choice | 15 min, 20 min or none | Selecting ONE option |
-| **Unit 2–7 quizzes** | 8 each (unit 6 has 9): multiple-choice plus 3 queries | 20 min, 30 min or none | Both |
+| **Unit 2–7 quizzes** | 8 each (units 4 and 6 have 9): multiple-choice plus 3 queries | 20 min, 30 min or none | Both |
 | **Query quiz** | 28, one for every topic on the path | 60 min, 75 min or none | Writing a query |
 | **Multiple-choice quiz** | 40, across all six units | 60 min, 75 min or none | Selecting ONE option |
 
@@ -121,7 +125,7 @@ showing the SQLite way:
 - **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Introduction**, **SQL dialects**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
-- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 40").
+- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 41").
 - **SQL dialects** – the header tab with the MySQL / T-SQL / SQLite comparison, available from every page.
 - **Next lesson** – the footer of every lesson links to the previous and next lessons.
 - **Tables** – the buttons above the editor insert a table name at the cursor (`Order Details` comes with the backticks it needs).
@@ -334,7 +338,10 @@ ${DIFF({ title:'Limiting rows in each dialect',
          note:'Optional explanation underneath.' })}
 ```
 
-Each value is shown as code (start it with `~` for plain text). `C(sql, false, READ_ONLY('mysql', 'MySQL Workbench'))`
+Each value is shown as code (start it with `~` for plain text). Where nothing differs, add `${SAME()}` (or
+`${SAME('an extra sentence')}`) for the green **Same in SQLite, MySQL and T-SQL** note. For joins, `VENN(['a','ab','b'], 'label')`
+draws a Venn diagram (`a` = only the left table, `ab` = both, `b` = only the right), and an exercise can have a `starter`:
+text that's in the editor when the learner first opens it (the join exercises use it for the made-up tables). `C(sql, false, READ_ONLY('mysql', 'MySQL Workbench'))`
 shows a read-only MySQL or T-SQL example with its icon.
 
 ### Exercises
@@ -469,7 +476,7 @@ Every important element has a stable hook:
 | **SQL editors** | Lessons `lesson-editor-input` / `lesson-run` · Free practice `free-editor-input` / `free-run` · Create tables `build-editor-input` / `build-run` · table buttons `lesson-insert-table-customers`, `free-insert-table-order-details` … |
 | **Query results** | Each results area (`lesson-results`, `free-results`, `build-results`, and `question-N-results` in a quiz) prefixes its hooks with its own name. For lessons: `lesson-query-log` · `lesson-query-error` · `lesson-query-error-message` · `lesson-query-error-hint` · `lesson-result-1` … · `lesson-row-count` (with `data-rows`) · `lesson-result-table`. A second result set adds `-2` (`lesson-result-table-2`). |
 | **What's an ERD** | `check-yourself` · `check-question-1` … `check-question-3` (with `data-answer`) · options `check-question-N-option-a` (the label) and `check-question-N-option-a-input` (the radio) · `check-question-N-feedback` |
-| **Create tables** | `build-step-1` … `build-step-6` (with `data-done`) · `step-checklist` · `step-check-1` … (with `data-done`) · `use-lesson-code` · `build-start-again` · `build-erd` · each table in the diagram `build-table-customers`, `build-table-orders` |
+| **Create tables** | `build-dialects` (the MySQL / T-SQL / SQLite comparison) · `build-step-1` … `build-step-6` (with `data-done`) · `step-checklist` · `step-check-1` … (with `data-done`) · `use-lesson-code` · `build-start-again` · `build-erd` · each table in the diagram `build-table-customers`, `build-table-orders` |
 | **Meet Northwind** | `northwind-erd` · each table `northwind-table-customers`, `northwind-table-order-details` … · `table-detail` · `query-table` |
 | **Free practice** | `restore-northwind` |
 | **Quizzes page** | `quizzes-title` · `unit-quizzes` · `final-quizzes` · `quiz-card-unit-1` … `quiz-card-unit-7` · `quiz-card-queries` / `quiz-card-mcq` · `quiz-card-<id>-count` · `quiz-card-<id>-last` · `quiz-card-<id>-best` · `open-quiz-unit-1` … `open-quiz-unit-7` · `open-quiz-queries` / `open-quiz-mcq` |
