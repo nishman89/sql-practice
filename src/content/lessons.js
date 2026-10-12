@@ -364,6 +364,8 @@ ${DIFF({title:'Sorting in each dialect', sqlite:'ORDER BY Country, CompanyName D
 <p><code>DISTINCT</code> removes duplicate rows from your result. Many customers share a country, but each country appears once here:</p>
 ${C("SELECT DISTINCT Country\nFROM Customers\nWHERE ContactTitle = 'Owner';")}
 ${TIP('<code>DISTINCT</code> looks at all the selected columns together. A row is only a duplicate if <em>every</em> column matches, so more columns usually means fewer duplicates.')}
+<p>Why all the columns? Look back at the diagram in <a href="#/lesson/sorting">Sorting data</a>: <code>DISTINCT</code> runs at step 6, straight after <code>SELECT</code>. By then the columns have been chosen, so it compares the finished rows. Add a column and it compares that too:</p>
+${C("SELECT DISTINCT Country, City\nFROM Customers\nWHERE ContactTitle = 'Owner';")}
 <p>Inside <code>COUNT</code>, it counts the different values:</p>
 ${C('SELECT COUNT(DISTINCT Country) AS \'Countries\'\nFROM Customers;')}
 <h3>Returning only the first rows</h3>
