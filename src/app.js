@@ -298,7 +298,7 @@ function renderPath(){
   v.append(h('div',{class:'path-hero'}, card));
   const ha=$('#heroActions'); ha.innerHTML='';
   ha.append(h('button',{class:'btn primary',type:'button','data-go':nxt?nxt.id:'free','data-testid':'hero-start'}, nxt?(doneL?'Continue learning':'Start the learning path'):'Free practice'),
-    h('button',{class:'btn light',type:'button','data-go':'quiz','data-testid':'hero-quiz'},'Take a query quiz'),
+    h('button',{class:'btn light',type:'button','data-go':'quiz','data-testid':'hero-quiz'},'Take a quiz'),
     h('button',{class:'btn light',type:'button','data-go':'free','data-testid':'hero-free'},'Free practice'));
   let num=0;
   UNITS.forEach((u,ui)=>{
@@ -579,7 +579,7 @@ function renderLessonBody(){
     h('button',{class:'btn small',type:'button',id:'bHint','data-testid':'show-hint',onclick:()=>{ reveal.hint=!reveal.hint; drawReveal(); }},'Show a hint'),
     h('button',{class:'btn small',type:'button',id:'bSol','data-testid':'show-answer',onclick:()=>{ reveal.sol=!reveal.sol; drawReveal(); }},'Show the answer')));
   body.append(h('div',{id:'lReveal'}));
-  if (!L.checkpoint && i===0) body.append(h('p',{class:'small'}, 'Stuck? The ', h('button',{type:'button',class:'linkish',onclick:()=>setTab('learn')},'Learn tab'), ' has worked examples. The ', h('button',{type:'button',class:'linkish',onclick:()=>goto('map')},'Northwind ERD'), ' shows every table and column.'));
+  if (!L.checkpoint && i===0) body.append(h('p',{class:'small'}, 'Stuck? The ', h('button',{type:'button',class:'linkish',onclick:()=>setTab('learn')},'Learn tab'), ' has worked examples. The ', h('button',{type:'button',class:'linkish','data-testid':'exercise-open-erd',onclick:openErd},'Northwind ERD'), ' shows every table and column.'));
   lEd.value = P.drafts[draftKey()] ?? `-- ${L.checkpoint?'Checkpoint question':'Exercise'} ${i+1}\n\n`;
   lEd.setLabel(`Your answer to ${L.checkpoint?'question':'exercise'} ${i+1}`);
   renderReport($('#lOut'), emptyRep(), {empty:'Run your query. It\'s checked against the expected result automatically.'});
@@ -625,11 +625,40 @@ function runLesson(){
   out.prepend(box);
 }
 
+/* ---------- Northwind ERD pop-up (lessons, quizzes and Free practice) ---------- */
+let dlgSel='Orders';
+function openErd(){
+  const d=$('#erdDialog'); drawDialog();
+  if (!d.open) d.showModal();
+}
+function closeErd(){ const d=$('#erdDialog'); if (d.open) d.close(); }
+function drawDialog(){
+  nwModel=nwModel||introspect(nw);
+  renderERD($('#dialogErd'), nwModel, {testPrefix:'dialog', positions:NW_POS, selected:dlgSel, minWidth:1000, label:'Northwind entity relationship diagram', onSelect:n=>{ dlgSel=n; drawDialog(); }});
+  const t=nwModel.find(x=>x.name===dlgSel)||nwModel[0]; const box=$('#dialogDetail'); box.innerHTML='';
+  const rows=nw.exec(`SELECT COUNT(*) FROM "${t.name}"`)[0].values[0][0];
+  const ul=h('ul',{class:'collist'});
+  for (const c of t.cols){
+    const li=h('li',{});
+    if (c.pk) li.append(h('span',{class:'badge pk'},'PK'));
+    if (c.fk) li.append(h('span',{class:'badge fk'},'FK'));
+    if (!c.pk&&!c.fk) li.append(h('span',{class:'badge none'},'–'));
+    li.append(h('span',{class:'nm'},c.name));
+    if (c.fk && c.fk.parent!==t.name) li.append(h('span',{class:'fklink'},'→ ', h('button',{type:'button',onclick:()=>{ dlgSel=c.fk.parent; drawDialog(); }}, c.fk.parent)));
+    li.append(h('span',{class:'ty'},c.type));
+    ul.append(li);
+  }
+  const tq=/\s/.test(t.name)?'`'+t.name+'`':t.name;
+  box.append(h('h3',{class:'dot','data-testid':'erd-dialog-table'},t.name), h('div',{class:'meta'},`${rows} rows, ${t.cols.length} columns. Write it as ${tq} in a query.`), h('p',{},NW_NOTES[t.name]||''), ul);
+}
+$('#erd-dialog-close').addEventListener('click',closeErd);
+$('#erdDialog').addEventListener('click',e=>{ if (e.target===$('#erdDialog')) closeErd(); });
+
 /* ---------- Free practice ---------- */
 function openFree(sql){ P.drafts.free=sql; save(); fEd.value=sql; goto('free'); }
 function runFree(){ const rep=runScript(nw, fEd.value, 'nw'); if (rep.ran.some(s=>/^(CREATE|DROP|ALTER)\s+TABLE\b/i.test(s))) nwModel=null; renderReport($('#fOut'), rep); }
 function makeStrip(host, getEd, key, tp){
-  host.append('Tables: ');
+  host.append(h('button',{class:'btn small erd-btn',type:'button','data-testid':`${tp}-open-erd`,onclick:openErd},'Northwind ERD'), ' Tables: ');
   for (const t of ['Customers','Orders','Order Details','Products','Categories','Suppliers','Employees','Shippers']){
     host.append(h('button',{class:'chip',type:'button','data-testid':`${tp}-insert-table-${t.toLowerCase().replace(/\s+/g,'-')}`,title:`Insert ${t} at the cursor`,onclick:()=>{ const ed=getEd(), ta=ed.ta; const txt=/\s/.test(t)?'`'+t+'`':t; ta.focus(); ta.setRangeText(txt, ta.selectionStart, ta.selectionEnd, 'end'); ed.sync(); P.drafts[key()]=ta.value; save(); }}, t));
   }
@@ -654,7 +683,6 @@ async function boot(){
   fEd.value = P.drafts.free ?? 'SELECT *\nFROM Customers\nLIMIT 10;';
   renderReport($('#fOut'), emptyRep(), {empty:'Results appear here.'});
   makeStrip($('#lStrip'), ()=>lEd, draftKey, 'lesson'); makeStrip($('#fStrip'), ()=>fEd, ()=>'free', 'free');
-  $('#freeErd').addEventListener('click',()=>goto('map'));
   $('#freeRestore').addEventListener('click',()=>{ if (confirm('Restore Northwind to its original data?')){ freshNorthwind(); nwModel=null; toast('Northwind restored'); } });
   renderBuild(); loadStepDraft(); prevTables=new Set(introspect(sb).map(t=>t.name)); drawBuildErd();
   if (!location.hash) history.replaceState(null,'','#/path');

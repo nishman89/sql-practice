@@ -26,7 +26,7 @@
     <nav class="nav-desktop" id="main-nav" data-testid="main-nav" aria-label="Main">
       <ul>
         <li><a href="#/path" data-nav="path" data-testid="nav-path">Learning path</a></li>
-        <li><a href="#/quiz" data-nav="quiz" data-testid="nav-quiz">Query quiz</a></li>
+        <li><a href="#/quiz" data-nav="quiz" data-testid="nav-quiz">Quizzes</a></li>
         <li><a href="#/free" data-nav="free" data-testid="nav-free">Free practice</a></li>
       </ul>
     </nav>
@@ -37,7 +37,7 @@
       <nav aria-label="Main (mobile)">
         <ul>
           <li><a href="#/path" data-nav="path" data-testid="mobile-nav-path">Learning path</a></li>
-          <li><a href="#/quiz" data-nav="quiz" data-testid="mobile-nav-quiz">Query quiz</a></li>
+          <li><a href="#/quiz" data-nav="quiz" data-testid="mobile-nav-quiz">Quizzes</a></li>
           <li><a href="#/free" data-nav="free" data-testid="mobile-nav-free">Free practice</a></li>
         </ul>
       </nav>
@@ -179,16 +179,27 @@
   <section class="view" id="v-free" aria-labelledby="h-free">
     <h1 id="h-free" class="dot">Free practice</h1>
     <p class="lede">Write any query against Northwind. Nothing is marked here, so explore. Changes you make to the data last until you reload the page.</p>
-    <div class="ex-actions"><button class="btn small" type="button" id="freeErd" data-testid="free-open-erd">Open the Northwind ERD</button><button class="btn small" type="button" id="freeRestore" data-testid="restore-northwind">Restore Northwind</button></div>
+    <div class="ex-actions"><button class="btn small" type="button" id="freeRestore" data-testid="restore-northwind">Restore Northwind</button></div>
     <div class="tables-strip" id="fStrip"></div>
     <div class="editor-wrap" id="fEditor"></div>
     <div class="out" id="fOut" data-testid="free-results"></div>
   </section>
-  <!-- Query quiz -->
+  <!-- Quizzes -->
   <section class="view" id="v-quizzes" aria-labelledby="h-quizzes"></section>
   <section class="view" id="v-quiz" aria-labelledby="h-quiz"></section>
   <div id="lessonFoot"></div>
 </main>
+<dialog class="erd-dialog" id="erdDialog" data-testid="erd-dialog" aria-labelledby="erd-dialog-title">
+  <div class="erd-dialog__head">
+    <div><h2 id="erd-dialog-title" class="dot">Northwind ERD</h2><p>Select a table to see its columns. Press Esc to close.</p></div>
+    <button class="btn small" type="button" id="erd-dialog-close" data-testid="erd-dialog-close">Close</button>
+  </div>
+  <div class="erd-dialog__body">
+    <div class="erd-scroll" id="dialogErd" data-testid="erd-dialog-diagram"></div>
+    <div class="erd-dialog__detail" id="dialogDetail" data-testid="erd-dialog-detail" aria-live="polite"></div>
+  </div>
+</dialog>
+
 <button class="to-top" type="button" id="back-to-top" data-testid="back-to-top" aria-label="Back to top" hidden>↑</button>
 
 <footer class="site-footer" data-testid="site-footer">
