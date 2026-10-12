@@ -1,4 +1,4 @@
-"""Rebuilds data/northwind.db from Microsoft's Northwind script.
+"""Rebuilds data/northwind.db (SQLite types: INTEGER, REAL and TEXT; dates are TEXT as YYYY-MM-DD) from Microsoft's Northwind script.
 
 Only needed if you want to change the database. Download instnwnd.sql from
 https://github.com/microsoft/sql-server-samples/tree/master/samples/databases/northwind-pubs,
@@ -42,60 +42,60 @@ schema='''
 PRAGMA foreign_keys=ON;
 CREATE TABLE Categories (
   CategoryID INTEGER PRIMARY KEY,
-  CategoryName VARCHAR(15) NOT NULL,
+  CategoryName TEXT NOT NULL,
   Description TEXT
 );
 CREATE TABLE Suppliers (
   SupplierID INTEGER PRIMARY KEY,
-  CompanyName VARCHAR(40) NOT NULL,
-  ContactName VARCHAR(30), ContactTitle VARCHAR(30), Address VARCHAR(60), City VARCHAR(15),
-  Region VARCHAR(15), PostalCode VARCHAR(10), Country VARCHAR(15), Phone VARCHAR(24), Fax VARCHAR(24), HomePage TEXT
+  CompanyName TEXT NOT NULL,
+  ContactName TEXT, ContactTitle TEXT, Address TEXT, City TEXT,
+  Region TEXT, PostalCode TEXT, Country TEXT, Phone TEXT, Fax TEXT, HomePage TEXT
 );
 CREATE TABLE Shippers (
   ShipperID INTEGER PRIMARY KEY,
-  CompanyName VARCHAR(40) NOT NULL,
-  Phone VARCHAR(24)
+  CompanyName TEXT NOT NULL,
+  Phone TEXT
 );
 CREATE TABLE Customers (
-  CustomerID CHAR(5) PRIMARY KEY,
-  CompanyName VARCHAR(40) NOT NULL,
-  ContactName VARCHAR(30), ContactTitle VARCHAR(30), Address VARCHAR(60), City VARCHAR(15),
-  Region VARCHAR(15), PostalCode VARCHAR(10), Country VARCHAR(15), Phone VARCHAR(24), Fax VARCHAR(24)
+  CustomerID TEXT PRIMARY KEY,
+  CompanyName TEXT NOT NULL,
+  ContactName TEXT, ContactTitle TEXT, Address TEXT, City TEXT,
+  Region TEXT, PostalCode TEXT, Country TEXT, Phone TEXT, Fax TEXT
 );
 CREATE TABLE Employees (
   EmployeeID INTEGER PRIMARY KEY,
-  LastName VARCHAR(20) NOT NULL, FirstName VARCHAR(10) NOT NULL, Title VARCHAR(30), TitleOfCourtesy VARCHAR(25),
-  BirthDate DATE, HireDate DATE, Address VARCHAR(60), City VARCHAR(15), Region VARCHAR(15), PostalCode VARCHAR(10),
-  Country VARCHAR(15), HomePhone VARCHAR(24), Extension VARCHAR(4), Notes TEXT,
+  LastName TEXT NOT NULL, FirstName TEXT NOT NULL, Title TEXT, TitleOfCourtesy TEXT,
+  BirthDate TEXT, HireDate TEXT, Address TEXT, City TEXT, Region TEXT, PostalCode TEXT,
+  Country TEXT, HomePhone TEXT, Extension TEXT, Notes TEXT,
   ReportsTo INTEGER REFERENCES Employees(EmployeeID)
 );
 CREATE TABLE Products (
   ProductID INTEGER PRIMARY KEY,
-  ProductName VARCHAR(40) NOT NULL,
+  ProductName TEXT NOT NULL,
   SupplierID INTEGER REFERENCES Suppliers(SupplierID),
   CategoryID INTEGER REFERENCES Categories(CategoryID),
-  QuantityPerUnit VARCHAR(20), UnitPrice DECIMAL(10,4) DEFAULT 0, UnitsInStock SMALLINT DEFAULT 0,
-  UnitsOnOrder SMALLINT DEFAULT 0, ReorderLevel SMALLINT DEFAULT 0, Discontinued BIT NOT NULL DEFAULT 0
+  QuantityPerUnit TEXT, UnitPrice REAL DEFAULT 0, UnitsInStock INTEGER DEFAULT 0,
+  UnitsOnOrder INTEGER DEFAULT 0, ReorderLevel INTEGER DEFAULT 0, Discontinued INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE Orders (
   OrderID INTEGER PRIMARY KEY,
-  CustomerID CHAR(5) REFERENCES Customers(CustomerID),
+  CustomerID TEXT REFERENCES Customers(CustomerID),
   EmployeeID INTEGER REFERENCES Employees(EmployeeID),
-  OrderDate DATE, RequiredDate DATE, ShippedDate DATE,
+  OrderDate TEXT, RequiredDate TEXT, ShippedDate TEXT,
   ShipVia INTEGER REFERENCES Shippers(ShipperID),
-  Freight DECIMAL(10,4) DEFAULT 0, ShipName VARCHAR(40), ShipAddress VARCHAR(60), ShipCity VARCHAR(15),
-  ShipRegion VARCHAR(15), ShipPostalCode VARCHAR(10), ShipCountry VARCHAR(15)
+  Freight REAL DEFAULT 0, ShipName TEXT, ShipAddress TEXT, ShipCity TEXT,
+  ShipRegion TEXT, ShipPostalCode TEXT, ShipCountry TEXT
 );
 CREATE TABLE "Order Details" (
   OrderID INTEGER NOT NULL REFERENCES Orders(OrderID),
   ProductID INTEGER NOT NULL REFERENCES Products(ProductID),
-  UnitPrice DECIMAL(10,4) NOT NULL DEFAULT 0, Quantity SMALLINT NOT NULL DEFAULT 1, Discount REAL NOT NULL DEFAULT 0,
+  UnitPrice REAL NOT NULL DEFAULT 0, Quantity INTEGER NOT NULL DEFAULT 1, Discount REAL NOT NULL DEFAULT 0,
   PRIMARY KEY (OrderID, ProductID)
 );
 '''
 if os.path.exists('northwind.db'): os.remove('northwind.db')
 import re as _re
-schema=_re.sub(r'\b((?:VAR)?CHAR\(\d+\)|TEXT)', r'\1 COLLATE NOCASE', schema)
+schema=_re.sub(r'\bTEXT\b', r'TEXT COLLATE NOCASE', schema)
 db=sqlite3.connect('northwind.db'); db.executescript(schema)
 colsets={
  'Customers':['CustomerID','CompanyName','ContactName','ContactTitle','Address','City','Region','PostalCode','Country','Phone','Fax'],
