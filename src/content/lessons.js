@@ -3,11 +3,23 @@
    C(sql) is a runnable example. C(sql, false) is read-only; pass a label to say why (default: tables not in Northwind). */
 const C = (sql, run=true, label) => `<pre class="ex"${run?'':' data-norun'}${label?` data-label="${esc(label)}"`:''}>${esc(sql)}</pre>`;
 const CERR = sql => `<pre class="ex" data-expect-error>${esc(sql)}</pre>`;
-/* The order you write a query vs the order the database runs it. highlight: clauses to pick out; later: show "(Unit 3)" notes */
-const RUN_ORDER = (highlight=[], later=false) => {
-  const rows=[['SELECT','1','5','Picks the columns to show, and works out calculations and aliases'],['FROM','2','1','Chooses the table'],['WHERE','3','2','Filters the rows'],['GROUP BY','4','3','Puts the rows into groups'],['HAVING','5','4','Filters the groups'],['ORDER BY','6','6','Sorts the result'],['LIMIT','7','7','Keeps only the first few rows']];
-  const unit3=later?' <span class="later">(Unit 3)</span>':'';
-  return `<div class="tbl-wrap"><table class="mini run-order"><tr><th>Clause</th><th>The order you write it</th><th>The order it runs</th><th>What it does</th></tr>${rows.map(([c,w,r,d])=>`<tr class="${highlight.includes(c)?'hl':''}"><td><code>${c}</code>${(c==='GROUP BY'||c==='HAVING')?unit3:''}</td><td class="num">${w}</td><td class="num run">${r}</td><td>${d}</td></tr>`).join('')}</table></div>`;
+/* The order you write a query (logical / syntax sequence) vs the order the database runs it (processing sequence),
+   drawn like the course slides. highlight: clauses to pick out. */
+const RUN_ORDER = (highlight=['SELECT','FROM']) => {
+  const written=['SELECT','DISTINCT','FROM','WHERE','GROUP BY','HAVING','ORDER BY'];
+  const runs   =['FROM','WHERE','GROUP BY','HAVING','SELECT','DISTINCT','ORDER BY'];
+  const W=560, bw=190, bh=44, gap=8, top=74, lx=16, rx=W-16-bw;
+  const y=i=>top+i*(bh+gap), mid=i=>y(i)+bh/2;
+  const lines=written.map((c,i)=>{ const j=runs.indexOf(c), hl=highlight.includes(c);
+    return `<path class="ro-link${hl?' hl':''}" d="M${lx+bw} ${mid(i)} C ${W/2} ${mid(i)}, ${W/2} ${mid(j)}, ${rx} ${mid(j)}"/>`; });
+  // highlighted links on top
+  lines.sort((a,b)=>a.includes(' hl')-b.includes(' hl'));
+  const block=(c,i,x)=>`<g class="ro-block${highlight.includes(c)?' hl':''}"><rect x="${x}" y="${y(i)}" width="${bw}" height="${bh}" rx="9"/><text x="${x+18}" y="${mid(i)+5}" class="ro-n">${i+1}</text><text x="${x+bw/2+8}" y="${mid(i)+6}" text-anchor="middle">${c}</text></g>`;
+  const label=`You write: ${written.join(', ')}. The database runs: ${runs.join(', ')}.`;
+  return `<figure class="run-order"><svg viewBox="0 0 ${W} ${y(written.length)+4}" role="img" aria-label="${label}">
+<text x="${lx+bw/2}" y="26" text-anchor="middle" class="ro-h">How you write it</text><text x="${lx+bw/2}" y="46" text-anchor="middle" class="ro-sub">logical (syntax) sequence</text>
+<text x="${rx+bw/2}" y="26" text-anchor="middle" class="ro-h">How the database runs it</text><text x="${rx+bw/2}" y="46" text-anchor="middle" class="ro-sub">processing sequence</text>
+${lines.join('')}${written.map((c,i)=>block(c,i,lx)).join('')}${runs.map((c,i)=>block(c,i,rx)).join('')}</svg></figure>`;
 };
 const TIP = t => `<div class="tip">${t}</div>`;
 
@@ -335,8 +347,8 @@ ${C('SELECT ProductName, UnitPrice\nFROM Products\nORDER BY UnitPrice DESC;')}
 ${C('SELECT Country, CompanyName\nFROM Customers\nORDER BY Country ASC, CompanyName ASC;')}
 <h3>The order SQL runs in</h3>
 <p>The order you <em>write</em> a query isn't the order the database <em>runs</em> it. You write <code>SELECT</code> first, but it runs fifth, after the rows have been found and filtered:</p>
-${RUN_ORDER(['SELECT','ORDER BY'], true)}
-<p class="small">You'll meet <code>GROUP BY</code> and <code>HAVING</code> in Unit 3.</p>
+${RUN_ORDER(['SELECT','FROM'])}
+<p>So the database finds the table (<code>FROM</code>) and filters the rows (<code>WHERE</code>) before it works out the columns in <code>SELECT</code>, and it sorts (<code>ORDER BY</code>) last of all. You'll meet <code>GROUP BY</code> and <code>HAVING</code> in Unit 3, and <code>DISTINCT</code> in the next lesson.</p>
 <p>Because <code>ORDER BY</code> runs last, it can use an alias you created in <code>SELECT</code>:</p>
 ${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products\nORDER BY \"Stock Value\" DESC;")}
 ${TIP('You can also write <code>ORDER BY 2</code> to sort by the second column, but avoid it. If someone reorders the columns later, it silently sorts the wrong one.')}
@@ -520,6 +532,7 @@ ${DIFF({title:'Selecting a column that isn\'t grouped or aggregated', sqlite:'~R
 ${C("SELECT SupplierID,\n       SUM(UnitsOnOrder) AS 'Total On Order',\n       AVG(UnitsOnOrder) AS 'Avg On Order'\nFROM Products\nGROUP BY SupplierID\nHAVING AVG(UnitsOnOrder) > 5;")}
 <p>Try moving that condition into <code>WHERE</code>: it fails, because when <code>WHERE</code> runs the groups don't exist yet.</p>
 ${RUN_ORDER(['WHERE','HAVING'])}
+<p><code>WHERE</code> runs before the rows are grouped, and <code>HAVING</code> runs after, which is why only <code>HAVING</code> can use <code>COUNT</code>, <code>SUM</code> and <code>AVG</code>.</p>
 ${TIP('Repeating the full expression in <code>HAVING</code> (<code>HAVING AVG(UnitsOnOrder) &gt; 5</code>) is the clearest way to write it.')}
 <p>You can use both in one query: <code>WHERE</code> to pick rows, <code>HAVING</code> to pick groups.</p>
 ${C("SELECT Country, COUNT(*) AS 'Customers'\nFROM Customers\nWHERE ContactTitle LIKE '%Sales%'\nGROUP BY Country\nHAVING COUNT(*) >= 3;")}

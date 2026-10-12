@@ -716,9 +716,15 @@ mark.x{background:#fff3cf;color:inherit;border-radius:3px;padding:0 2px;font-wei
 .install-callout{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border-left:8px solid var(--pink);padding:16px 22px;margin:28px 0}
 .install-callout h2{font-size:1.35rem;margin:0 0 8px}
 .install-callout .btn{text-decoration:none}
-/* Written order vs run order */
-table.run-order td.num{text-align:center;font-weight:700;width:7.5rem}
-table.run-order td.run{color:var(--pink-dark)}
-table.run-order th:nth-child(2),table.run-order th:nth-child(3){text-align:center}
-table.run-order tr.hl td{background:var(--pink-tint)}
-table.run-order .later{font-size:.78rem;color:var(--muted);white-space:nowrap}
+/* Written order vs run order, drawn like the course slides */
+figure.run-order{margin:10px 0 16px;max-width:36rem}
+figure.run-order svg{width:100%;height:auto;display:block}
+.run-order .ro-h{font:700 17px var(--f-head);fill:var(--ink)}
+.run-order .ro-sub{font:400 12.5px var(--f-body);fill:var(--muted)}
+.run-order .ro-block rect{fill:var(--pink);stroke:var(--pink-dark);stroke-width:1}
+.run-order .ro-block text{font:600 15px var(--f-body);fill:#fff;letter-spacing:.02em}
+.run-order .ro-block .ro-n{font:700 11px var(--f-mono);fill:rgb(255 255 255 / .7)}
+.run-order .ro-block.hl text{fill:#ffd65a;font-weight:700}
+.run-order .ro-block.hl rect{stroke:var(--ink);stroke-width:2}
+.run-order .ro-link{fill:none;stroke:var(--line);stroke-width:2}
+.run-order .ro-link.hl{stroke:var(--ink);stroke-width:3}
