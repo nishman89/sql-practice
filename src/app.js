@@ -221,6 +221,7 @@ function renderERD(host, tables, {testPrefix='erd', positions, selected, onSelec
 
 /* ---------- Path progress ---------- */
 const FOUND = {
+  capstone:{need:'Tick every task in the checklist when it\'s done.', prog:()=>[CAPSTONE_TASKS.filter(t=>(P.capstone||{})[t[0]]).length, CAPSTONE_TASKS.length], label:'Project'},
   databases:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.dbDone?1:0,1], label:'Intro and quiz'},
   flavours:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.flavDone?1:0,1], label:'Intro and quiz'},
   erd:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.quizDone?1:0,1], label:'Diagram and quiz'},
@@ -234,7 +235,7 @@ function lessonDone(id){ const [a,b]=lessonProg(id); return a>=b; }
 function nextLesson(){ return PATH.find(x=>!lessonDone(x.id)); }
 
 /* ---------- Routing ---------- */
-const VIEWS=['path','intro','install','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
+const VIEWS=['path','intro','install','capstone','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
 let current={view:'path',lesson:null};
 function route(){
   const parts=location.hash.replace(/^#\/?/,'').split('/');
@@ -257,6 +258,7 @@ function route(){
   if (view==='databases') drawDatabases();
   if (view==='intro') drawIntro();
   if (view==='install') drawInstall();
+  if (view==='capstone') drawCapstone();
   if (view==='flavours') drawFlavours();
   if (view==='dialects') renderDialectTabs($('#dialectsTabs'), 'dialects');
   if (view==='build'){ buildEd.sync(); drawBuildDiff(); }
@@ -428,6 +430,17 @@ function drawInstall(){
   host.append(list, panel);
   addCopyButtons(panel);
 }
+function drawCapstone(){
+  const b=$('#capstoneBody'); if (!b.childElementCount) b.innerHTML=CAPSTONE_HTML;
+  P.capstone=P.capstone||{};
+  const ul=$('#capChecklist'); ul.innerHTML='';
+  CAPSTONE_TASKS.forEach(([id,label])=>{
+    const cb=h('input',{type:'checkbox',id:`cap-${id}`,name:`capstone-${id}`,'data-testid':`capstone-task-${id.replace('.','-')}`,checked:!!P.capstone[id]});
+    cb.addEventListener('change',()=>{ P.capstone[id]=cb.checked; save(); refreshChrome(); });
+    ul.append(h('li',{}, h('label',{for:`cap-${id}`}, cb, h('span',{},label))));
+  });
+}
+$('#capPrint').addEventListener('click',()=>window.print());
 function drawIntro(){
   const b=$('#introBody'); b.innerHTML=SITE_INTRO;
   const slot=$('[data-intro-erd]',b); if (slot) slot.append(erdButton('intro-open-erd'));

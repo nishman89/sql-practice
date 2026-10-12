@@ -58,10 +58,12 @@ const UNITS = [
   {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['joinsintro','innerjoin','leftjoin','multijoin','cp3']},
   {id:'u5', title:'Subqueries', blurb:'Feed the result of one query into another.', lessons:['subintro','subwhere','subfrom','exists','cp4']},
   {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, and saving SQL in the database as views and stored procedures.', lessons:['case','datesstrings','views','procedures']},
-  {id:'u7', title:'Advanced topics', blurb:'Window functions, statistics, WITH, temporary tables, pivoting and making queries fast.', lessons:['windows','ranking','leadlag','frames','stats','cte','temptables','pivot','performance','cp5']}
+  {id:'u7', title:'Advanced topics', blurb:'Window functions, statistics, WITH, temporary tables, pivoting and making queries fast.', lessons:['windows','ranking','leadlag','frames','stats','cte','temptables','pivot','performance','cp5']},
+  {id:'u8', title:'Capstone project', blurb:'Put it all together on your own SQL Server or MySQL: build a database of Spartans and courses, then answer questions about Northwind.', lessons:['capstone']}
 ];
 
 const LESSONS = {
+  capstone:{title:'Capstone project', summary:'Design tables, draw an ERD and answer nine Northwind questions, in your own SQL Server or MySQL.', cmds:['CREATE TABLE','INSERT','JOIN','GROUP BY','CREATE VIEW','CREATE PROCEDURE'], kind:'capstone'},
   databases:{title:'What\'s a database', summary:'What a database is, how it\'s organised into tables, rows and columns, and what SQL is for.', cmds:[], kind:'databases'},
   flavours:{title:'SQL flavours', summary:'The dialects of SQL: MySQL, T-SQL and SQLite, what\'s the same and what changes.', cmds:[], kind:'flavours'},
   erd:{title:'Entity relationship diagrams', summary:'How to read a diagram of a database\'s tables, keys and relationships.', cmds:[], kind:'erd'},

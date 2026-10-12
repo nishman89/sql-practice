@@ -621,3 +621,31 @@ table.choose td:first-child{width:38%}
 .sq-place b{font-family:var(--f-head);font-size:1.05rem}
 .sq-place span{font-size:.9rem;color:var(--ink-2)}
 .sq-place code{font-size:.76rem;background:var(--mist-2);overflow-wrap:anywhere}
+
+/* Capstone project */
+.cap-title{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;max-width:50rem}
+.cap-title h1{margin:0}
+.cap-before{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border-left:8px solid var(--pink);padding:16px 22px;margin:18px 0 26px}
+.cap-before h2{font-size:1.35rem;margin:0 0 8px}
+.cap-when{display:inline-block;background:var(--ink);color:#fff;border-radius:999px;padding:3px 14px;font-size:.88rem;margin:0 0 12px}
+.cap-when strong{color:#fff}
+.cap-list{list-style:none;padding:0;margin:0 0 26px;display:grid;gap:14px}
+.cap-q{display:grid;grid-template-columns:3.2rem minmax(0,1fr);gap:12px;background:var(--paper);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px}
+.cap-n{font-family:var(--f-head);font-weight:700;font-size:1.3rem;color:var(--pink-dark)}
+.cap-q p{margin:0 0 8px}
+.cap-check{background:var(--ok-tint);border-radius:8px;padding:8px 12px;font-size:.93rem;margin-bottom:6px}
+.cap-check b{display:block;color:var(--ok);font-size:.85rem}
+.cap-revise{font-size:.88rem;color:var(--muted)}
+.cap-progress{margin-top:30px}
+.cap-checklist{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px}
+.cap-checklist label{display:flex;gap:10px;align-items:center;background:var(--paper);border-radius:10px;padding:8px 12px;box-shadow:var(--shadow);cursor:pointer}
+.cap-checklist input{accent-color:var(--ok);width:18px;height:18px}
+.cap-checklist label:has(input:checked) span{text-decoration:line-through;color:var(--muted)}
+
+/* Printing (the capstone brief, and any page) */
+@media print{
+  .site-header,.site-footer,.hero,.to-top,#crumbs,#lessonFoot,.cap-title .btn,.cap-progress,.toast{display:none !important}
+  body{background:#fff}
+  main{padding-top:0}
+  .cap-q,.cap-before,.ddiff,.tip{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+}

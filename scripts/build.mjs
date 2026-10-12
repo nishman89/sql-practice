@@ -10,7 +10,7 @@ const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 const parts = [
   ['/*__CSS__*/', read('src/styles.css')],
   ['/*__ENGINE__*/', read('src/engine.js')],
-  ['/*__CONTENT__*/', read('src/content/lessons.js') + '\n' + read('src/content/quizzes.js') + '\n' + read('src/content/dialects.js') + '\n' + read('src/content/intro.js') + '\n' + read('src/content/install.js')],
+  ['/*__CONTENT__*/', read('src/content/lessons.js') + '\n' + read('src/content/quizzes.js') + '\n' + read('src/content/dialects.js') + '\n' + read('src/content/intro.js') + '\n' + read('src/content/install.js') + '\n' + read('src/content/capstone.js')],
   ['/*__APP__*/', read('src/app.js') + '\n' + read('src/quiz.js')],
   ['/*__SQLJS__*/', read('node_modules/sql.js/dist/sql-asm-memory-growth.js')],
   ['__NWDB__', fs.readFileSync(path.join(root, 'data/northwind.db')).toString('base64')],
