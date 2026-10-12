@@ -541,6 +541,9 @@ const BUILD_STEPS=[
   { short:'Customers', title:'Create the Customers table',
     why:'Every table needs a name, its columns, and a type for each column. SQLite\'s main types are INTEGER, REAL (decimals) and TEXT. customer_id is the primary key, and AUTOINCREMENT makes the database fill it in for you.',
     starter:'-- Create a Customers table with:\n--   customer_id    a whole number, primary key, auto-incrementing\n--   customer_name  text, required\n--   height         a decimal number\n--   is_happy       true or false (1 or 0)\n\n',
+    mysql:`DROP DATABASE IF EXISTS my_db;\nCREATE DATABASE my_db;\nUSE my_db;\n\nCREATE TABLE Customers (\n    customer_id    INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,\n    customer_name  VARCHAR(255) NOT NULL,\n    height         DECIMAL(7,3),\n    is_happy       BOOLEAN\n);`,
+    tsql:`CREATE DATABASE my_db;\nUSE my_db;\n\nCREATE TABLE Customers (\n    customer_id    INT          NOT NULL IDENTITY(1,1) PRIMARY KEY,\n    customer_name  VARCHAR(255) NOT NULL,\n    height         DECIMAL(7,3),\n    is_happy       BIT\n);`,
+    diffNote:'SQLite needs no <code>CREATE DATABASE</code> or <code>USE</code>: the database is a single file, and you\'re already in it.',
     example:`DROP TABLE IF EXISTS Orders;\nDROP TABLE IF EXISTS Customers;\n\nCREATE TABLE Customers (\n    customer_id    INTEGER PRIMARY KEY AUTOINCREMENT,\n    customer_name  TEXT NOT NULL,\n    height         REAL,\n    is_happy       INTEGER\n);`,
     checks:T=>{ const c=findT(T,'customers'); return [
       ['A table called Customers exists', !!c],
@@ -551,6 +554,9 @@ const BUILD_STEPS=[
   { short:'Orders and FK', title:'Create Orders with a foreign key',
     why:'The FOREIGN KEY line is what draws the relationship. It tells the database that Orders.customer_id must match a customer_id that exists in Customers.',
     starter:'-- Create an Orders table with:\n--   order_id      primary key, auto-incrementing\n--   order_number  a whole number, required\n--   customer_id   a whole number that links to Customers\n\n',
+    mysql:`CREATE TABLE Orders (\n    order_id     INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\n    order_number INT NOT NULL,\n    customer_id  INT,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
+    tsql:`CREATE TABLE Orders (\n    order_id     INT NOT NULL IDENTITY(1,1) PRIMARY KEY,\n    order_number INT NOT NULL,\n    customer_id  INT,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
+    diffNote:'The <code>FOREIGN KEY … REFERENCES</code> line is the same in all three.',
     example:`CREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
     checks:T=>{ const o=findT(T,'orders'); const fk=o&&o.fks.find(f=>f.from.toLowerCase()==='customer_id'&&f.table.toLowerCase()==='customers'); return [
       ['A table called Orders exists', !!o],
@@ -561,6 +567,9 @@ const BUILD_STEPS=[
   { short:'Insert data', title:'Insert some data',
     why:'Leave customer_id out of the Customers insert: the database generates it. Each order then uses a customer_id that already exists.',
     starter:'-- Add three customers, then six orders that belong to them\n\n',
+    mysql:`INSERT INTO Customers (customer_name, height, is_happy) VALUES\n('Nish Mandal',    1.85, TRUE),\n('Cathy French',   1.70, FALSE),\n('Rich Gurney',    1.80, TRUE);\n\nINSERT INTO Orders (order_number, customer_id) VALUES\n(1001, 1), (1002, 2), (1003, 3),\n(1004, 1), (1005, 2), (1006, 3);`,
+    tsql:`INSERT INTO Customers (customer_name, height, is_happy) VALUES\n('Nish Mandal',    1.85, 1),\n('Cathy French',   1.70, 0),\n('Rich Gurney',    1.80, 1);\n\nINSERT INTO Orders (order_number, customer_id) VALUES\n(1001, 1), (1002, 2), (1003, 3),\n(1004, 1), (1005, 2), (1006, 3);`,
+    diffNote:'A <code>BIT</code> column in T-SQL takes <code>1</code> and <code>0</code>, not <code>TRUE</code> and <code>FALSE</code>.',
     example:`INSERT INTO Customers (customer_name, height, is_happy) VALUES\n('Nish Mandal',    1.85, TRUE),\n('Cathy French',   1.70, FALSE),\n('Rich Gurney',    1.80, TRUE);\n\nINSERT INTO Orders (order_number, customer_id) VALUES\n(1001, 1),\n(1002, 2),\n(1003, 3),\n(1004, 1),\n(1005, 2),\n(1006, 3);\n\nSELECT * FROM Customers;`,
     checks:T=>{ const c=findT(T,'customers'), o=findT(T,'orders'); const nc=c?count(c.name):0, no=o?count(o.name):0; return [
       [`Customers has at least 3 rows (now ${nc})`, nc>=3],
@@ -569,6 +578,7 @@ const BUILD_STEPS=[
   { short:'Join', title:'Query across both tables',
     why:'A JOIN matches rows where Orders.customer_id equals Customers.customer_id, so you can see each order next to its customer\'s name.',
     starter:'-- Find all orders placed by Nish Mandal,\n-- showing order_id, order_number and customer_name\n\n',
+    same:true, diffNote:'Joins are written the same way in all three.',
     example:`SELECT Orders.order_id, Orders.order_number, Customers.customer_name\nFROM Orders\nJOIN Customers ON Orders.customer_id = Customers.customer_id\nWHERE Customers.customer_name = 'Nish Mandal';`,
     checks:()=>{ const r=buildLast.rep; const sqlRan=(r&&r.ran.join(' '))||''; const last=r&&r.results[r.results.length-1];
       const hasNish=!!(last&&last.values.length&&last.values.every(row=>row.some(v=>v==='Nish Mandal')));
@@ -579,6 +589,7 @@ const BUILD_STEPS=[
   { short:'FK in action', title:'See the foreign key protect you',
     why:'Try to add an order for customer 99, who doesn\'t exist. The foreign key constraint should reject it, which is exactly the point: no orphaned orders.',
     starter:'-- Insert an order for a customer_id that doesn\'t exist\n\n',
+    same:true, diffNote:'The statement is the same in all three, and all three refuse it. Only the wording of the error message differs.',
     example:`INSERT INTO Orders (order_number, customer_id) VALUES (1007, 99);`,
     checks:()=>[
       ['The database rejected an order for a customer that doesn\'t exist', !!P.fkSeen]
@@ -586,6 +597,9 @@ const BUILD_STEPS=[
   { short:'ALTER TABLE', title:'Add columns with ALTER TABLE',
     why:'ALTER TABLE changes an existing table. SQLite adds one column per statement. Re-running your CREATE TABLE script is usually better practice, but ALTER is handy for quick changes. Watch the new columns appear on the diagram.',
     starter:'-- Add an email column (text) and an age column (whole number) to Customers\n\n',
+    mysql:`ALTER TABLE Customers\n    ADD COLUMN email VARCHAR(255),\n    ADD COLUMN age   INT;`,
+    tsql:`ALTER TABLE Customers\n    ADD email VARCHAR(255), age INT;`,
+    diffNote:'SQLite adds one column per <code>ALTER TABLE</code>; MySQL and T-SQL can add several at once.',
     example:`ALTER TABLE Customers ADD COLUMN email TEXT;\nALTER TABLE Customers ADD COLUMN age INTEGER;`,
     checks:T=>{ const c=findT(T,'customers'); return [
       ['Customers has an email column', !!findC(c,'email')],
@@ -609,9 +623,11 @@ function renderBuild(){
   const ul=h('ul',{class:'checks','aria-label':'Step checklist','data-testid':'step-checklist'});
   checks.forEach(([t,ok],ci)=>ul.append(h('li',{class:ok?'ok':'','data-testid':`step-check-${ci+1}`,'data-done':String(ok)}, h('span',{class:'ic','aria-hidden':'true'}), h('span',{}, t, h('span',{class:'sr'}, ok?' (done)':' (not yet)')))));
   card.append(ul);
+  card.append(h('details',{class:'step-answers','data-testid':'step-dialect-answers'}, h('summary',{},'Sample answer in each dialect'),
+    h('div',{html: DIFF({sqlite:s.example, mysql:s.same?s.example:s.mysql, tsql:s.same?s.example:s.tsql, note:s.diffNote}) })));
   if (P.buildDone[i]){
     const nxt=i<BUILD_STEPS.length-1;
-    card.append(h('div',{class:'step-done'}, 'Step complete.', nxt?h('button',{class:'btn small primary',type:'button',onclick:()=>{ P.buildStep=i+1; save(); renderBuild(); loadStepDraft(); }},'Next step'):h('button',{class:'btn small primary',type:'button','data-go':'map'},'Explore Northwind')));
+    card.append(h('div',{class:'step-done'}, 'Step complete.', nxt?h('button',{class:'btn small primary',type:'button',onclick:()=>{ P.buildStep=i+1; save(); renderBuild(); loadStepDraft(); }},'Next step'):h('button',{class:'btn small primary',type:'button','data-go':'changedata'},'Next: Inserting, updating and deleting data')));
   }
 }
 function loadStepDraft(){

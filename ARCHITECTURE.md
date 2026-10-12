@@ -109,7 +109,8 @@ data feeds the SQL flavours lesson and the SQL dialects page; a row's `try` adds
 Read-only examples in a lesson use `C(sql, false, label)`; `READ_ONLY('mysql' | 'tsql', tool)` makes a label with the
 dialect's icon. `DIFF({ title, sqlite, mysql, tsql, note })` draws a callout showing the same job in each dialect, with
 the icons 🪶 SQLite, 🐬 MySQL and 🪟 T-SQL from the course notes. Values are code; start one with `~` for plain text.
-`CERR(sql)` is a runnable example that's meant to fail, such as a delete blocked by a foreign key; the checks fail the
+Each step in `BUILD_STEPS` (Creating tables) has an `example` (SQLite, used by Use the lesson's code), plus `mysql` and
+`tsql` versions (or `same: true`) and a `diffNote`, shown together under Sample answer in each dialect. `CERR(sql)` is a runnable example that's meant to fail, such as a delete blocked by a foreign key; the checks fail the
 build if it *doesn't* error. `SAME(extra)` is the note for lessons where nothing differs, and `BUILD_DIFF()` is the comparison drawn on the Creating
 tables page. `VENN(regions, label)` draws a join Venn diagram as inline SVG (each one gets unique clip and mask ids), and
 `FAKE` is the `WITH` block that builds the made-up student and course tables used in Introduction to joins. `SHOP` does the same

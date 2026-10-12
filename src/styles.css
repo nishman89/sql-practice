@@ -707,3 +707,8 @@ table.choose-os td:nth-child(2){white-space:nowrap}
 .cap-checklist li.optional label{border-left:4px solid var(--line)}
 .cap-checklist em.opt{margin-left:auto;font-style:normal;font-size:.78rem;color:var(--muted);background:var(--mist-2);border-radius:999px;padding:1px 9px}
 table.mini th.hl-key{background:var(--pink-dark);text-decoration:underline;text-underline-offset:3px}
+details.step-answers{margin:12px 0 4px}
+details.step-answers summary{cursor:pointer;font-weight:700;color:var(--pink-dark);padding:4px 0}
+details.step-answers .ddiff{margin-top:8px}
+details.step-answers .ddiff-row{grid-template-columns:minmax(0,1fr);gap:4px}
+details.step-answers .ddiff-row pre{white-space:pre;overflow-x:auto}
