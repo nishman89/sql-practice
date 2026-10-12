@@ -51,7 +51,7 @@ const QUIZZES = [
       {unit:1, q:'Orders.customer_id is a foreign key to Customers. What happens if you insert an order with customer_id 99 when no customer 99 exists?', options:['The order is saved with customer_id set to NULL','A customer 99 is created automatically','The insert is rejected with a foreign key error','The order is saved and a warning is shown'], answer:2, why:'That\'s the point of a foreign key: it stops rows that refer to something that doesn\'t exist.'},
       {unit:1, q:'Which statement adds an email column to an existing Customers table?', options:['UPDATE Customers ADD email VARCHAR(255);','INSERT INTO Customers (email) VALUES (\'\');','CREATE COLUMN email ON Customers;','ALTER TABLE Customers ADD email VARCHAR(255);'], answer:3, why:'ALTER TABLE changes a table\'s structure. UPDATE and INSERT change the data in it.'},
 
-      /* Unit 2: Querying one table */
+      /* Unit 2: Introduction to querying */
       {unit:2, q:'Which clause does the database process first?', options:['SELECT','WHERE','FROM','ORDER BY'], answer:2, why:'The order is FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY. SELECT is written first but runs fifth.'},
       {unit:2, q:'Why can\'t you use an alias created in SELECT inside the WHERE clause?', options:['Aliases only work with numbers','WHERE runs before SELECT, so the alias doesn\'t exist yet','Aliases can only be used in GROUP BY','WHERE can only refer to the primary key'], answer:1, why:'WHERE is processed before SELECT. ORDER BY runs after SELECT, which is why aliases do work there.'},
       {unit:2, q:'Which condition correctly finds the product Sir Rodney\'s Scones?', options:["WHERE ProductName = 'Sir Rodney's Scones'","WHERE ProductName = 'Sir Rodney''s Scones'","WHERE ProductName = Sir Rodney's Scones","WHERE ProductName = [Sir Rodney's Scones]"], answer:1, why:'A single quote ends the text, so one inside the value is doubled: \'\'. Without quotes, SQL reads the words as column names.'},
@@ -113,7 +113,7 @@ const QUIZZES = [
       {unit:1, q:'Which data type suits a price such as 18.99?', options:['INT','VARCHAR(10)','DATE','DECIMAL(10,2)'], answer:3, why:'DECIMAL stores exact numbers with a fixed number of decimal places, which is what money needs. INT drops the decimals.'}
     ]},
 
-  { id:'unit-2', unitQuiz:2, type:'mixed', title:'Unit 2 quiz: Querying one table', timeLimits:[20, 30, 0], defaultLimit:20,
+  { id:'unit-2', unitQuiz:2, type:'mixed', title:'Unit 2 quiz: Introduction to querying', timeLimits:[20, 30, 0], defaultLimit:20,
     blurb:'Filtering, sorting, wildcards, text and calculations.',
     questions:[
       {unit:2, q:'Which query returns only the ProductName and UnitPrice columns?', options:['SELECT * FROM Products','SELECT ProductName, UnitPrice FROM Products','SELECT Products WHERE ProductName, UnitPrice','SELECT ProductName AND UnitPrice FROM Products'], answer:1, why:'List the columns you want after SELECT, separated by commas.'},

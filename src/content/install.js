@@ -8,11 +8,13 @@ const MS_NORTHWIND = 'https://raw.githubusercontent.com/microsoft/sql-server-sam
 const INSTALL_INTRO = `
 <p class="lede">This site runs SQLite in your browser, so you don't need to install anything to do the lessons. To practise the way you will at work, with 🪟 SQL Server (T-SQL) or 🐬 MySQL, set one up on your own computer using one of the guides below.</p>
 <h2 class="dot">Which one to choose</h2>
-<table class="mini choose"><tr><th>If you…</th><th>Use</th></tr>
-<tr><td>Aren't sure, or have a Mac</td><td><strong>🪟 SQL Server with Docker and VS Code.</strong> It's the same on Windows and Mac, and Northwind comes ready to use.</td></tr>
-<tr><td>Are on Windows and want SQL Server without Docker</td><td><strong>🪟 SQL Server on Windows</strong>, with SQL Server Management Studio (SSMS)</td></tr>
-<tr><td>Are on a course that uses MySQL</td><td><strong>🐬 MySQL on Windows</strong> or <strong>🐬 MySQL on Mac</strong>, with MySQL Workbench</td></tr>
-<tr><td>Want MySQL without installing a server</td><td><strong>🐬 MySQL with Docker</strong></td></tr></table>
+<p>Pick the database for the dialect you want to write. <strong>T-SQL is the dialect of Microsoft SQL Server</strong>, so to write T-SQL you install SQL Server. <strong>MySQL</strong> is both the dialect and the database.</p>
+<table class="mini choose"><tr><th>To write…</th><th>Install</th><th>Guide</th></tr>
+<tr><td rowspan="2"><strong>🪟 T-SQL</strong></td><td rowspan="2">Microsoft SQL Server</td><td><strong>SQL Server with Docker and VS Code</strong>: Windows or Mac, with Northwind ready to use. <em>The easiest start, and the only SQL Server option on a Mac.</em></td></tr>
+<tr><td><strong>SQL Server on Windows</strong>: SQL Server Express with SSMS, installed directly on Windows</td></tr>
+<tr><td rowspan="3"><strong>🐬 MySQL</strong></td><td rowspan="3">MySQL</td><td><strong>MySQL on Windows</strong>, with MySQL Workbench</td></tr>
+<tr><td><strong>MySQL on Mac</strong>, with MySQL Workbench</td></tr>
+<tr><td><strong>MySQL with Docker</strong>: no server to install, on Windows or Mac</td></tr></table>
 ${TIP('Ask your trainer which database your course uses. The SQL you learn here works in both: the 🪶 🐬 🪟 notes in each lesson show where they differ.')}`;
 
 const INSTALL_OPTIONS = [
