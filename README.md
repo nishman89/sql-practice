@@ -20,26 +20,30 @@ tablets and phones.
 | Page | What it does |
 |---|---|
 | **Learning path** (home) | Every unit and lesson as a route. Finished lessons are ticked, the next lesson is highlighted and checkpoints are shown as diamonds. The **Continue** card shows the next unfinished lesson and a trail of progress across the whole path. |
+| **What's a database** | The first lesson: what a database and a DBMS are, why not a spreadsheet, tables, rows, columns, primary and foreign keys, data types, NoSQL, and what SQL does (DDL, DML and CRUD), with a labelled example table and three **Check yourself** questions. |
+| **SQL flavours** | The second lesson: what SQL dialects are, the flavours learners will meet (MySQL, T-SQL, PostgreSQL, Oracle, SQLite), what's the same and what changes, which SQL the lab runs, a tabbed MySQL / T-SQL / lab comparison and three **Check yourself** questions. |
+| **SQL dialects** (header tab) | The same comparison on its own page: **Side by side**, **MySQL**, **T-SQL** and **This lab** tabs covering returning rows, wildcards, names and values, functions, tables and procedures, and advanced features. On the **This lab** tab, **Try it** opens an example in Free practice. |
 | **What's an ERD** | Entities, attributes, primary and foreign keys, crow's foot notation and the three kinds of relationship, with an interactive diagram and three **Check yourself** questions. |
 | **Create tables and connect them** | Six guided steps that build a `Customers` and an `Orders` table, insert data, join them, trigger a foreign key error and add columns. The ERD beside the editor redraws itself from the learner's tables after every run. |
 | **Meet Northwind** | The full Northwind ERD. Select a table to see its columns, its keys, what it links to and its first five rows. |
-| **Lessons** (24) | A **Learn** tab with a short explanation and worked examples, each with a **Run this** button, then one tab per exercise. The editor and results sit alongside. |
-| **Checkpoints** | The last lesson in units 2–5. No new teaching: mixed exercises on the whole unit. |
-| **Quizzes** | The **Query quiz** (20 query-writing tasks, one for every topic) and the **Multiple-choice quiz** (40 questions on ERDs, how queries run, filtering, grouping, joins, subqueries and MySQL vs T-SQL). Nothing is marked until you submit. Optional timer, a score for each unit and a full review. |
+| **Lessons** (34) | A **Learn** tab with a short explanation and worked examples, each with a **Run this** button, then one tab per exercise. The editor and results sit alongside. |
+| **Checkpoints** | The last lesson in units 2–5 and 7. No new teaching: mixed exercises on the whole unit. |
+| **Quizzes** | An **end-of-unit quiz** for each of the 7 units (8 questions each: multiple choice, plus 3 queries to write from unit 2 on), and two final quizzes: the **Query quiz** (28 query-writing tasks, one for every topic, including the advanced ones) and the **Multiple-choice quiz** (40 questions on ERDs, how queries run, filtering, grouping, joins, subqueries, advanced topics and MySQL vs T-SQL). Nothing is marked until you submit. Optional timer, a score for each unit and a full review. |
 | **Free practice** | Run any query against Northwind. Nothing is marked. |
 
 ### The learning path
 
 | Unit | Lessons |
 |---|---|
-| **1. Foundations** | What's an ERD · Create tables and connect them · Meet Northwind |
+| **1. Foundations** | What's a database · SQL flavours · What's an ERD · Create tables and connect them · Meet Northwind |
 | **2. Querying one table** | SELECT and WHERE · Operators: AND, OR, IN, BETWEEN · Sorting with ORDER BY · DISTINCT and LIMIT · Searching text with LIKE · Joining text and naming columns · Calculations · *Checkpoint* |
 | **3. Summarising data** | Aggregate functions · GROUP BY · Filtering groups with HAVING · Working with NULL · *Checkpoint* |
 | **4. Combining tables** | INNER JOIN · LEFT JOIN · Aliases and multiple joins · *Checkpoint* |
 | **5. Subqueries** | Subqueries in WHERE · Subqueries in FROM and SELECT · EXISTS and NOT EXISTS · *Checkpoint* |
 | **6. Going further** | CASE expressions · Dates and text functions · Views |
+| **7. Advanced topics** | Window functions: OVER and PARTITION BY · Ranking: ROW_NUMBER, RANK and DENSE_RANK · LEAD, LAG, FIRST_VALUE and LAST_VALUE · Window frames and moving averages · Statistical functions · WITH (common table expressions) · Temporary tables · Pivoting · Performance tuning and indexes · *Checkpoint* |
 
-27 lessons, 82 exercises and 61 runnable examples in total.
+39 lessons, 112 exercises and 89 runnable examples in total. Unit 7 follows the *Advanced SQL* slides.
 
 ### How the exercises work
 
@@ -60,10 +64,12 @@ columns are fine, and row order only matters when the exercise asks for it (for 
 
 | Quiz | Questions | Time limits | You answer by |
 |---|---|---|---|
-| **Query quiz** | 20, one for every topic on the path | 45 min, 60 min or none | Writing a query |
+| **Unit 1 quiz** | 8 multiple-choice | 15 min, 20 min or none | Selecting ONE option |
+| **Unit 2–7 quizzes** | 8 each: 5 multiple-choice and 3 queries | 20 min, 30 min or none | Both |
+| **Query quiz** | 28, one for every topic on the path | 60 min, 75 min or none | Writing a query |
 | **Multiple-choice quiz** | 40, across all six units | 60 min, 75 min or none | Selecting ONE option |
 
-1. Choose a quiz on the **Quizzes** page, then a time limit.
+1. Choose a quiz on the **Quizzes** page (or the **Unit N quiz** button under each unit on the learning path), then a time limit.
 2. Press **Start the quiz**. Questions are shown one at a time; the numbered buttons at the top jump between them and fill in once a question has an answer.
 3. Answer each question. In the Query quiz you can **Run** your query as often as you like to see its results, but you **won't be told whether it's right** until you submit.
 4. Every question has a **Northwind ERD** button. It opens the diagram over the question, so you can check table and column names without leaving the quiz (the timer keeps running). Press **Esc** or **Close** to go back.
@@ -93,7 +99,9 @@ translates it. A note appears whenever it does.
 | `DROP DATABASE` | Drops all your tables (Create tables lesson only) |
 | `ALTER TABLE t ADD a INT, b INT` | One `ADD COLUMN` per column |
 | `SELECT TOP 10 …` | `SELECT … LIMIT 10` |
-| `SHOW TABLES`, `DESCRIBE t` | Equivalent queries on the schema |
+| `SHOW TABLES`, `DESCRIBE t`, `SHOW INDEX FROM t` | Equivalent queries on the schema |
+| T-SQL `SELECT … INTO #name FROM …`, `#name`, `##name` | `CREATE TEMP TABLE name AS SELECT …`, a temporary table |
+| `EXPLAIN SELECT …`, `EXPLAIN ANALYZE SELECT …` | `EXPLAIN QUERY PLAN SELECT …` (`SCAN` = full table scan, `SEARCH … USING INDEX` = index seek) |
 | `DATE_ADD(d, INTERVAL 5 DAY)`, `TIMESTAMPDIFF(YEAR, a, b)` | Built-in equivalents |
 | T-SQL `DATEDIFF(d, start, end)`, `DATEADD(d, 5, x)` | Built-in equivalents |
 
@@ -102,14 +110,17 @@ These functions work as they do in MySQL or T-SQL: `CONCAT`, `YEAR`, `MONTH`, `D
 Northwind ignore case, as they do with MySQL's default settings, so `'london'` matches `'London'`.
 
 **Not available:** stored procedures (`CREATE PROCEDURE`, `CALL`, `EXEC`), adding a foreign key with `ALTER TABLE`, the
-T-SQL `LIKE '[ABC]%'` character list and T-SQL `FORMAT`. Practise these in MySQL Workbench or SQL Server Management Studio.
+T-SQL `LIKE '[ABC]%'` character list, T-SQL `FORMAT`, T-SQL `PIVOT` / `UNPIVOT` and `PERCENTILE_CONT` / `PERCENTILE_DISC`,
+and MySQL's `RANGE … INTERVAL` window frames. Each gives a message explaining the alternative, and the lessons show those
+examples as read-only, labelled *T-SQL only* or *MySQL only*. Practise these in MySQL Workbench or SQL Server Management Studio.
 
 ### Finding your way around
 
 - **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
-- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 27").
+- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 39").
+- **SQL dialects** – the header tab with the MySQL / T-SQL / lab comparison, available from every page.
 - **Next lesson** – the footer of every lesson links to the previous and next lessons.
 - **Tables** – the buttons above the editor insert a table name at the cursor (`Order Details` comes with the backticks it needs).
 - **Errors** – an error message comes with advice, for example a reminder that text needs single quotes.
@@ -144,6 +155,7 @@ Each page has its own address after the `#`, so you can link straight to it:
 | Page | Address |
 |---|---|
 | Learning path | `…/#/path` |
+| SQL dialects | `…/#/dialects` |
 | A lesson | `…/#/lesson/<id>`, e.g. `#/lesson/innerjoin` (ids are in `src/content/lessons.js`) |
 | Quizzes | `…/#/quiz` |
 | A quiz | `…/#/quiz/queries`, `…/#/quiz/mcq` |
@@ -291,6 +303,7 @@ select: {
     <p>Every query answers two questions…</p>
     ${C("SELECT * FROM Customers;")}                  ← an example with a Run this button
     ${C("SELECT … FROM student …", false)}            ← a read-only example (tables not in Northwind)
+    ${C("… PIVOT (…)", false, TSQL_ONLY)}             ← a read-only example labelled "T-SQL only" (or MYSQL_ONLY)
     ${TIP('<code>SELECT</code> filters columns…')}    ← a pink tip box
     <h3>Apostrophes inside text</h3>                  ← a sub-heading
   `,
@@ -332,7 +345,7 @@ const QUIZZES = [
     …
   ]},
   { id:'mcq', type:'mcq', title:'Multiple-choice quiz', timeLimits:[60, 75, 0], defaultLimit:60, blurb:'…', questions:[
-    { unit: 3,                                           // 1-6, for "Score by unit"
+    { unit: 3,                                           // 1-7, for "Score by unit"
       q:    'Which condition finds customers who have no Region?',
       code: 'SELECT …',                                  // optional: a query shown under the question
       options: ["WHERE Region = ''", 'WHERE Region = NULL', "WHERE Region IS 'NULL'", 'WHERE Region IS NULL'],
@@ -343,19 +356,24 @@ const QUIZZES = [
 ];
 ```
 
+An end-of-unit quiz has `unitQuiz: N` (it gets a button under unit N on the learning path) and `type:'mixed'`, so its
+questions can be either kind: an object with `options` is multiple choice, one with `lesson` and `sol` is a query task.
+
 `timeLimits` are minutes, and `0` means no limit. To add a quiz, add another object to `QUIZZES` with a new `id`; it
 gets a card on the Quizzes page and its own address (`#/quiz/<id>`). Spread the right answers across a–d: the checks
 print how often each letter is used.
 
 **Safety net:** `npm run build` refuses to build if the content is broken. It runs every model answer and every
 **Run this** example against Northwind, and fails if one gives an error, if a lesson in `UNITS` doesn't exist, if an
-exercise is missing its task, hint or answer, if `ordered` points at a column that isn't there, if a quiz id is
+exercise is missing its task, hint or answer, if a dialect comparison **Try it** example errors, if `ordered` points at a column that isn't there, if a quiz id is
 used twice, or if a multiple-choice question doesn't have exactly four different options and a valid `answer`. It also warns when a model answer returns no rows. Run `npm run check` after editing.
 
 ### Other things you might change
 
 | To change… | Edit… |
 |---|---|
+| The What's a database lesson and its questions | `DATABASES_LEARN` and `DATABASES_CHECK` in `src/content/intro.js` |
+| The SQL flavours lesson text, its questions, and the dialect comparison | `FLAVOURS_LEARN`, `FLAVOURS_CHECK` and `DIALECTS` in `src/content/dialects.js` |
 | Colours and fonts | `src/styles.css` (the variables at the top) |
 | Pass mark | `QUIZ_SETTINGS` in `src/content/quizzes.js` |
 | A quiz's time limits | `timeLimits` and `defaultLimit` on the quiz in `src/content/quizzes.js` |
@@ -393,11 +411,13 @@ nothing to host except that one file.
     ├── assets/                    Sparta Global logos and favicon (inlined into the page by the build)
     └── content/
         ├── lessons.js             Units, lessons, examples and exercises
-        └── quizzes.js             The Query quiz, the Multiple-choice quiz and the pass mark
+        ├── intro.js               The What's a database lesson text and its questions
+        ├── dialects.js            The SQL flavours lesson text and the MySQL / T-SQL / lab comparison
+        └── quizzes.js             The end-of-unit quizzes, the Query quiz, the Multiple-choice quiz and the pass mark
 ```
 
 The lessons were written from the Sparta Global SQL lesson notes (`SQL Querying` and `Creating Tables and Connecting
-Them`) and are now edited directly in `src/content/`.
+Them`) and the *Advanced SQL* slides, and are now edited directly in `src/content/`.
 
 ---
 
@@ -415,11 +435,14 @@ Every important element has a stable hook:
 
 | Page / area | Hooks |
 |---|---|
-| **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` · `nav-quiz` · `nav-free` · `back-to-top` · `site-footer` |
-| **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-quiz` · `mobile-nav-free` |
+| **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` · `nav-dialects` · `nav-quiz` · `nav-free` · `back-to-top` · `site-footer` |
+| **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-dialects` · `mobile-nav-quiz` · `mobile-nav-free` |
 | **Home hero** | `hero` · `hero-start` · `hero-quiz` · `hero-free` |
-| **Learning path** | `continue-card` · `overall-progress` (with `data-lessons-done` and `data-exercises-done`) · `continue` · `reset-progress` · `unit-1` … `unit-6` · `lesson-<id>` (with `data-status`: `done`, `next`, `started` or `todo`) · `lesson-link-<id>` · `lesson-status-<id>` |
+| **Learning path** | `continue-card` · `overall-progress` (with `data-lessons-done` and `data-exercises-done`) · `continue` · `reset-progress` · `unit-1` … `unit-7` · `unit-quiz-1` … `unit-quiz-7` (each unit's quiz button) · `unit-quiz-N-score` · `lesson-<id>` (with `data-status`: `done`, `next`, `started` or `todo`) · `lesson-link-<id>` · `lesson-status-<id>` |
 | **Any lesson** | `breadcrumb` · `breadcrumb-path` · `breadcrumb-unit` · `lesson-position` · `lesson-footer` · `lesson-status` (with `data-done`) · `previous-lesson` · `next-lesson` |
+| **What's a database lesson** | `databases-title` · `databases-body` · `databases-see-table` · `databases-check` · `databases-check-question-1` … `-3` (with `data-answer`) · options `databases-check-question-N-option-a` and `…-option-a-input` · `databases-check-question-N-feedback` |
+| **SQL flavours lesson** | `flavours-title` · `flavours-body` · the comparison (prefix `flavours-`, see next row) · `flavours-check` · `flavours-check-question-1` … `-3` (with `data-answer`) · options `flavours-check-question-N-option-a` and `…-option-a-input` · `flavours-check-question-N-feedback` |
+| **Dialect comparison** | On the SQL dialects page the prefix is `dialects-` (`dialects-title`, `dialects-flavours-link`); in the lesson it's `flavours-`. `<prefix>-tabs` · tabs `<prefix>-tab-side`, `-tab-mysql`, `-tab-tsql`, `-tab-lab` (with `aria-selected`; Left/Right arrows move between them) · `<prefix>-panel` (with `data-tab`) · rows `<prefix>-row-1` … · on the lab tab `<prefix>-try-N` |
 | **Northwind ERD pop-up** | Open buttons: `lesson-open-erd` · `exercise-open-erd` · `free-open-erd` · `question-N-open-erd` (quizzes) · the pop-up: `erd-dialog` · `erd-dialog-close` · `erd-dialog-diagram` · each table `dialog-table-customers`, `dialog-table-order-details` … · `erd-dialog-detail` · `erd-dialog-table` (the selected table's name) |
 | **Lesson tabs** | `lesson-title` · `lesson-tabs` · `tab-learn` · `tab-exercise-1` … (with `data-done`) · `lesson-body` |
 | **Learn tab** | `example-1` … · `run-example-1` … · `start-exercises` |
@@ -430,13 +453,13 @@ Every important element has a stable hook:
 | **Create tables** | `build-step-1` … `build-step-6` (with `data-done`) · `step-checklist` · `step-check-1` … (with `data-done`) · `use-lesson-code` · `build-start-again` · `build-erd` · each table in the diagram `build-table-customers`, `build-table-orders` |
 | **Meet Northwind** | `northwind-erd` · each table `northwind-table-customers`, `northwind-table-order-details` … · `table-detail` · `query-table` |
 | **Free practice** | `restore-northwind` |
-| **Quizzes page** | `quizzes-title` · `quiz-card-queries` / `quiz-card-mcq` · `quiz-card-<id>-count` · `quiz-card-<id>-last` · `quiz-card-<id>-best` · `open-quiz-queries` / `open-quiz-mcq` |
-| **Quiz start** | `back-to-quizzes` · `quiz-title` · `quiz-start` · `question-count` · `pass-mark` · `last-attempt` · `time-limit` (`<select name="time-limit">`: Query quiz `45`, `60`, `0`; Multiple-choice quiz `60`, `75`, `0`) · `start-quiz` |
+| **Quizzes page** | `quizzes-title` · `unit-quizzes` · `final-quizzes` · `quiz-card-unit-1` … `quiz-card-unit-7` · `quiz-card-queries` / `quiz-card-mcq` · `quiz-card-<id>-count` · `quiz-card-<id>-last` · `quiz-card-<id>-best` · `open-quiz-unit-1` … `open-quiz-unit-7` · `open-quiz-queries` / `open-quiz-mcq` |
+| **Quiz start** | `back-to-quizzes` · `quiz-title` · `quiz-start` · `question-count` · `pass-mark` · `last-attempt` · `time-limit` (`<select name="time-limit">`: unit 1 `15`, `20`, `0`; units 2–7 `20`, `30`, `0`; final quizzes `60`, `75`, `0`) · `start-quiz` |
 | **Quiz question** (N = 1, 2, 3…) | `question-nav` · `question-nav-N` · `question-N` (with `data-unit`) · `question-N-number` · `question-N-unit` · `question-N-prompt` · `question-N-open-erd` |
 | **Query quiz question** | `question-N` has `data-solution` · `question-N-input` · `question-N-run` · `question-N-results` |
 | **Multiple-choice question** | `question-N` has `data-answer` (`a`–`d`) · `question-N-code` (when there's a query) · `question-N-instruction` ("Select ONE") · options `question-N-option-a` (the label) and `question-N-option-a-input` (the radio, `name="question-N"`, with `data-option`) |
 | **Submit bar** | `submit-bar` · `answered-count` · `previous-question` · `question-position` · `next-question` · `timer` · `submit-answers` |
-| **Quiz results** | `results` · `quiz-verdict` · `score` · `score-total` · `score-percent` · `time-taken` · `unit-breakdown` · `breakdown-unit-N` / `breakdown-unit-N-score` · `only-wrong-toggle` · `retake` · `all-quizzes` · per question `question-N-review` (with `data-state`: `right`, `wrong` or `blank`) · `question-N-verdict` · `question-N-explanation` · Query quiz: `question-N-your-answer` · `question-N-model-answer` · Multiple-choice: `question-N-review-option-a` … |
+| **Quiz results** | `results` · `revise-unit` (unit quizzes, instead of the unit table) · `quiz-verdict` · `score` · `score-total` · `score-percent` · `time-taken` · `unit-breakdown` · `breakdown-unit-N` / `breakdown-unit-N-score` · `only-wrong-toggle` · `retake` · `all-quizzes` · per question `question-N-review` (with `data-state`: `right`, `wrong` or `blank`) · `question-N-verdict` · `question-N-explanation` · Query quiz: `question-N-your-answer` · `question-N-model-answer` · Multiple-choice: `question-N-review-option-a` … |
 
 ### Things worth knowing when you write tests
 
@@ -487,7 +510,7 @@ class QueryQuizTest {
 
         new Select(wait.until(ExpectedConditions.elementToBeClickable(testId("time-limit")))).selectByValue("0");
 
-        int total = Integer.parseInt(driver.findElement(testId("question-count")).getText());   // 20
+        int total = Integer.parseInt(driver.findElement(testId("question-count")).getText());   // 28
         driver.findElement(testId("start-quiz")).click();
         for (int i = 1; i <= total; i++) {
             String sql = driver.findElement(testId("question-" + i)).getAttribute("data-solution");

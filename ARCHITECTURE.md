@@ -45,6 +45,9 @@ after `#`, shows one section, and calls its render function.
 | Address | View (section id) | Rendered by |
 |---|---|---|
 | `#/path` | `v-path` | `renderPath()` |
+| `#/lesson/databases` | `v-databases` | `drawDatabases()`: lesson text and `renderCheck()` |
+| `#/lesson/flavours` | `v-flavours` | `drawFlavours()`: lesson text, `renderDialectTabs()`, `renderCheck()` |
+| `#/dialects` | `v-dialects` | `renderDialectTabs()` |
 | `#/lesson/erd` | `v-erd` | static HTML + `drawLesson()` (diagram, legend, Check yourself) |
 | `#/lesson/build` | `v-build` | `renderBuild()`, `runBuild()`, `drawBuildErd()` |
 | `#/lesson/map` | `v-map` | `drawMap()` |
@@ -77,19 +80,43 @@ const PATH    = UNITS.flatMap(…);                                             
 | `learn` | HTML for the Learn tab. `C(sql)` makes a runnable example, `C(sql, false)` a read-only one, `TIP(html)` a tip box |
 | `ex` | The exercises: `p` (the task), `hint`, `sol` (a model answer) and optionally `ordered` |
 | `checkpoint: true` | A checkpoint: no Learn tab, shown as a diamond on the path |
-| `kind: 'erd' \| 'build' \| 'map'` | A Foundations lesson with its own page (see section 7) |
+| `kind: 'databases' \| 'flavours' \| 'erd' \| 'build' \| 'map'` | A Foundations lesson with its own page (see section 7) |
+
+### What's a database: `src/content/intro.js`
+
+`DATABASES_LEARN` (the lesson's HTML, including the labelled example table) and `DATABASES_CHECK` (three questions in
+the same `{ q, a, c, why }` shape as `FLAVOURS_CHECK`).
+
+### SQL flavours and dialects: `src/content/dialects.js`
+
+```js
+const DIALECTS = [ { group, task, mysql, tsql, lab, try? }, … ];   // rows of the comparison; cells are HTML, K('…') makes code
+const DIALECT_INFO = { mysql, tsql, lab };                         // the sentence shown above each single-dialect tab
+const FLAVOURS_LEARN = `…`;  const FLAVOURS_CHECK = [ { q, a:[3], c, why }, … ];
+```
+
+`renderDialectTabs(host, prefix)` draws the four tabs (Side by side, MySQL, T-SQL, This lab) from `DIALECTS`. The same
+data feeds the SQL flavours lesson and the SQL dialects page; a row's `try` adds a **Try it** button on the lab tab.
+
+Read-only examples in a lesson use `C(sql, false, label)`; `TSQL_ONLY` and `MYSQL_ONLY` are ready-made labels for
+syntax the lab can't run.
 
 ### Quizzes: `src/content/quizzes.js`
 
 ```js
 const QUIZ_SETTINGS = { passMark: 65 };
 const QUIZZES = [
-  { id:'queries', type:'query', title, blurb, timeLimits:[45, 60, 0], defaultLimit:45,
-    questions: [ { lesson, p, sol, why, ordered? }, … ] },              // 20: one per topic
+  { id:'queries', type:'query', title, blurb, timeLimits:[60, 75, 0], defaultLimit:60,
+    questions: [ { lesson, p, sol, why, ordered? }, … ] },              // 28: one per topic
   { id:'mcq',     type:'mcq',   title, blurb, timeLimits:[60, 75, 0], defaultLimit:60,
     questions: [ { unit, q, code?, options:[4 strings], answer:0-3, why }, … ] },   // 40
 ];
 ```
+
+End-of-unit quizzes (`id:'unit-1'` … `'unit-7'`) have `unitQuiz: N` and `type:'mixed'`: each question is multiple choice
+if it has `options`, otherwise a query task. They're listed under **End-of-unit quizzes**, and `renderPath()` adds a
+**Unit N quiz** button (with the best score) under each unit. With only one unit in a quiz, the results show a
+**Revise** link instead of the Score by unit table.
 
 A query question's unit comes from its `lesson` (the unit that lesson is in), and the review links back to that lesson.
 A multiple-choice question names its `unit` directly. `timeLimits` are minutes, with `0` meaning no limit.
@@ -100,13 +127,14 @@ A multiple-choice question names its `unit` directly. `timeLimits` are minutes, 
 
 - a lesson listed in `UNITS` isn't in `LESSONS`, or is listed twice
 - a lesson has no `title` or `summary`, a non-checkpoint has no `learn`, or a lesson has no exercises
-- an exercise has no `p`, `hint` or `sol`; a quiz question has no `p`, `sol` or `why`, or a `unit` outside 1–6
+- an exercise has no `p`, `hint` or `sol`; a quiz question has no `p`, `sol` or `why`, or a `unit` outside 1–7
 - a model answer or a runnable example gives an error against Northwind
 - `ordered` refers to a column the model answer doesn't return
 - a model answer doesn't pass when compared with itself
 - two quizzes share an id, a quiz has no questions, or its `defaultLimit` isn't one of its `timeLimits`
+- a quiz's `type` isn't `query`, `mcq` or `mixed`, an `mcq` quiz has a query task (or the reverse), or `unitQuiz` isn't 1–7
 - a query question's `lesson` isn't a lesson with exercises
-- a multiple-choice question doesn't have exactly four different options, a `unit` of 1–6, or an `answer` of 0–3
+- a multiple-choice question doesn't have exactly four different options, a `unit` of 1–7, or an `answer` of 0–3
 
 After the checks it prints how often each letter (a–d) is the right answer in each multiple-choice quiz, so you can
 keep them evenly spread.
@@ -138,7 +166,9 @@ Both have foreign keys switched on (`PRAGMA foreign_keys = ON`) and the extra fu
    ├─ splitStatements()   split on ; outside quotes, backticks, [brackets] and comments
    │
    ├─ for each statement:
-   │    transform()       dialect rules: CREATE/DROP DATABASE, USE, SHOW TABLES, DESCRIBE,
+   │    transform()       dialect rules: CREATE/DROP DATABASE, USE, SHOW TABLES, DESCRIBE, SHOW INDEX,
+   │    │                 SELECT … INTO #temp, #temp names, EXPLAIN → EXPLAIN QUERY PLAN,
+   │    │                 T-SQL-only PIVOT/UNPIVOT/PERCENTILE and MySQL RANGE … INTERVAL (refused with an alternative),
    │    │                 AUTO_INCREMENT / IDENTITY, multi-column ALTER TABLE ADD, TOP n,
    │    │                 stored procedures (refused with an explanation)
    │    └─ rewriteFns()   function rewrites: DATE_ADD/DATE_SUB … INTERVAL, TIMESTAMPDIFF(unit,…),
@@ -186,7 +216,8 @@ distinct token. Each failure returns a message and a tip ("Check your ORDER BY, 
 
 ## 6. The quiz engine (`src/quiz.js`)
 
-One engine runs both quiz types; `QZ.def.type` decides how a question is shown and marked.
+One engine runs every quiz. Each question decides how it's shown and marked: `isMcq(q)` (it has `options`) means
+multiple choice, otherwise it's a query task. A quiz can mix both, as the end-of-unit quizzes do.
 
 ```
  Start screen                 In progress                            Results
@@ -222,6 +253,8 @@ One engine runs both quiz types; `QZ.def.type` decides how a question is shown a
 
 | Lesson | Completes when | Code |
 |---|---|---|
+| What's a database | All three Check yourself questions are answered correctly (`P.dbDone`) | `drawDatabases()` |
+| SQL flavours | All three Check yourself questions are answered correctly (`P.flavDone`) | `drawFlavours()` |
 | What's an ERD | All three Check yourself questions are answered correctly (`P.quizDone`) | `drawLesson()` |
 | Create tables | All six steps pass their checklist (`P.buildDone`) | `BUILD_STEPS`, `renderBuild()`, `runBuild()` |
 | Meet Northwind | Three or more tables have been opened (`P.mapTables`) | `drawMap()` |
@@ -370,6 +403,9 @@ to configure.
 
 ## 12. Where the content came from
 
+- **Advanced topics (unit 7):** written from the Sparta Global *Advanced SQL* slides: analytic functions (PARTITION BY,
+  ORDER BY, LEAD/LAG, FIRST/LAST_VALUE, window frames), statistical functions, WITH, temporary tables, PIVOT and
+  performance tuning. T-SQL-only features are shown read-only with a portable alternative that runs in the lab.
 - **Lessons and exercises:** written from the Sparta Global SQL lesson notes (*SQL Querying* and *Creating Tables and
   Connecting Them*). The exercises from the notes are kept, with their answers checked against the data, and extra
   exercises, checkpoints and quizzes were added. They're now maintained directly in `src/content/`.
@@ -441,6 +477,8 @@ There is no server. Everything a visitor sees comes from the one file; the only 
 | `src/assets/` | Sparta Global logos (`sparta-logo.png`, `sparta-logo-white.png`) and `favicon.svg`, shared with the ISTQB site | - |
 | `src/engine.js` | Dialect layer, `runScript()`, `friendlyError()`, extra SQL functions, `expected()` and `compare()` | - (no DOM) |
 | `src/content/lessons.js` | `UNITS`, `LESSONS`, `PATH`, and the `C()` / `TIP()` helpers | `esc()` from `engine.js` |
+| `src/content/intro.js` | `DATABASES_LEARN`, `DATABASES_CHECK` | - |
+| `src/content/dialects.js` | `DIALECTS`, `DIALECT_INFO`, `FLAVOURS_LEARN`, `FLAVOURS_CHECK` | `esc()` from `engine.js` |
 | `src/content/quizzes.js` | `QUIZ_SETTINGS` and `QUIZZES` (the Query quiz and the Multiple-choice quiz) | - |
 | `src/app.js` | Progress, header behaviour (back-to-top, menu), databases, results tables, editor, ERD renderer, routing, path, lessons, Foundations pages, Free practice, boot | engine, content |
 | `src/quiz.js` | Quiz list, start screen, questions, timer, marking, results and review | engine, content, `app.js` helpers |
@@ -450,7 +488,7 @@ There is no server. Everything a visitor sees comes from the one file; the only 
 
 | Check | Where | What it catches |
 |---|---|---|
-| Content checks | `scripts/check.mjs` | a model answer or example that errors, a missing field, a lesson missing from `LESSONS`, an `ordered` column that doesn't exist, duplicate quiz ids, answers that return no rows (warning) |
+| Content checks | `scripts/check.mjs` | a model answer, example or dialect **Try it** example that errors, a missing field, a lesson missing from `LESSONS`, an `ordered` column that doesn't exist, duplicate quiz ids, answers that return no rows (warning) |
 | Self-marking | `scripts/check.mjs` | a model answer that the checker wouldn't mark as correct |
 | Safe inlining | `scripts/build.mjs` | a missing placeholder, or content that would break out of its `<script>` |
 | Deploy gate | GitHub Actions | nothing is published unless the checks and the build pass |
