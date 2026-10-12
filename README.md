@@ -38,8 +38,8 @@ tablets and phones.
 
 | Unit | Lessons |
 |---|---|
-| **1. Foundations** | What's a database · SQL flavours · Entity relationship diagrams · Data types · Creating tables · Meet Northwind · Inserting, updating and deleting data |
-| **2. Querying one table** | Simple queries · Operators · Sorting data · Removing duplicates and limiting results · Wildcards · Concatenation · Arithmetic operators · *Checkpoint* |
+| **1. Foundations** | What's a database · SQL flavours · Entity relationship diagrams · Data types · Types of SQL command · Creating tables · Inserting, updating and deleting data |
+| **2. Introduction to querying** | Meet Northwind · Simple queries · Operators · Sorting data · Removing duplicates and limiting results · Wildcards · Concatenation · Arithmetic operators · *Checkpoint* |
 | **3. Summarising data** | Aggregate functions · GROUP BY · HAVING · Working with NULL values · *Checkpoint* |
 | **4. Combining tables** | Introduction to joins · Inner joins · Left joins · Table aliases and multiple joins · *Checkpoint* |
 | **5. Subqueries** | Introduction to subqueries · Subqueries in WHERE · Subqueries in FROM and SELECT · EXISTS and NOT EXISTS · *Checkpoint* |
@@ -47,10 +47,11 @@ tablets and phones.
 | **7. Advanced topics** | Window functions · Ranking functions · Comparing rows · Window frames · Statistical functions · Common table expressions · Temporary tables · Pivoting · Performance tuning · *Checkpoint* |
 | **8. Capstone project** | Capstone project (in the learner's own SQL Server or MySQL) |
 
-45 lessons, 132 exercises and 118 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
+46 lessons, 132 exercises and 123 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
-exercises. **Inserting, updating and deleting data** undoes every run straight afterwards, so learners can practise
-`INSERT`, `UPDATE` and `DELETE` on Northwind without changing it. **Introduction to joins** uses Venn diagrams and two small made-up tables (students and courses, built with
+exercises. **Data types**, **Types of SQL command** (DDL, DML, DQL, DCL and TCL, with `DELETE` vs `TRUNCATE` vs `DROP`) and
+**Inserting, updating and deleting data** build on the `Customers` and `Orders` tables from Creating tables (the same names
+and data as the course notes), and every run starts from a fresh copy, so learners can't break anything. **Introduction to joins** uses Venn diagrams and two small made-up tables (students and courses, built with
 `WITH` so they run here) to show inner, left, right, full outer and cross joins, and why to avoid `RIGHT JOIN`. **Introduction to subqueries** does the same for subqueries with a small made-up café
 (products and sales): an inside-out diagram, what a subquery can return (one value, a list or a table), where it can
 go, correlated subqueries and `EXISTS`.
@@ -128,10 +129,10 @@ showing the SQLite way:
 
 ### Finding your way around
 
-- **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Introduction**, **SQL dialects**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
+- **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Introduction**, **SQL dialects**, **Install**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
-- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 45").
+- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 46").
 - **SQL dialects** – the header tab with the MySQL / T-SQL / SQLite comparison, available from every page.
 - **Next lesson** – the footer of every lesson links to the previous and next lessons.
 - **Tables** – the buttons above the editor insert a table name at the cursor (`Order Details` comes with the backticks it needs).
@@ -301,7 +302,7 @@ The file has two parts. `UNITS` sets the order of the path:
 
 ```js
 const UNITS = [
-  { id:'u2', title:'Querying one table', blurb:'Choose the columns and rows you need…',
+  { id:'u2', title:'Introduction to querying', blurb:'Meet Northwind, then choose the columns and rows you need…',
     lessons:['select', 'operators', 'sorting', 'distinct', 'wildcards', 'concat', 'arithmetic', 'cp1'] },
   …
 ];
@@ -350,7 +351,8 @@ Each value is shown as code (start it with `~` for plain text). Where nothing di
 draws a Venn diagram (`a` = only the left table, `ab` = both, `b` = only the right), and an exercise can have a `starter`:
 text that's in the editor when the learner first opens it (the join exercises use it for the made-up tables).
 `CERR(sql)` is an example that's meant to fail (the build checks it does), and a lesson with `rollback: true` undoes
-every run, for lessons that change data. `C(sql, false, READ_ONLY('mysql', 'MySQL Workbench'))`
+every run, for lessons that change data. Add `db: 'mydb'` as well to run the lesson on the Creating tables example
+(`MYDB_SEED`) instead of Northwind; `${MYDB_TABLES}` shows those two tables. `C(sql, false, READ_ONLY('mysql', 'MySQL Workbench'))`
 shows a read-only MySQL or T-SQL example with its icon.
 
 ### Exercises
@@ -474,8 +476,8 @@ Every important element has a stable hook:
 
 | Page / area | Hooks |
 |---|---|
-| **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` · `nav-intro` · `nav-dialects` · `nav-quiz` · `nav-free` · `back-to-top` · `site-footer` |
-| **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-intro` · `mobile-nav-dialects` · `mobile-nav-quiz` · `mobile-nav-free` |
+| **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` · `nav-intro` · `nav-dialects` · `nav-install` · `nav-quiz` · `nav-free` · `back-to-top` · `site-footer` |
+| **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-intro` · `mobile-nav-dialects` · `mobile-nav-install` · `mobile-nav-quiz` · `mobile-nav-free` |
 | **Home hero** | `hero` · `hero-start` · `hero-intro` · `hero-install` · `hero-quiz` · `hero-free` |
 | **Capstone project** | `capstone-title` · `capstone-print` · `capstone-body` · `capstone-before` · `capstone-install-link` · `capstone-q-1-1` … `capstone-q-2-9` · `capstone-checklist` · `capstone-task-setup`, `capstone-task-1-1` … `capstone-task-2-9`, `capstone-task-submit` |
 | **Install on your computer** | `install-title` · `install-intro` · `install-guides` · `install-tab-docker-sqlserver` / `-windows-sqlserver` / `-windows-mysql` / `-mac-mysql` / `-docker-mysql` · `install-panel` (with `data-guide`) · `copy-command` · `download-mysql-northwind` |
@@ -486,7 +488,7 @@ Every important element has a stable hook:
 | **SQL flavours lesson** | `flavours-title` · `flavours-body` · the comparison (prefix `flavours-`, see next row) · `flavours-check` · `flavours-check-question-1` … `-3` (with `data-answer`) · options `flavours-check-question-N-option-a` and `…-option-a-input` · `flavours-check-question-N-feedback` |
 | **Dialect comparison** | On the SQL dialects page the prefix is `dialects-` (`dialects-title`, `dialects-flavours-link`); in the lesson it's `flavours-`. `<prefix>-tabs` · tabs `<prefix>-tab-side`, `-tab-mysql`, `-tab-tsql`, `-tab-lab` (the SQLite tab; with `aria-selected`; Left/Right arrows move between them) · `<prefix>-panel` (with `data-tab`) · rows `<prefix>-row-1` … · on the SQLite tab `<prefix>-try-N` |
 | **Northwind ERD pop-up** | Open buttons: `lesson-open-erd` · `exercise-open-erd` · `free-open-erd` · `question-N-open-erd` (quizzes) · the pop-up: `erd-dialog` · `erd-dialog-close` · `erd-dialog-diagram` · each table `dialog-table-customers`, `dialog-table-order-details` … · `erd-dialog-detail` · `erd-dialog-table` (the selected table's name) |
-| **Lesson tabs** | `lesson-title` · `lesson-summary` · `lesson-commands` · `lesson-tabs` · `tab-learn` · `tab-exercise-1` … (with `data-done`) · `lesson-body` |
+| **Lesson tabs** | `lesson-title` · `lesson-summary` · `lesson-commands` · `lesson-mydb-note` (lessons using the Creating tables example) · `lesson-tabs` · `tab-learn` · `tab-exercise-1` … (with `data-done`) · `lesson-body` |
 | **Learn tab** | `example-1` … · `run-example-1` … (numbered with the read-only examples) · `start-exercises` · on Stored procedures: `lesson-check` · `lesson-check-question-1` … · options `lesson-check-question-N-option-a` and `…-input` |
 | **Exercise tab** | `exercise-number` · `exercise-prompt` · `solved` · `show-hint` · `hint` · `show-answer` · `answer` · `copy-answer` · `verdict` (with `data-correct`) · `verdict-next` |
 | **SQL editors** | Lessons `lesson-editor-input` / `lesson-run` · Free practice `free-editor-input` / `free-run` · Create tables `build-editor-input` / `build-run` · table buttons `lesson-insert-table-customers`, `free-insert-table-order-details` … |

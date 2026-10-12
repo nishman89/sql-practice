@@ -82,6 +82,7 @@ const PATH    = UNITS.flatMap(…);                                             
 | `title`, `summary` | Shown on the path and at the top of the lesson |
 | `cmds` | The commands the lesson uses, shown as chips under the summary |
 | exercise `starter` | Optional text placed in the editor the first time an exercise is opened |
+| `db: 'mydb'` | Run the lesson on `my`, a separate database seeded from `MYDB_SEED` (the Customers and Orders tables from Creating tables) instead of Northwind; the Northwind table buttons are hidden and a note explains |
 | `rollback: true` | Every run in the lesson is wrapped in a `SAVEPOINT` and undone (`runSafe()`), so `INSERT`, `UPDATE` and `DELETE` can be practised without changing Northwind |
 | `check` | Questions instead of exercises, for a lesson that can't run here (Stored procedures) |
 | `learn` | HTML for the Learn tab. `C(sql)` makes a runnable example, `C(sql, false)` a read-only one, `TIP(html)` a tip box |
@@ -195,6 +196,10 @@ Both have foreign keys switched on (`PRAGMA foreign_keys = ON`, in `addFns()`). 
   text needs single quotes.
 - `mode` is `'sandbox'` or `'nw'`. It changes a few rules: `DROP DATABASE` clears the sandbox (through `opts.onReset`)
   but is skipped on Northwind.
+
+Some differences don't cause an error in SQLite (`+` between strings gives 0, `LIKE '[BS]%'` matches the brackets
+literally, `FORMAT()` treats a date pattern as text), so `OTHER_DIALECTS` catches those too; entries marked `'raw'` look
+inside quoted text.
 
 ### Functions from other dialects: `FN_HINTS`
 
