@@ -65,7 +65,7 @@ ${CAP_Q('3.5', 'Pivot the number of orders each shipper carried into one column 
 
 <h2 class="dot">MySQL and T-SQL reminders</h2>
 <p>The differences between 🪶 SQLite, 🐬 MySQL and 🪟 T-SQL that matter most for this project:</p>
-${DIFF({title:'Joining text (2.5, 2.8)', sqlite:"FirstName || ' ' || LastName\n-- or CONCAT(FirstName, ' ', LastName)", mysql:"CONCAT(FirstName, ' ', LastName)", tsql:"FirstName + ' ' + LastName\n-- or CONCAT(FirstName, ' ', LastName)"})}
+${DIFF({title:'Joining text (2.5, 2.8)', common:"CONCAT(FirstName, ' ', LastName)", otherTitle:'Each dialect\'s shortcut', sqlite:"FirstName || ' ' || LastName", mysql:'~None: use CONCAT()', tsql:"FirstName + ' ' + LastName"})}
 ${DIFF({title:'Returning the top rows, including ties (2.7)', sqlite:'ORDER BY … DESC\nLIMIT 2', mysql:'ORDER BY … DESC\nLIMIT 2', tsql:'SELECT TOP 1 WITH TIES …\nORDER BY … DESC', note:'T-SQL\'s <code>WITH TIES</code> keeps every row that ties for last place, so you don\'t have to know there are two.'})}
 ${DIFF({title:'Table names with spaces (2.7)', sqlite:'"Order Details"', mysql:'`Order Details`', tsql:'[Order Details]'})}
 ${DIFF({title:'Showing money (2.7)', sqlite:"printf('$%,.2f', amount)", mysql:"CONCAT('$', FORMAT(amount, 2))", tsql:"FORMAT(amount, 'C')"})}

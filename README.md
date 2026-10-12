@@ -352,7 +352,8 @@ ${DIFF({ title:'Limiting rows in each dialect',
          note:'Optional explanation underneath.' })}
 ```
 
-Each value is shown as code (start it with `~` for plain text). Where nothing differs, add `${SAME()}` (or
+Each value is shown as code (start it with `~` for plain text). Add `common:` for the way that works in all three: it's shown first, in green, and any dialect row
+that just repeats it is left out (`otherTitle` names the rows below it). Where nothing differs, add `${SAME()}` (or
 `${SAME('an extra sentence')}`) for the green **Same in SQLite, MySQL and T-SQL** note. For joins, `VENN(['a','ab','b'], 'label')`
 draws a Venn diagram (`a` = only the left table, `ab` = both, `b` = only the right), and an exercise can have a `starter`:
 text that's in the editor when the learner first opens it (the join exercises use it for the made-up tables).
