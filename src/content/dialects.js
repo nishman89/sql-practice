@@ -6,7 +6,7 @@ const K = s => `<code>${esc(s)}</code>`;
 const DIALECT_INFO = {
   mysql:{name:'🐬 MySQL', who:'Open source, owned by Oracle. Very common behind websites and web apps.', tool:'MySQL Workbench'},
   tsql:{name:'🪟 T-SQL', who:'Transact-SQL: Microsoft\'s dialect, used by SQL Server and Azure SQL.', tool:'SQL Server Management Studio (SSMS)'},
-  lab:{name:'🪶 This dialect: SQLite', who:'SQLite, a small database engine built into phones, apps and browsers. It\'s the dialect this course uses, and it runs right here in your browser.', tool:'This website'}
+  lab:{name:'🪶 SQLite', who:'A small database engine built into phones, apps and browsers. It\'s the dialect this course uses, and it runs right here in your browser.', tool:'This website'}
 };
 
 const DIALECTS = [
@@ -70,7 +70,7 @@ const FLAVOURS_LEARN = `
 <p>Every lesson, example, exercise and quiz is written in SQLite, and everything runs in your browser, so there's nothing to install. If you type MySQL or T-SQL out of habit, such as <code>TOP 10</code> or <code>YEAR(OrderDate)</code>, you'll get a message showing the SQLite way to write it.</p>
 <p>Where the three dialects write something differently, the lessons show all three, marked with the same icons as the course notes:</p>
 ${DIFF({title:'Example: returning only the first 10 rows', sqlite:'SELECT ProductName FROM Products LIMIT 10;', mysql:'SELECT ProductName FROM Products LIMIT 10;', tsql:'SELECT TOP 10 ProductName FROM Products;', note:'🪶 SQLite is the one that runs here. 🐬 MySQL and 🪟 T-SQL are there so you know what to write when you use those databases.'})}
-<p>The table below compares MySQL, T-SQL and SQLite. Use the tabs to see one dialect at a time; on the <strong>This dialect: SQLite</strong> tab, <strong>Try it</strong> opens an example in Free practice. The same table is always available from <strong>SQL dialects</strong> in the header.</p>`;
+<p>The table below compares MySQL, T-SQL and SQLite. Use the tabs to see one dialect at a time; on the <strong>SQLite</strong> tab, <strong>Try it</strong> opens an example in Free practice. The same table is always available from <strong>SQL dialects</strong> in the header.</p>`;
 
 const FLAVOURS_CHECK = [
   {q:'Which of these works the same in MySQL, T-SQL and SQLite?', a:['SELECT … FROM … WHERE …','SELECT TOP 10 …','LIKE \'[BS]%\''], c:0, why:'The core of SELECT, FROM and WHERE is part of the standard. TOP is T-SQL only, and so is LIKE with [ ].'},

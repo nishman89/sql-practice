@@ -98,7 +98,7 @@ const DIALECT_INFO = { mysql, tsql, lab };                         // the senten
 const FLAVOURS_LEARN = `…`;  const FLAVOURS_CHECK = [ { q, a:[3], c, why }, … ];
 ```
 
-`renderDialectTabs(host, prefix)` draws the four tabs (Side by side, MySQL, T-SQL, This dialect: SQLite) from `DIALECTS`; the SQLite column is highlighted. The same
+`renderDialectTabs(host, prefix)` draws the four tabs (Side by side, MySQL, T-SQL, SQLite) from `DIALECTS`; the SQLite column is highlighted. The same
 data feeds the SQL flavours lesson and the SQL dialects page; a row's `try` adds a **Try it** button on the lab tab.
 
 Read-only examples in a lesson use `C(sql, false, label)`; `READ_ONLY('mysql' | 'tsql', tool)` makes a label with the

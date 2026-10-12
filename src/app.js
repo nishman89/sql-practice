@@ -340,7 +340,7 @@ function resetAll(){
 }
 
 /* ---------- SQL flavours lesson and the SQL dialects page ---------- */
-const DTABS=[['side','Side by side'],['mysql','🐬 MySQL'],['tsql','🪟 T-SQL'],['lab','🪶 This dialect: SQLite']];
+const DTABS=[['side','Side by side'],['mysql','🐬 MySQL'],['tsql','🪟 T-SQL'],['lab','🪶 SQLite']];
 function renderDialectTabs(host, tp){
   let cur=host.dataset.tab||'side';
   const draw=()=>{
@@ -359,7 +359,7 @@ function renderDialectTabs(host, tp){
         if (r.group!==group){ group=r.group; tb.append(h('tr',{class:'grp'}, h('th',{colspan:'4',scope:'colgroup'}, group))); }
         tb.append(h('tr',{'data-testid':`${tp}-row-${i+1}`}, h('td',{},r.task), h('td',{html:r.mysql}), h('td',{html:r.tsql}), h('td',{class:'this-col',html:r.lab})));
       });
-      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},h('tr',{},h('th',{},'Task'),h('th',{},'🐬 MySQL'),h('th',{},'🪟 T-SQL'),h('th',{class:'this-col'},'🪶 SQLite (this dialect)'))), tb)));
+      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},h('tr',{},h('th',{},'Task'),h('th',{},'🐬 MySQL'),h('th',{},'🪟 T-SQL'),h('th',{class:'this-col'},'🪶 SQLite'))), tb)));
     } else {
       const info=DIALECT_INFO[cur];
       panel.append(h('p',{class:'dinfo'}, h('b',{},info.name+'. '), info.who+' ', h('span',{class:'muted'},`Tool: ${info.tool}.`)));
