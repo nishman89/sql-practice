@@ -14,29 +14,32 @@ const quizDef = id => QUIZZES.find(q=>q.id===id);
 const quizRecord = id => (P.quizzes||{})[id];
 const attemptText = a => `${a.score} of ${a.total} (${a.percent}%), ${a.passed?'passed':'not passed'}`;
 const isAnsweredFor = (type, a) => type==='mcq' ? a!=null : !!stripComments(a||'').trim();
-const isAnswered = a => isAnsweredFor(QZ.def.type, a);
+const isMcq = q => Array.isArray(q.options);
+const answered = k => isAnsweredFor(isMcq(QZ.questions[k])?'mcq':'query', QZ.answers[k]);
+const typeLabel = q => q.type==='mcq' ? 'Multiple choice' : q.type==='query' ? 'Write a query' : 'MCQs and queries';
 
 /* ----- Quiz list ----- */
+function quizCard(q){
+    const rec=quizRecord(q.id);
+    const units=[...new Set(q.questions.map(qUnit))].sort().map(unitTitle);
+    return h('article',{class:'quiz-card'+(q.unitQuiz?' unit-card':''),'data-testid':`quiz-card-${q.id}`},
+      h('h2',{},q.title), h('p',{},q.blurb),
+      h('dl',{}, h('dt',{},'Questions'), h('dd',{'data-testid':`quiz-card-${q.id}-count`},String(q.questions.length)),
+        h('dt',{},'Type'), h('dd',{}, typeLabel(q)),
+        q.unitQuiz ? null : h('dt',{},'Covers'), q.unitQuiz ? null : h('dd',{},units.join(', ')),
+        h('dt',{},'Last attempt'), h('dd',{'data-testid':`quiz-card-${q.id}-last`}, rec?attemptText(rec.last):'Not tried yet'),
+        rec ? h('dt',{},'Best') : null, rec ? h('dd',{'data-testid':`quiz-card-${q.id}-best`}, `${rec.best.percent}%`) : null),
+      h('button',{class:'btn primary',type:'button','data-go':'quiz/'+q.id,'data-testid':`open-quiz-${q.id}`}, rec?'Try again':'Start'));
+}
 function renderQuizList(){
   const v=$('#v-quizzes'); v.innerHTML='';
   v.append(h('h1',{class:'dot',id:'h-quizzes','data-testid':'quizzes-title'},'Quizzes'),
     h('p',{class:'lede'},`Test yourself without the hints. You won't see whether your answers are right until you submit. The pass mark is ${QUIZ_SETTINGS.passMark}%.`));
-  const grid=h('div',{class:'quiz-cards'});
-  for (const q of QUIZZES){
-    const rec=quizRecord(q.id);
-    const units=[...new Set(q.questions.map(qUnit))].sort().map(unitTitle);
-    grid.append(h('article',{class:'quiz-card','data-testid':`quiz-card-${q.id}`},
-      h('h2',{},q.title), h('p',{},q.blurb),
-      h('dl',{}, h('dt',{},'Questions'), h('dd',{'data-testid':`quiz-card-${q.id}-count`},String(q.questions.length)),
-        h('dt',{},'Type'), h('dd',{}, q.type==='mcq'?'Multiple choice':'Write a query'),
-        h('dt',{},'Covers'), h('dd',{},units.join(', ')),
-        h('dt',{},'Last attempt'), h('dd',{'data-testid':`quiz-card-${q.id}-last`}, rec?attemptText(rec.last):'Not tried yet'),
-        rec ? h('dt',{},'Best') : null, rec ? h('dd',{'data-testid':`quiz-card-${q.id}-best`}, `${rec.best.percent}%`) : null),
-      h('button',{class:'btn primary',type:'button','data-go':'quiz/'+q.id,'data-testid':`open-quiz-${q.id}`}, rec?'Try again':'Start')));
-  }
-  v.append(grid);
+  v.append(h('h2',{class:'dot quiz-group-h'},'End-of-unit quizzes'), h('p',{class:'muted'},'A short quiz for each unit of the learning path: multiple-choice questions plus, from unit 2, a few queries to write.'));
+  v.append(h('div',{class:'quiz-cards unit-cards','data-testid':'unit-quizzes'}, QUIZZES.filter(q=>q.unitQuiz).map(quizCard)));
+  v.append(h('h2',{class:'dot quiz-group-h'},'Final quizzes'), h('p',{class:'muted'},'Two longer quizzes across the whole path.'));
+  v.append(h('div',{class:'quiz-cards','data-testid':'final-quizzes'}, QUIZZES.filter(q=>!q.unitQuiz).map(quizCard)));
 }
-
 /* ----- One quiz ----- */
 function openQuiz(id){
   stopTimer();
@@ -60,9 +63,10 @@ function renderQuizStart(v){
   v.append(h('p',{class:'lede'},d.blurb));
   v.append(h('section',{class:'quiz-start','data-testid':'quiz-start'},
     h('ul',{class:'facts'},
-      h('li',{}, h('b',{'data-testid':'question-count'},String(d.questions.length)), d.type==='mcq'?' multiple-choice questions':' query tasks'),
+      h('li',{}, h('b',{'data-testid':'question-count'},String(d.questions.length)), (()=>{ const m=d.questions.filter(isMcq).length, n=d.questions.length-m; return m&&n?` questions: ${m} multiple-choice and ${n} queries to write`:m?' multiple-choice questions':' query tasks'; })()),
       h('li',{}, 'Pass mark ', h('b',{'data-testid':'pass-mark'},`${QUIZ_SETTINGS.passMark}%`)),
-      d.type==='query' ? h('li',{}, 'Your answer to each task is the last query in its editor when you submit.') : h('li',{}, 'Select one answer for each question.'),
+      d.questions.some(q=>!isMcq(q)) ? h('li',{}, 'Your answer to each query task is the last query in its editor when you submit.') : null,
+      d.questions.some(isMcq) ? h('li',{}, 'Select one answer for each multiple-choice question.') : null,
       h('li',{}, 'The Northwind ERD is available on every question.'),
       h('li',{}, 'Leaving this page ends the attempt without saving it.')),
     rec ? h('p',{'data-testid':'last-attempt'}, `Last attempt: ${attemptText(rec.last)}. Best: ${rec.best.percent}%.`) : null,
@@ -70,7 +74,7 @@ function renderQuizStart(v){
     h('button',{class:'btn primary',type:'button',id:'start-quiz','data-testid':'start-quiz',onclick:()=>startQuiz(+sel.value)},'Start the quiz')));
 }
 function startQuiz(limit){
-  QZ.answers = QZ.questions.map(()=> QZ.def.type==='mcq' ? null : '');
+  QZ.answers = QZ.questions.map(q=> isMcq(q) ? null : '');
   QZ.runs = QZ.questions.map(()=>null);
   QZ.phase='doing'; QZ.i=0; QZ.limit=limit*60; QZ.started=Date.now();
   renderQuiz();
@@ -86,11 +90,11 @@ function tick(){
   t.textContent=fmtTime(Math.max(0,left)); t.classList.toggle('low', left<=300);
   if (left<=0){ stopTimer(); closeErd(); toast('Time\'s up. Your answers have been submitted.'); submitQuiz(true); }
 }
-function saveCurrent(){ if (QZ && QZ.phase==='doing' && QZ.def.type==='query' && qEd) QZ.answers[QZ.i]=qEd.value; }
+function saveCurrent(){ if (QZ && QZ.phase==='doing' && !isMcq(QZ.questions[QZ.i]) && qEd) QZ.answers[QZ.i]=qEd.value; }
 function renderQuizDoing(v){
-  const q=QZ.questions[QZ.i], n=QZ.questions.length, N=QZ.i+1, type=QZ.def.type;
+  const q=QZ.questions[QZ.i], n=QZ.questions.length, N=QZ.i+1, type=isMcq(q)?'mcq':'query';
   const navq=h('ol',{class:'qnav','aria-label':'Questions','data-testid':'question-nav'});
-  QZ.questions.forEach((_,k)=>navq.append(h('li',{}, h('button',{type:'button',class:(isAnswered(QZ.answers[k])?'ans ':'')+(k===QZ.i?'cur':''),'aria-current':k===QZ.i?'step':null,'data-testid':`question-nav-${k+1}`,'aria-label':`Question ${k+1}${isAnswered(QZ.answers[k])?', answered':''}`,onclick:()=>goQ(k)}, String(k+1)))));
+  QZ.questions.forEach((_,k)=>navq.append(h('li',{}, h('button',{type:'button',class:(answered(k)?'ans ':'')+(k===QZ.i?'cur':''),'aria-current':k===QZ.i?'step':null,'data-testid':`question-nav-${k+1}`,'aria-label':`Question ${k+1}${answered(k)?', answered':''}`,onclick:()=>goQ(k)}, String(k+1)))));
   v.append(navq);
   const card=h('section',{class:'qcard','data-testid':`question-${N}`,'data-unit':String(qUnit(q))});
   if (type==='mcq') card.setAttribute('data-answer', LETTERS[q.answer]); else card.setAttribute('data-solution', q.sol);
@@ -128,8 +132,8 @@ function renderQuizDoing(v){
   refreshAnswered(); tick();
 }
 function refreshAnswered(){
-  const c=QZ.answers.filter(isAnswered).length; const el=$('#answered-count'); if (el) el.textContent=String(c);
-  $$('.qnav button').forEach((b,k)=>b.classList.toggle('ans', isAnswered(QZ.answers[k])));
+  const c=QZ.answers.filter((_,k)=>answered(k)).length; const el=$('#answered-count'); if (el) el.textContent=String(c);
+  $$('.qnav button').forEach((b,k)=>b.classList.toggle('ans', answered(k)));
 }
 function goQ(k){ if (k<0||k>=QZ.questions.length) return; saveCurrent(); QZ.i=k; renderQuiz(); $('.qnav').scrollIntoView({block:'nearest'}); }
 function runSafe(sql){
@@ -148,12 +152,12 @@ function markQuery(q, sql){
 }
 function submitQuiz(timeUp){
   saveCurrent();
-  const missing=QZ.answers.filter(a=>!isAnswered(a)).length;
+  const missing=QZ.answers.filter((_,k)=>!answered(k)).length;
   if (!timeUp && missing && !confirm(`You haven't answered ${missing} question${missing===1?'':'s'}. Submit anyway?`)) return;
   stopTimer();
   const marks=QZ.questions.map((q,k)=>{
     const a=QZ.answers[k];
-    if (QZ.def.type==='mcq') return a==null ? {state:'blank',msg:''} : {state:a===q.answer?'right':'wrong',msg:''};
+    if (isMcq(q)) return a==null ? {state:'blank',msg:''} : {state:a===q.answer?'right':'wrong',msg:''};
     return markQuery(q, a);
   });
   const score=marks.filter(m=>m.state==='right').length, total=marks.length, percent=Math.round(score/total*100);
@@ -164,7 +168,7 @@ function submitQuiz(timeUp){
   QZ.results={marks, attempt}; QZ.phase='done'; renderQuiz(); window.scrollTo({top:0});
 }
 function renderQuizResults(v){
-  const {marks, attempt}=QZ.results, type=QZ.def.type;
+  const {marks, attempt}=QZ.results;
   v.append(h('section',{class:'results '+(attempt.passed?'pass':'fail'),'data-testid':'results'},
     h('div',{class:'verdict-big','data-testid':'quiz-verdict'}, attempt.passed?'Passed':'Not passed yet'),
     h('div',{class:'score-line'}, 'You scored ', h('b',{id:'score','data-testid':'score'},String(attempt.score)), ' out of ', h('b',{'data-testid':'score-total'},String(attempt.total)), ' (', h('span',{'data-testid':'score-percent'},`${attempt.percent}%`), `). The pass mark is ${QUIZ_SETTINGS.passMark}%.`),
@@ -172,13 +176,15 @@ function renderQuizResults(v){
   const tb=h('tbody');
   Object.keys(attempt.units).sort().forEach(u=>{ const [a,b]=attempt.units[u];
     tb.append(h('tr',{'data-testid':`breakdown-unit-${u}`}, h('td',{},`Unit ${u}: ${unitTitle(+u)}`), h('td',{'data-testid':`breakdown-unit-${u}-score`},`${a} of ${b}`), h('td',{}, h('a',{href:'#/lesson/'+UNITS[u-1].lessons[0]},'Revise this unit')))); });
-  v.append(h('h2',{class:'dot',style:'margin-top:28px'},'Score by unit'), h('div',{class:'tbl-wrap'}, h('table',{class:'grid breakdown','data-testid':'unit-breakdown'}, h('thead',{},h('tr',{},h('th',{},'Unit'),h('th',{},'Score'),h('th',{},''))), tb)));
+  if (Object.keys(attempt.units).length>1)
+    v.append(h('h2',{class:'dot',style:'margin-top:28px'},'Score by unit'), h('div',{class:'tbl-wrap'}, h('table',{class:'grid breakdown','data-testid':'unit-breakdown'}, h('thead',{},h('tr',{},h('th',{},'Unit'),h('th',{},'Score'),h('th',{},''))), tb)));
+  else { const u=+Object.keys(attempt.units)[0]; $('[data-testid="results"]',v).append(h('p',{class:'small',style:'margin-top:8px'}, h('a',{href:'#/lesson/'+UNITS[u-1].lessons[0],'data-testid':'revise-unit'},`Revise unit ${u}: ${unitTitle(u)}`))); }
   const toggle=h('input',{type:'checkbox',name:'only-wrong',id:'only-wrong','data-testid':'only-wrong-toggle',checked:QZ.onlyWrong});
   toggle.addEventListener('change',()=>{ QZ.onlyWrong=toggle.checked; $$('.review',v).forEach(r=>r.hidden=QZ.onlyWrong&&r.dataset.state==='right'); });
   v.append(h('div',{class:'review-tools'}, h('h2',{class:'dot'},'Review'), h('label',{class:'toggle'}, toggle, ' Show only questions I got wrong'),
     h('div',{style:'margin-left:auto;display:flex;gap:8px;flex-wrap:wrap'}, h('button',{class:'btn primary',type:'button','data-testid':'retake',onclick:()=>openQuiz(QZ.id)},'Retake quiz'), h('button',{class:'btn',type:'button','data-go':'quiz','data-testid':'all-quizzes'},'All quizzes'))));
   QZ.questions.forEach((q,k)=>{
-    const m=marks[k], N=k+1; const label={right:'Correct',wrong:'Incorrect',blank:'Not answered'}[m.state];
+    const m=marks[k], N=k+1, type=isMcq(q)?'mcq':'query'; const label={right:'Correct',wrong:'Incorrect',blank:'Not answered'}[m.state];
     const r=h('article',{class:'review '+m.state,'data-state':m.state,'data-testid':`question-${N}-review`,hidden:QZ.onlyWrong&&m.state==='right'},
       h('div',{class:'ex-num'}, `Question ${N}`, h('span',{class:'qunit'}, unitTitle(qUnit(q)))),
       h('p',{class:'ex-prompt'}, ...fmtPrompt(type==='mcq'?q.q:q.p)),
