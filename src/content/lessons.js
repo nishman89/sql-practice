@@ -3,25 +3,34 @@
 const C = (sql, run=true, label) => `<pre class="ex"${run?'':' data-norun'}${label?` data-label="${esc(label)}"`:''}>${esc(sql)}</pre>`;
 const TIP = t => `<div class="tip">${t}</div>`;
 
+/* Dialect callouts, marked with the same icons as the course notes. Each value is code;
+   start it with ~ to show plain text instead (for example "~Not available"). */
+const DIALECT_ICON = { sqlite:'🪶', mysql:'🐬', tsql:'🪟' };
+const DIALECT_LABEL = { sqlite:'SQLite (runs here)', mysql:'MySQL', tsql:'T-SQL' };
+const DIFF = o => `<div class="ddiff">${o.title?`<div class="ddiff-h">${o.title}</div>`:''}${['sqlite','mysql','tsql'].filter(k=>o[k]!=null).map(k=>{
+  const v=o[k], body = v.startsWith('~') ? `<span class="ddiff-text">${esc(v.slice(1))}</span>` : /\n/.test(v) ? `<pre>${esc(v)}</pre>` : `<code>${esc(v)}</code>`;
+  return `<div class="ddiff-row ${k}"><span class="ddiff-tag"><span aria-hidden="true">${DIALECT_ICON[k]}</span> ${DIALECT_LABEL[k]}</span>${body}</div>`; }).join('')}${o.note?`<p class="ddiff-note">${o.note}</p>`:''}</div>`;
+const READ_ONLY = (dialect, tool) => `${DIALECT_ICON[dialect]} ${DIALECT_LABEL[dialect]}: read it here, run it in ${tool}`;
+
 const UNITS = [
   {id:'u1', title:'Foundations', blurb:'Learn what a database is, meet the flavours of SQL, read a database diagram, build tables yourself, then meet the Northwind data you\'ll query.', lessons:['databases','flavours','erd','build','map']},
   {id:'u2', title:'Querying one table', blurb:'Choose the columns and rows you need, then sort, trim, search and calculate.', lessons:['select','operators','sorting','distinct','wildcards','concat','arithmetic','cp1']},
   {id:'u3', title:'Summarising data', blurb:'Turn hundreds of rows into totals, averages and counts, and deal with missing values.', lessons:['aggregates','groupby','having','nulls','cp2']},
   {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['innerjoin','leftjoin','multijoin','cp3']},
   {id:'u5', title:'Subqueries', blurb:'Feed the result of one query into another.', lessons:['subwhere','subfrom','exists','cp4']},
-  {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, and saving queries as views.', lessons:['case','datesstrings','views']},
+  {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, and saving SQL in the database as views and stored procedures.', lessons:['case','datesstrings','views','procedures']},
   {id:'u7', title:'Advanced topics', blurb:'Window functions, statistics, WITH, temporary tables, pivoting and making queries fast.', lessons:['windows','ranking','leadlag','frames','stats','cte','temptables','pivot','performance','cp5']}
 ];
 
 const LESSONS = {
-  databases:{title:'What\'s a database', summary:'Databases, DBMSs, tables, rows, columns and keys, and what SQL is for.', kind:'databases'},
-  flavours:{title:'SQL flavours', summary:'One language, several dialects: MySQL, T-SQL and SQLite, the one this course uses.', kind:'flavours'},
-  erd:{title:'What\'s an ERD', summary:'Read a database diagram: tables, keys and relationships.', kind:'erd'},
-  build:{title:'Create tables and connect them', summary:'Build two linked tables and watch the ERD draw itself.', kind:'build'},
-  map:{title:'Meet Northwind', summary:'Explore the sample database every exercise from here on uses.', kind:'map'},
+  databases:{title:'What\'s a database', summary:'What a database is, how it\'s organised into tables, rows and columns, and what SQL is for.', cmds:[], kind:'databases'},
+  flavours:{title:'SQL flavours', summary:'The dialects of SQL: MySQL, T-SQL and SQLite, what\'s the same and what changes.', cmds:[], kind:'flavours'},
+  erd:{title:'Entity relationship diagrams', summary:'How to read a diagram of a database\'s tables, keys and relationships.', cmds:[], kind:'erd'},
+  build:{title:'Creating tables', summary:'Build two linked tables, add data and see the foreign key in action.', cmds:['CREATE TABLE','PRIMARY KEY','FOREIGN KEY','INSERT INTO','ALTER TABLE'], kind:'build'},
+  map:{title:'Meet Northwind', summary:'The sample database every exercise from here on uses.', cmds:[], kind:'map'},
 
   /* ===== Unit 2 ===== */
-  select:{title:'SELECT and WHERE', summary:'Pick columns with SELECT and filter rows with WHERE.',
+  select:{title:'Simple queries', summary:'Choose which columns to show and filter the rows you want.', cmds:['SELECT','FROM','WHERE','COUNT(*)','AS'],
     learn:`
 <p>Every query answers two questions: which table, and which columns? <code>FROM</code> names the table and <code>SELECT</code> lists the columns. <code>*</code> means every column. It's handy for exploring, but in real code you should name the columns you need.</p>
 ${C('SELECT * FROM Customers;')}
@@ -44,7 +53,7 @@ ${C("SELECT ProductID, ProductName\nFROM Products\nWHERE ProductName = 'Sir Rodn
       {p:'Show the ProductID and UnitPrice of Sir Rodney\'s Marmalade.', hint:"Double the apostrophe: 'Sir Rodney''s Marmalade'", sol:"SELECT ProductID, UnitPrice\nFROM Products\nWHERE ProductName = 'Sir Rodney''s Marmalade';"}
     ]},
 
-  operators:{title:'Operators: AND, OR, IN, BETWEEN', summary:'Combine conditions to ask more precise questions.',
+  operators:{title:'Operators', summary:'Compare values and combine conditions to ask more precise questions.', cmds:['=','<>','>','<','AND','OR','IN','BETWEEN','NOT'],
     learn:`
 <table class="mini"><tr><th>Operator</th><th>Meaning</th><th>Example</th></tr>
 <tr><td><code>=</code> <code>&lt;&gt;</code></td><td>Equal, not equal</td><td><code>Country &lt;&gt; 'UK'</code></td></tr>
@@ -71,7 +80,7 @@ ${C("SELECT CompanyName, Country, City\nFROM Customers\nWHERE (Country = 'UK' OR
       {p:'Find the employees who live in London and have the title Sales Representative. Show their first and last names.', hint:'City and Title, joined with AND.', sol:"SELECT FirstName, LastName\nFROM Employees\nWHERE City = 'London' AND Title = 'Sales Representative';"}
     ]},
 
-  sorting:{title:'Sorting with ORDER BY', summary:'Control the order your results come back in.',
+  sorting:{title:'Sorting data', summary:'Control the order your results come back in.', cmds:['ORDER BY','ASC','DESC'],
     learn:`
 <p>Without <code>ORDER BY</code>, a database returns rows in no guaranteed order. Whenever order matters, say so.</p>
 ${C("SELECT CompanyName, ContactName\nFROM Customers\nWHERE Country = 'France'\nORDER BY CompanyName ASC;")}
@@ -91,7 +100,7 @@ ${TIP('You can also write <code>ORDER BY 2</code> to sort by the second column, 
       {p:'Show each employee\'s first name, last name and hire date, longest-serving first.', hint:'The earliest HireDate has served longest, so sort ascending.', ordered:[2], sol:'SELECT FirstName, LastName, HireDate\nFROM Employees\nORDER BY HireDate ASC;'}
     ]},
 
-  distinct:{title:'DISTINCT and LIMIT', summary:'Remove duplicates and return only the top few rows.',
+  distinct:{title:'Removing duplicates and limiting results', summary:'Show each value only once, and return only the first few rows.', cmds:['DISTINCT','COUNT(DISTINCT …)','LIMIT','OFFSET'],
     learn:`
 <p><code>DISTINCT</code> removes duplicate rows from your result. Many customers share a country, but each country appears once here:</p>
 ${C("SELECT DISTINCT Country\nFROM Customers\nWHERE ContactTitle = 'Owner';")}
@@ -103,6 +112,7 @@ ${C('SELECT COUNT(DISTINCT Country) AS \'Countries\'\nFROM Customers;')}
 ${C("SELECT CompanyName, City\nFROM Customers\nWHERE Country = 'France'\nORDER BY CompanyName DESC\nLIMIT 3;")}
 <p>Add <code>OFFSET</code> to skip rows first, which is how pages of results work:</p>
 ${C("SELECT ProductName\nFROM Products\nORDER BY ProductName\nLIMIT 5 OFFSET 10;")}
+${DIFF({title:'Limiting rows in each dialect', sqlite:'SELECT … ORDER BY UnitPrice DESC LIMIT 5', mysql:'SELECT … ORDER BY UnitPrice DESC LIMIT 5', tsql:'SELECT TOP 5 … ORDER BY UnitPrice DESC', note:'T-SQL puts <code>TOP</code> straight after <code>SELECT</code>. For paging it uses <code>ORDER BY … OFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY</code>.'})}
 ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> rows, not the top ones. Sort first.')}`,
     ex:[
       {p:'List each country that has at least one supplier, once each.', hint:'SELECT DISTINCT Country FROM Suppliers', sol:'SELECT DISTINCT Country\nFROM Suppliers;'},
@@ -111,7 +121,7 @@ ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> 
       {p:'Show each different combination of City and Country for customers in Brazil.', hint:'DISTINCT applies to both columns together.', sol:"SELECT DISTINCT City, Country\nFROM Customers\nWHERE Country = 'Brazil';"}
     ]},
 
-  wildcards:{title:'Searching text with LIKE', summary:'Match patterns instead of exact values.',
+  wildcards:{title:'Wildcards', summary:'Match patterns in text instead of exact values.', cmds:['LIKE','%','_','GLOB'],
     learn:`
 <p><code>LIKE</code> compares text against a pattern. Two wildcards do the work:</p>
 <table class="mini"><tr><th>Wildcard</th><th>Matches</th><th>Example</th></tr>
@@ -124,7 +134,8 @@ ${C("SELECT ProductName\nFROM Products\nWHERE ProductName LIKE '%ale%';")}
 <p>SQLite also has <code>GLOB</code>. It uses <code>*</code> for any characters and <code>?</code> for one character, and it understands <strong>sets</strong>: <code>[BS]</code> means B or S, and <code>[^BS]</code> means anything else.</p>
 ${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName GLOB '[BS]*';")}
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*';")}
-${TIP('<code>LIKE</code> ignores upper and lower case (for A to Z), but <code>GLOB</code> doesn\'t: <code>GLOB \'c*\'</code> won\'t match Chai.')}`,
+${TIP('<code>LIKE</code> ignores upper and lower case (for A to Z), but <code>GLOB</code> doesn\'t: <code>GLOB \'c*\'</code> won\'t match Chai.')}
+${DIFF({title:'Matching a set of characters in each dialect', sqlite:"WHERE CategoryName GLOB '[BS]*'", mysql:"WHERE CategoryName REGEXP '^[BS]'", tsql:"WHERE CategoryName LIKE '[BS]%'", note:'<code>%</code> and <code>_</code> work the same in all three. Only the way you match a set of characters differs.'})}`,
     ex:[
       {p:'Which categories have a category name beginning with B or S? Return the category name.', hint:"LIKE 'B%' OR LIKE 'S%', or GLOB '[BS]*'.", sol:"SELECT CategoryName\nFROM Categories\nWHERE CategoryName LIKE 'B%'\n   OR CategoryName LIKE 'S%';"},
       {p:'List the names of products that contain "choc" anywhere in their name.', hint:'Put % on both sides.', sol:"SELECT ProductName\nFROM Products\nWHERE ProductName LIKE '%choc%';"},
@@ -132,7 +143,7 @@ ${TIP('<code>LIKE</code> ignores upper and lower case (for A to Z), but <code>GL
       {p:'List the products whose name starts with a vowel.', hint:"GLOB '[AEIOU]*'", sol:"SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*';"}
     ]},
 
-  concat:{title:'Joining text and naming columns', summary:'Build new text values with CONCAT and label them with AS.',
+  concat:{title:'Concatenation', summary:'Join text together and give columns readable names.', cmds:['CONCAT()','||','AS'],
     learn:`
 <p><code>CONCAT</code> joins values into one piece of text. Anything in quotes, such as <code>', '</code>, is added as written.</p>
 ${C("SELECT CompanyName AS 'Company Name',\n       CONCAT(City, ', ', Country) AS 'Location'\nFROM Customers;")}
@@ -140,18 +151,20 @@ ${C("SELECT CompanyName AS 'Company Name',\n       CONCAT(City, ', ', Country) A
 ${C("SELECT CONCAT(FirstName, ' ', LastName) AS 'Full Name', Title\nFROM Employees;")}
 <p>SQLite also joins text with the <code>||</code> operator:</p>
 ${C("SELECT FirstName || ' ' || LastName AS 'Full Name'\nFROM Employees;")}
-${TIP('Don\'t use <code>+</code> to join text: in SQLite it adds numbers, so <code>\'Nancy\' + \'Davolio\'</code> gives 0.')}`,
+${TIP('Don\'t use <code>+</code> to join text: in SQLite it adds numbers, so <code>\'Nancy\' + \'Davolio\'</code> gives 0.')}
+${DIFF({title:'Joining text in each dialect', sqlite:"FirstName || ' ' || LastName", mysql:"CONCAT(FirstName, ' ', LastName)", tsql:"FirstName + ' ' + LastName", note:'<code>CONCAT()</code> works in all three.'})}`,
     ex:[
       {p:'Join each employee\'s first name and last name, a colon and their home phone, like Nancy Davolio: (206) 555-9857. Alias the column Employee Name and Contact Number.', hint:"CONCAT(FirstName, ' ', LastName, ': ', HomePhone)", sol:"SELECT CONCAT(FirstName, ' ', LastName, ': ', HomePhone) AS 'Employee Name and Contact Number'\nFROM Employees;"},
       {p:'Label every supplier like Exotic Liquids (London, UK). Alias the column Supplier.', hint:"CONCAT(CompanyName, ' (', City, ', ', Country, ')')", sol:"SELECT CONCAT(CompanyName, ' (', City, ', ', Country, ')') AS 'Supplier'\nFROM Suppliers;"},
       {p:'For every customer, build a line like Maria Anders at Alfreds Futterkiste. Alias it Contact.', hint:"ContactName, then ' at ', then CompanyName.", sol:"SELECT CONCAT(ContactName, ' at ', CompanyName) AS 'Contact'\nFROM Customers;"}
     ]},
 
-  arithmetic:{title:'Calculations', summary:'Do maths on your columns as the rows come back.',
+  arithmetic:{title:'Arithmetic operators', summary:'Do maths on your columns as the rows come back.', cmds:['+','-','*','/','%'],
     learn:`
 <p>You can calculate in <code>SELECT</code> with <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code> and <code>%</code>. Always alias the result so the column has a readable name.</p>
 ${C("SELECT UnitPrice, Quantity, Discount,\n       UnitPrice * Quantity AS 'Gross Total'\nFROM \"Order Details\";")}
 ${TIP('Table and column names with spaces need double quotes: <code>"Order Details"</code>. Single quotes are for text values.')}
+${DIFF({title:'Table names with spaces in each dialect', sqlite:'"Order Details"', mysql:'`Order Details`', tsql:'[Order Details]', note:'SQLite also accepts the MySQL and T-SQL forms, but double quotes are its own.'})}
 <p><code>%</code> (modulo) gives the remainder after dividing. Dividing by 2 leaves 0 for even numbers and 1 for odd ones:</p>
 ${C("SELECT OrderID,\n       OrderID % 2 AS 'Remainder'\nFROM Orders;")}
 <p>You can use calculations in <code>WHERE</code> and <code>ORDER BY</code> too:</p>
@@ -163,7 +176,7 @@ ${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Product
       {p:'How many orders have an even OrderID?', hint:'WHERE OrderID % 2 = 0', sol:'SELECT COUNT(*)\nFROM Orders\nWHERE OrderID % 2 = 0;'}
     ]},
 
-  cp1:{title:'Checkpoint: one table', summary:'Mix everything from this unit. No new lesson, just practice.', checkpoint:true,
+  cp1:{title:'Checkpoint: querying one table', summary:'Mixed practice on everything in this unit.', cmds:[], checkpoint:true,
     ex:[
       {p:'Show the CompanyName and Phone of every customer in the UK, in alphabetical order of company name.', hint:'WHERE, then ORDER BY.', ordered:[0], sol:"SELECT CompanyName, Phone\nFROM Customers\nWHERE Country = 'UK'\nORDER BY CompanyName;"},
       {p:'How many products cost between 20 and 50 and are not discontinued?', hint:'BETWEEN and Discontinued = 0, joined with AND.', sol:'SELECT COUNT(*)\nFROM Products\nWHERE UnitPrice BETWEEN 20 AND 50\n  AND Discontinued = 0;'},
@@ -172,7 +185,7 @@ ${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Product
     ]},
 
   /* ===== Unit 3 ===== */
-  aggregates:{title:'Aggregate functions', summary:'Collapse many rows into a single answer.',
+  aggregates:{title:'Aggregate functions', summary:'Turn many rows into a single answer: a count, total, average, minimum or maximum.', cmds:['COUNT()','SUM()','AVG()','MIN()','MAX()'],
     learn:`
 <p>An aggregate function works across a set of rows and returns one value.</p>
 <table class="mini"><tr><th>Function</th><th>Returns</th></tr>
@@ -192,7 +205,7 @@ ${TIP('<code>COUNT(*)</code> counts rows. <code>COUNT(Region)</code> counts only
       {p:'What is the average unit price of products in category 1 (Beverages)?', hint:'AVG with a WHERE on CategoryID.', sol:'SELECT AVG(UnitPrice)\nFROM Products\nWHERE CategoryID = 1;'}
     ]},
 
-  groupby:{title:'GROUP BY', summary:'Calculate a total for each group instead of one for everything.',
+  groupby:{title:'GROUP BY', summary:'Work out a total or average for each group instead of one for everything.', cmds:['GROUP BY'],
     learn:`
 <p><code>GROUP BY</code> splits the rows into groups and runs the aggregate once per group. Instead of one total for all products, you get one per supplier:</p>
 ${C("SELECT SupplierID,\n       SUM(UnitsOnOrder) AS 'Total On Order',\n       AVG(UnitsOnOrder) AS 'Avg On Order',\n       MAX(UnitsOnOrder) AS 'Max On Order'\nFROM Products\nGROUP BY SupplierID;")}
@@ -207,7 +220,7 @@ ${C("SELECT CategoryID, COUNT(*) AS 'Discontinued'\nFROM Products\nWHERE Discont
       {p:'Using `Order Details`, find the five products (ProductID) with the highest total quantity sold, highest first.', hint:'SUM(Quantity) per ProductID, sorted, LIMIT 5.', ordered:[1], sol:"SELECT ProductID, SUM(Quantity) AS 'Total Sold'\nFROM \"Order Details\"\nGROUP BY ProductID\nORDER BY SUM(Quantity) DESC\nLIMIT 5;"}
     ]},
 
-  having:{title:'Filtering groups with HAVING', summary:'Keep only the groups that pass a test.',
+  having:{title:'HAVING', summary:'Keep only the groups that pass a test.', cmds:['HAVING'],
     learn:`
 <p><code>WHERE</code> filters rows before grouping. <code>HAVING</code> filters the groups afterwards, so it's the one to use when your condition involves an aggregate.</p>
 ${C("SELECT SupplierID,\n       SUM(UnitsOnOrder) AS 'Total On Order',\n       AVG(UnitsOnOrder) AS 'Avg On Order'\nFROM Products\nGROUP BY SupplierID\nHAVING AVG(UnitsOnOrder) > 5;")}
@@ -222,7 +235,7 @@ ${C("SELECT Country, COUNT(*) AS 'Customers'\nFROM Customers\nWHERE ContactTitle
       {p:'Which countries have more than 5 customers? Show the country and the number of customers.', hint:'GROUP BY Country, HAVING COUNT(*) > 5.', sol:'SELECT Country, COUNT(*)\nFROM Customers\nGROUP BY Country\nHAVING COUNT(*) > 5;'}
     ]},
 
-  nulls:{title:'Working with NULL', summary:'Find, exclude and replace missing values.',
+  nulls:{title:'Working with NULL values', summary:'Find, exclude and replace missing values.', cmds:['IS NULL','IS NOT NULL','COALESCE()','IFNULL()'],
     learn:`
 <p><code>NULL</code> means "no value". It isn't zero and it isn't empty text: it's unknown. That's why <code>= NULL</code> never matches anything. Use <code>IS NULL</code> and <code>IS NOT NULL</code>.</p>
 ${C('SELECT CompanyName, Region\nFROM Customers\nWHERE Region IS NULL;')}
@@ -231,14 +244,15 @@ ${C('SELECT CompanyName, Region\nFROM Customers\nWHERE Region IS NOT NULL;')}
 ${C('SELECT CompanyName\nFROM Customers\nWHERE Region = NULL;')}
 <h3>Replacing NULLs</h3>
 <p><code>COALESCE</code> returns the first value that isn't NULL, so it's a neat way to show a placeholder. <code>IFNULL(x, y)</code> does the same with two values.</p>
-${C("SELECT CompanyName, COALESCE(Fax, 'No fax') AS 'Fax'\nFROM Customers;")}`,
+${C("SELECT CompanyName, COALESCE(Fax, 'No fax') AS 'Fax'\nFROM Customers;")}
+${DIFF({title:'Replacing NULLs in each dialect', sqlite:"IFNULL(Fax, 'No fax')", mysql:"IFNULL(Fax, 'No fax')", tsql:"ISNULL(Fax, 'No fax')", note:'<code>COALESCE()</code> works the same in all three.'})}`,
     ex:[
       {p:'List the countries that have region codes in the Customers table, with a count of customers per country.', hint:'WHERE Region IS NOT NULL, then GROUP BY Country.', sol:"SELECT Country, COUNT(*) AS 'No. of Customers'\nFROM Customers\nWHERE Region IS NOT NULL\nGROUP BY Country\nORDER BY COUNT(*) DESC;"},
       {p:'Which orders haven\'t been shipped yet? Show the OrderID and OrderDate.', hint:'An unshipped order has no ShippedDate.', sol:'SELECT OrderID, OrderDate\nFROM Orders\nWHERE ShippedDate IS NULL;'},
       {p:'List every customer\'s CompanyName and Region, showing No region when Region is NULL.', hint:"COALESCE(Region, 'No region')", sol:"SELECT CompanyName, COALESCE(Region, 'No region') AS 'Region'\nFROM Customers;"}
     ]},
 
-  cp2:{title:'Checkpoint: summarising', summary:'Mix aggregates, groups and NULLs.', checkpoint:true,
+  cp2:{title:'Checkpoint: summarising data', summary:'Mixed practice on aggregates, groups and NULLs.', cmds:[], checkpoint:true,
     ex:[
       {p:'What is the average freight per shipper (ShipVia)? Show the highest average first.', hint:'GROUP BY ShipVia, ORDER BY AVG(Freight) DESC.', ordered:[1], sol:'SELECT ShipVia, AVG(Freight)\nFROM Orders\nGROUP BY ShipVia\nORDER BY AVG(Freight) DESC;'},
       {p:'Which categories (CategoryID) have an average unit price above 30? Show the CategoryID and the average.', hint:'A condition on an aggregate needs HAVING.', sol:'SELECT CategoryID, AVG(UnitPrice)\nFROM Products\nGROUP BY CategoryID\nHAVING AVG(UnitPrice) > 30;'},
@@ -247,7 +261,7 @@ ${C("SELECT CompanyName, COALESCE(Fax, 'No fax') AS 'Fax'\nFROM Customers;")}`,
     ]},
 
   /* ===== Unit 4 ===== */
-  innerjoin:{title:'INNER JOIN', summary:'Combine rows from two tables where their keys match.',
+  innerjoin:{title:'Inner joins', summary:'Combine rows from two tables where their keys match.', cmds:['INNER JOIN','ON'],
     learn:`
 <p>The ERD shows <code>Products.SupplierID</code> pointing at <code>Suppliers.SupplierID</code>. A join follows that line. The <code>ON</code> clause says which columns must match:</p>
 ${C('SELECT Products.ProductName, Suppliers.CompanyName\nFROM Products\nINNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID;')}
@@ -262,7 +276,7 @@ ${C("SELECT Orders.OrderID, Orders.OrderDate, Customers.CompanyName\nFROM Orders
       {p:'What was in order 10248? Show each ProductName and Quantity.', hint:'Join "Order Details" to Products, filter on OrderID.', sol:'SELECT Products.ProductName, "Order Details".Quantity\nFROM "Order Details"\nINNER JOIN Products ON "Order Details".ProductID = Products.ProductID\nWHERE "Order Details".OrderID = 10248;'}
     ]},
 
-  leftjoin:{title:'LEFT JOIN', summary:'Keep every row from the first table, matched or not.',
+  leftjoin:{title:'Left joins', summary:'Keep every row from the first table, whether it has a match or not.', cmds:['LEFT JOIN','IS NULL'],
     learn:`
 <p>A <code>LEFT JOIN</code> returns every row from the left table (the one in <code>FROM</code>). Where there's no match on the right, those columns come back as NULL.</p>
 ${C("-- The student example again\nSELECT student.name, course.name\nFROM student\nLEFT JOIN course ON student.course = course.id;", false)}
@@ -279,7 +293,7 @@ ${TIP('Avoid <code>RIGHT JOIN</code>. Any right join can be written as a left jo
       {p:'Show every employee\'s first and last name next to their manager\'s last name. Include the employee who has no manager.', hint:'Join Employees to itself: Employees e LEFT JOIN Employees m ON e.ReportsTo = m.EmployeeID.', sol:"SELECT e.FirstName, e.LastName, m.LastName AS 'Manager'\nFROM Employees e\nLEFT JOIN Employees m ON e.ReportsTo = m.EmployeeID;"}
     ]},
 
-  multijoin:{title:'Aliases and multiple joins', summary:'Short table names, and joining three or more tables.',
+  multijoin:{title:'Table aliases and multiple joins', summary:'Give tables short names and join three or more of them.', cmds:['FROM Products p','JOIN … JOIN'],
     learn:`
 <p>Writing <code>Products.ProductName</code> in full gets tiring. A table alias is a short name you give a table in <code>FROM</code> or <code>JOIN</code>, then use everywhere else in the query:</p>
 ${C('SELECT p.ProductName, s.CompanyName\nFROM Products p\nLEFT JOIN Suppliers s ON p.SupplierID = s.SupplierID;')}
@@ -294,7 +308,7 @@ ${C("SELECT c.CategoryName, COUNT(*) AS 'Products'\nFROM Products p\nINNER JOIN 
       {p:'Show each customer\'s CustomerID, CompanyName and total Freight. Only return customers whose total freight exceeds 500.', hint:'Join, GROUP BY the customer, then HAVING SUM(o.Freight) > 500.', sol:"SELECT c.CustomerID,\n       c.CompanyName  AS 'Customer',\n       SUM(o.Freight) AS 'Total Freight'\nFROM Orders o\nINNER JOIN Customers c ON o.CustomerID = c.CustomerID\nGROUP BY c.CustomerID, c.CompanyName\nHAVING SUM(o.Freight) > 500;"}
     ]},
 
-  cp3:{title:'Checkpoint: joins', summary:'Follow the ERD across several tables.', checkpoint:true,
+  cp3:{title:'Checkpoint: joins', summary:'Mixed practice following the ERD across several tables.', cmds:[], checkpoint:true,
     ex:[
       {p:'What is the total sales value (UnitPrice × Quantity × (1 − Discount)) for each category name? Show the highest first.', hint:'"Order Details" → Products → Categories, then GROUP BY CategoryName.', ordered:[1], sol:"SELECT c.CategoryName,\n       SUM(od.UnitPrice * od.Quantity * (1 - od.Discount)) AS 'Sales'\nFROM \"Order Details\" od\nINNER JOIN Products   p ON od.ProductID = p.ProductID\nINNER JOIN Categories c ON p.CategoryID  = c.CategoryID\nGROUP BY c.CategoryName\nORDER BY Sales DESC;"},
       {p:'Which products come from suppliers in Japan? Show ProductName and the supplier\'s CompanyName.', hint:"Join Products to Suppliers, WHERE s.Country = 'Japan'.", sol:"SELECT p.ProductName, s.CompanyName\nFROM Products p\nINNER JOIN Suppliers s ON p.SupplierID = s.SupplierID\nWHERE s.Country = 'Japan';"},
@@ -302,7 +316,7 @@ ${C("SELECT c.CategoryName, COUNT(*) AS 'Products'\nFROM Products p\nINNER JOIN 
     ]},
 
   /* ===== Unit 5 ===== */
-  subwhere:{title:'Subqueries in WHERE', summary:'Filter using a value or list worked out by another query.',
+  subwhere:{title:'Subqueries in WHERE', summary:'Filter using a value or a list worked out by another query.', cmds:['(SELECT …)','IN','NOT IN'],
     learn:`
 <p>A subquery is a <code>SELECT</code> inside brackets, nested in another statement. The inner query runs first, and its result is used by the outer one.</p>
 ${C('SELECT ProductName, UnitPrice\nFROM Products\nWHERE UnitPrice > (SELECT AVG(UnitPrice) FROM Products);')}
@@ -316,7 +330,7 @@ ${TIP('<strong>Watch out with NOT IN.</strong> If the subquery returns even one 
       {p:'Using IN, list the CompanyName of every customer who has had at least one order shipped by shipper 3 (ShipVia = 3).', hint:'WHERE CustomerID IN (SELECT CustomerID FROM Orders WHERE ShipVia = 3)', sol:'SELECT CompanyName\nFROM Customers\nWHERE CustomerID IN (SELECT CustomerID FROM Orders WHERE ShipVia = 3);'}
     ]},
 
-  subfrom:{title:'Subqueries in FROM and SELECT', summary:'Use a query as a temporary table, or as a calculated column.',
+  subfrom:{title:'Subqueries in FROM and SELECT', summary:'Use a query as a temporary table, or as a calculated column.', cmds:['FROM (SELECT …) AS t','SELECT (SELECT …)'],
     learn:`
 <h3>In FROM: derived tables</h3>
 <p>A subquery in <code>FROM</code> acts as a temporary table that exists only for this query. It must have an alias. It's useful when you need to summarise first, then join:</p>
@@ -333,7 +347,7 @@ ${TIP('If you keep writing the same derived table, save it as a view. That\'s th
       {p:'Using a subquery in SELECT, show each CustomerID from Customers with how many orders they\'ve placed.', hint:'(SELECT COUNT(*) FROM Orders o WHERE o.CustomerID = c.CustomerID)', sol:"SELECT c.CustomerID,\n       (SELECT COUNT(*) FROM Orders o WHERE o.CustomerID = c.CustomerID) AS 'Orders'\nFROM Customers c;"}
     ]},
 
-  exists:{title:'EXISTS and NOT EXISTS', summary:'Check whether related rows exist, safely.',
+  exists:{title:'EXISTS and NOT EXISTS', summary:'Check whether related rows exist.', cmds:['EXISTS','NOT EXISTS'],
     learn:`
 <p><code>EXISTS</code> is true if its subquery returns at least one row. What the subquery selects doesn't matter, so <code>SELECT 1</code> is the convention.</p>
 ${C('SELECT CompanyName\nFROM Customers c\nWHERE EXISTS (\n    SELECT 1\n    FROM Orders o\n    WHERE o.CustomerID = c.CustomerID\n);')}
@@ -349,7 +363,7 @@ ${C('SELECT DISTINCT c.CompanyName\nFROM Customers c\nINNER JOIN Orders o ON c.C
       {p:'Which products have appeared on an order line with a quantity over 100? Show the ProductName.', hint:'EXISTS on "Order Details" with od.ProductID = p.ProductID AND od.Quantity > 100.', sol:'SELECT ProductName\nFROM Products p\nWHERE EXISTS (\n    SELECT 1\n    FROM "Order Details" od\n    WHERE od.ProductID = p.ProductID\n      AND od.Quantity > 100\n);'}
     ]},
 
-  cp4:{title:'Checkpoint: subqueries', summary:'Nested queries, all mixed together.', checkpoint:true,
+  cp4:{title:'Checkpoint: subqueries', summary:'Mixed practice on nested queries.', cmds:[], checkpoint:true,
     ex:[
       {p:'Find the most expensive product in each category. Show CategoryID, ProductName and UnitPrice.', hint:'A correlated subquery: WHERE p.UnitPrice = (SELECT MAX(UnitPrice) FROM Products WHERE CategoryID = p.CategoryID)', sol:'SELECT p.CategoryID, p.ProductName, p.UnitPrice\nFROM Products p\nWHERE p.UnitPrice = (\n    SELECT MAX(UnitPrice)\n    FROM Products\n    WHERE CategoryID = p.CategoryID\n);'},
       {p:'Which customers have spent more than 30,000 in total? Show CompanyName and total spend (UnitPrice × Quantity × (1 − Discount)).', hint:'Build a derived table of spend per CustomerID from Orders and "Order Details", then join it to Customers.', sol:"SELECT c.CompanyName, t.TotalSpend\nFROM Customers c\nINNER JOIN (\n    SELECT o.CustomerID,\n           SUM(od.UnitPrice * od.Quantity * (1 - od.Discount)) AS TotalSpend\n    FROM Orders o\n    INNER JOIN \"Order Details\" od ON o.OrderID = od.OrderID\n    GROUP BY o.CustomerID\n) AS t ON c.CustomerID = t.CustomerID\nWHERE t.TotalSpend > 30000;"},
@@ -357,7 +371,7 @@ ${C('SELECT DISTINCT c.CompanyName\nFROM Customers c\nINNER JOIN Orders o ON c.C
     ]},
 
   /* ===== Unit 6 ===== */
-  case:{title:'CASE expressions', summary:'Choose a value row by row, like if/else.',
+  case:{title:'CASE statements', summary:'Choose a value row by row, like if/else.', cmds:['CASE','WHEN','THEN','ELSE','END'],
     learn:`
 <p><code>CASE</code> checks conditions in order and returns the value for the first one that's true. <code>ELSE</code> covers everything else, and <code>END</code> closes it.</p>
 ${C("SELECT ProductName, UnitsInStock,\n       CASE\n           WHEN UnitsInStock = 0  THEN 'Out of stock'\n           WHEN UnitsInStock < 20 THEN 'Low'\n           ELSE 'OK'\n       END AS 'Stock Status'\nFROM Products;")}
@@ -370,7 +384,7 @@ ${C("SELECT CASE WHEN Discontinued = 1 THEN 'Discontinued' ELSE 'Active' END AS 
       {p:'Count how many products fall in each of those price bands.', hint:'GROUP BY the same CASE expression.', sol:"SELECT CASE\n           WHEN UnitPrice < 10 THEN 'Budget'\n           WHEN UnitPrice < 30 THEN 'Standard'\n           ELSE 'Premium'\n       END AS 'Price Band',\n       COUNT(*) AS 'Products'\nFROM Products\nGROUP BY CASE\n           WHEN UnitPrice < 10 THEN 'Budget'\n           WHEN UnitPrice < 30 THEN 'Standard'\n           ELSE 'Premium'\n       END;"}
     ]},
 
-  datesstrings:{title:'Dates and text functions', summary:'Pull apart dates and text with built-in functions.',
+  datesstrings:{title:'Date and string functions', summary:'Pull apart, change and format dates and text.', cmds:['date()','strftime()','julianday()','substr()','instr()','length()','upper()'],
     learn:`
 <p>SQLite stores dates as text in the form <code>'YYYY-MM-DD'</code>, so dates sort and compare in the right order. A handful of functions work with them:</p>
 <table class="mini"><tr><th>Task</th><th>SQLite</th><th>Example result</th></tr>
@@ -381,6 +395,7 @@ ${C("SELECT CASE WHEN Discontinued = 1 THEN 'Discontinued' ELSE 'Active' END AS 
 <tr><td>Format a date</td><td><code>strftime('%d/%m/%Y', d)</code></td><td><code>'04/07/1996'</code></td></tr></table>
 ${TIP('<code>strftime</code> returns text, so compare it with text: <code>WHERE strftime(\'%Y\', OrderDate) = \'1997\'</code>.')}
 ${C("SELECT OrderDate,\n       date(OrderDate, '+5 days')                    AS 'Due Date',\n       julianday(ShippedDate) - julianday(OrderDate) AS 'Ship Days',\n       strftime('%d/%m/%Y', OrderDate)               AS 'UK Format'\nFROM Orders;")}
+${DIFF({title:'The same date jobs in each dialect', sqlite:"strftime('%Y', OrderDate)\njulianday(ShippedDate) - julianday(OrderDate)\ndate(OrderDate, '+5 days')\nstrftime('%d/%m/%Y', OrderDate)", mysql:"YEAR(OrderDate)\nDATEDIFF(ShippedDate, OrderDate)\nDATE_ADD(OrderDate, INTERVAL 5 DAY)\nDATE_FORMAT(OrderDate, '%d/%m/%Y')", tsql:"YEAR(OrderDate)\nDATEDIFF(day, OrderDate, ShippedDate)\nDATEADD(day, 5, OrderDate)\nFORMAT(OrderDate, 'dd/MM/yyyy')", note:'Watch the order of the dates: MySQL\'s <code>DATEDIFF</code> takes the end date first; T-SQL\'s takes the start date first.'})}
 <h3>Text</h3>
 <table class="mini"><tr><th>Task</th><th>SQLite</th></tr>
 <tr><td>Length</td><td><code>length(s)</code></td></tr>
@@ -388,6 +403,7 @@ ${C("SELECT OrderDate,\n       date(OrderDate, '+5 days')                    AS 
 <tr><td>Cut text</td><td><code>substr(s, start, length)</code>; <code>substr(s, -3)</code> for the last 3 characters</td></tr>
 <tr><td>Change case</td><td><code>upper(s)</code>, <code>lower(s)</code></td></tr>
 <tr><td>Replace and trim</td><td><code>replace(s, 'a', 'b')</code>, <code>trim(s)</code></td></tr></table>
+${DIFF({title:'Text functions in each dialect', sqlite:"length(s)\ninstr(s, ' ')\nsubstr(s, 1, 3)", mysql:"LENGTH(s)\nLOCATE(' ', s)\nLEFT(s, 3)", tsql:"LEN(s)\nCHARINDEX(' ', s)\nLEFT(s, 3)", note:'Watch the argument order: <code>instr</code> takes the text first; <code>LOCATE</code> and <code>CHARINDEX</code> take the thing to find first.'})}
 <p>Functions nest. This finds the space in a UK postcode and keeps everything before it:</p>
 ${C("SELECT PostalCode,\n       substr(PostalCode, 1, instr(PostalCode, ' ') - 1) AS 'Post Code Region'\nFROM Customers\nWHERE Country = 'UK';")}`,
     ex:[
@@ -397,20 +413,59 @@ ${C("SELECT PostalCode,\n       substr(PostalCode, 1, instr(PostalCode, ' ') - 1
       {p:'Show each customer\'s CompanyName in capital letters, with the length of the name.', hint:'upper(CompanyName) and length(CompanyName).', sol:"SELECT upper(CompanyName) AS 'Company', length(CompanyName) AS 'Length'\nFROM Customers;"}
     ]},
 
-  views:{title:'Views', summary:'Save a query under a name and use it like a table.',
+  views:{title:'Views', summary:'Save a query under a name and use it like a table.', cmds:['CREATE VIEW','DROP VIEW'],
     learn:`
 <p>A view is a saved query. It stores no data of its own: each time you select from it, the query behind it runs.</p>
 ${C("CREATE VIEW ProductCategorySummary AS\nSELECT c.CategoryName AS 'Category Name',\n       COUNT(*)       AS 'Number of Products'\nFROM Categories c\nINNER JOIN Products p ON p.CategoryID = c.CategoryID\nGROUP BY c.CategoryName;\n\nSELECT * FROM ProductCategorySummary;")}
 <p>Running that twice gives an "already exists" error. Drop it first if you want to redefine it:</p>
 ${C('DROP VIEW IF EXISTS ProductCategorySummary;')}
+${DIFF({title:'Changing a view in each dialect', sqlite:'DROP VIEW IF EXISTS v;\nCREATE VIEW v AS SELECT …;', mysql:'CREATE OR REPLACE VIEW v AS SELECT …;', tsql:'CREATE OR ALTER VIEW v AS SELECT …;', note:'Creating a view and selecting from it work the same in all three.'})}
 <ul class="plain"><li>Use views for complex queries you run often, or to give people a simpler way into joined data.</li><li>Views with joins or aggregates are read-only: you can't insert or update through them.</li><li>No spaces in view names. Some teams use a <code>vw_</code> prefix.</li></ul>
-${TIP('Views you create here last until you reload the page.')}`,
+${TIP('Views you create here last until you reload the page. A view\'s close cousin is the stored procedure, which is the next lesson.')}`,
     ex:[
       {p:'Create the ProductCategorySummary view from the lesson (Category Name and Number of Products), then select everything from it.', hint:'Copy the example. Start with DROP VIEW IF EXISTS if it already exists.', sol:"DROP VIEW IF EXISTS ProductCategorySummary;\nCREATE VIEW ProductCategorySummary AS\nSELECT c.CategoryName AS 'Category Name',\n       COUNT(*)       AS 'Number of Products'\nFROM Categories c\nINNER JOIN Products p ON p.CategoryID = c.CategoryID\nGROUP BY c.CategoryName;\nSELECT * FROM ProductCategorySummary;"},
       {p:'Create a view called vw_CustomerOrderCounts with each customer\'s CompanyName and number of orders (call it OrderCount). Then use the view to list the customers with more than 20 orders.', hint:'CREATE VIEW … AS SELECT … GROUP BY …; then SELECT * FROM vw_CustomerOrderCounts WHERE OrderCount > 20;', sol:"DROP VIEW IF EXISTS vw_CustomerOrderCounts;\nCREATE VIEW vw_CustomerOrderCounts AS\nSELECT c.CompanyName, COUNT(o.OrderID) AS OrderCount\nFROM Customers c\nLEFT JOIN Orders o ON o.CustomerID = c.CustomerID\nGROUP BY c.CustomerID, c.CompanyName;\nSELECT * FROM vw_CustomerOrderCounts WHERE OrderCount > 20;"}
     ]},
+  procedures:{title:'Stored procedures', summary:'Save a block of SQL in the database, with parameters, and run it by name.', cmds:['CREATE PROCEDURE','CALL','EXEC'],
+    learn:`
+<p>A <strong>stored procedure</strong> is a named, reusable block of SQL saved in the database. Instead of writing the same statements every time, you call the procedure by name and pass in values, called <strong>parameters</strong>.</p>
+<ul class="plain"><li><strong>No duplication:</strong> every application and user calls the same logic instead of rewriting it.</li><li><strong>Consistency:</strong> a change to the logic is made in one place.</li><li><strong>Security:</strong> people can be allowed to run a procedure without being given direct access to its tables.</li></ul>
+${TIP('<strong>SQLite has no stored procedures.</strong> It runs inside your application, so the application\'s own code does this job. The examples below are MySQL and T-SQL: read them here, and run them in MySQL Workbench or SQL Server Management Studio.')}
+<h3>Creating a procedure</h3>
+<p>This procedure updates a customer's phone number. It takes two parameters: the customer's ID and the new number.</p>
+${C("DELIMITER //\n\nCREATE PROCEDURE UpdateCustomerPhone(\n    IN p_CustomerID CHAR(5),\n    IN p_NewPhone   VARCHAR(24)\n)\nBEGIN\n    UPDATE Customers\n    SET Phone = p_NewPhone\n    WHERE CustomerID = p_CustomerID;\nEND //\n\nDELIMITER ;", false, READ_ONLY('mysql','MySQL Workbench'))}
+<table class="mini"><tr><th>Part</th><th>What it does</th></tr>
+<tr><td><code>DELIMITER //</code></td><td>Temporarily changes the end-of-statement marker, so MySQL doesn't stop at the semicolons inside the procedure</td></tr>
+<tr><td><code>CREATE PROCEDURE UpdateCustomerPhone</code></td><td>Names the procedure</td></tr>
+<tr><td><code>IN p_CustomerID CHAR(5)</code></td><td>An input parameter: which customer to update</td></tr>
+<tr><td><code>BEGIN … END</code></td><td>Wraps the statements the procedure runs</td></tr>
+<tr><td><code>DELIMITER ;</code></td><td>Puts the normal semicolon back</td></tr></table>
+<p>The T-SQL version is similar. Parameters start with <code>@</code>, and there's no <code>DELIMITER</code>:</p>
+${C("CREATE PROCEDURE UpdateCustomerPhone\n    @CustomerID CHAR(5),\n    @NewPhone   VARCHAR(24)\nAS\nBEGIN\n    UPDATE Customers\n    SET    Phone = @NewPhone\n    WHERE  CustomerID = @CustomerID;\nEND;", false, READ_ONLY('tsql','SQL Server Management Studio'))}
+<h3>Running a procedure</h3>
+${DIFF({title:'Calling a procedure in each dialect', mysql:"CALL UpdateCustomerPhone('ALFKI', '0121-555-5555');", tsql:"EXEC UpdateCustomerPhone\n    @CustomerID = 'ALFKI',\n    @NewPhone   = '0121-555-5555';", sqlite:'~No stored procedures: use a view for saved queries, and your application for the rest.'})}
+<h3>A procedure that returns rows</h3>
+<p>A procedure can also run a <code>SELECT</code> and hand back its result, such as a customer's contact name:</p>
+${C("DELIMITER //\n\nCREATE PROCEDURE GetCustomerContactName(\n    IN p_CustomerID CHAR(5)\n)\nBEGIN\n    SELECT ContactName\n    FROM Customers\n    WHERE CustomerID = p_CustomerID;\nEND //\n\nDELIMITER ;\n\nCALL GetCustomerContactName('ALFKI');", false, READ_ONLY('mysql','MySQL Workbench'))}
+${C("CREATE PROCEDURE GetCustomerContactName\n    @CustomerID CHAR(5)\nAS\nBEGIN\n    SELECT ContactName\n    FROM Customers\n    WHERE CustomerID = @CustomerID;\nEND;\n\nEXEC GetCustomerContactName @CustomerID = 'ALFKI';", false, READ_ONLY('tsql','SQL Server Management Studio'))}
+<h3>Views or stored procedures?</h3>
+<p>Both save SQL in the database so it can be reused. The difference is what they can do:</p>
+<table class="mini"><tr><th></th><th>View</th><th>Stored procedure</th></tr>
+<tr><td>Holds</td><td>One <code>SELECT</code></td><td>Any statements: <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, logic</td></tr>
+<tr><td>Parameters</td><td>No: filter it with <code>WHERE</code> instead</td><td>Yes</td></tr>
+<tr><td>Used by</td><td>Selecting from it, like a table</td><td><code>CALL</code> (MySQL) or <code>EXEC</code> (T-SQL)</td></tr>
+<tr><td>Changes data</td><td>No</td><td>Can</td></tr>
+<tr><td>In SQLite</td><td>Yes</td><td>No</td></tr></table>
+<p>In SQLite, the nearest thing to <code>GetCustomerContactName</code> is a view that you filter. This one does run here:</p>
+${C("DROP VIEW IF EXISTS vw_CustomerContacts;\n\nCREATE VIEW vw_CustomerContacts AS\nSELECT CustomerID, ContactName FROM Customers;\n\nSELECT ContactName\nFROM vw_CustomerContacts\nWHERE CustomerID = 'ALFKI';")}`,
+    check:[
+      {q:'How do you run a stored procedure called GetCustomerContactName in MySQL?', a:["CALL GetCustomerContactName('ALFKI');","EXEC GetCustomerContactName 'ALFKI';","SELECT * FROM GetCustomerContactName;"], c:0, why:'MySQL uses CALL. T-SQL uses EXEC. A procedure isn\'t a table, so you can\'t SELECT from it.'},
+      {q:'What can a stored procedure do that a view can\'t?', a:['Return rows','Take parameters and change data','Be saved in the database'], c:1, why:'Both are saved in the database and both can return rows, but only a procedure takes parameters and can INSERT, UPDATE or DELETE.'},
+      {q:'Why does MySQL need DELIMITER // before CREATE PROCEDURE?', a:['To name the procedure','To mark the start of a parameter','So the semicolons inside the procedure don\'t end the CREATE statement early'], c:2, why:'The procedure body contains semicolons. Changing the delimiter lets MySQL read the whole procedure as one statement.'}
+    ]},
+
   /* ===== Unit 7: Advanced topics (from the Advanced SQL slides) ===== */
-  windows:{title:'Window functions: OVER and PARTITION BY', summary:'Add a total, count or average to every row without losing any rows.',
+  windows:{title:'Window functions', summary:'Add a total, count or average to every row without losing any rows.', cmds:['OVER ()','PARTITION BY'],
     learn:`
 <p>Aggregate functions such as <code>COUNT</code> and <code>AVG</code> squash rows together: one row per group. <strong>Analytic</strong> (or <strong>window</strong>) functions calculate across a set of rows but keep every row, so you can see the calculation next to the original data.</p>
 <p>Say you want each order alongside how many orders that employee has handled. With what you know so far, that needs a join to a grouped subquery:</p>
@@ -430,7 +485,7 @@ ${TIP('Window functions run last, after <code>WHERE</code>, <code>GROUP BY</code
       {p:'Show every order\'s OrderID and Freight next to the average freight across all orders.', hint:'AVG(Freight) OVER () - empty brackets mean the whole table.', sol:"SELECT OrderID, Freight, AVG(Freight) OVER () AS 'Average Freight'\nFROM Orders;"}
     ]},
 
-  ranking:{title:'Ranking: ROW_NUMBER, RANK and DENSE_RANK', summary:'Number and rank rows, overall or within each group.',
+  ranking:{title:'Ranking functions', summary:'Number and rank rows, overall or within each group.', cmds:['ROW_NUMBER()','RANK()','DENSE_RANK()'],
     learn:`
 <p><code>ORDER BY</code> inside <code>OVER ( )</code> tells the window function what order to work through the rows. It's most often used to number or rank them:</p>
 ${C("SELECT ProductName, UnitPrice,\n       ROW_NUMBER() OVER (ORDER BY UnitPrice DESC) AS 'Row Number'\nFROM Products;")}
@@ -450,7 +505,7 @@ ${C("SELECT ProductName, UnitPrice, CategoryID,\n       ROW_NUMBER() OVER (PARTI
       {p:'List the three most expensive products in each category (CategoryID, ProductName, UnitPrice). If prices tie for third place, include them all.', hint:'Rank inside a subquery, then filter on the rank in the outer query: a window function can\'t go in WHERE.', sol:"SELECT CategoryID, ProductName, UnitPrice\nFROM (\n    SELECT CategoryID, ProductName, UnitPrice,\n           RANK() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC) AS PriceRank\n    FROM Products\n) ranked\nWHERE PriceRank <= 3;"}
     ]},
 
-  leadlag:{title:'LEAD, LAG, FIRST_VALUE and LAST_VALUE', summary:'Look at other rows: the next, the previous, the first and the last.',
+  leadlag:{title:'Comparing rows', summary:'Look at the next, previous, first or last row in a window.', cmds:['LEAD()','LAG()','FIRST_VALUE()','LAST_VALUE()'],
     learn:`
 <p><code>LEAD()</code> looks ahead a number of rows; <code>LAG()</code> looks back. Both take three arguments: the column to return, how many rows to move, and a default for when there's no row to return.</p>
 ${C("SELECT ProductName, UnitPrice,\n       LEAD(ProductName, 1, NULL) OVER (ORDER BY UnitPrice) AS 'Next Product by Price',\n       LAG(UnitPrice, 1, 0)       OVER (ORDER BY UnitPrice) AS 'Previous Price'\nFROM Products;")}
@@ -468,7 +523,7 @@ ${TIP('Window functions have a hidden <strong>window frame</strong>. With an <co
       {p:'Show each product\'s ProductName, CategoryID and UnitPrice, with the name of the cheapest product in its category.', hint:'FIRST_VALUE(ProductName) OVER (PARTITION BY CategoryID ORDER BY UnitPrice)', sol:"SELECT ProductName, CategoryID, UnitPrice,\n       FIRST_VALUE(ProductName) OVER (PARTITION BY CategoryID ORDER BY UnitPrice) AS 'Cheapest in Category'\nFROM Products;"}
     ]},
 
-  frames:{title:'Window frames and moving averages', summary:'Control exactly which rows a window function looks at.',
+  frames:{title:'Window frames', summary:'Control exactly which rows a window function looks at, for running totals and moving averages.', cmds:['ROWS BETWEEN','RANGE','PRECEDING','FOLLOWING'],
     learn:`
 <p>Alongside <code>PARTITION BY</code> and <code>ORDER BY</code>, a window has a third part: the <strong>frame</strong>, written with <code>ROWS</code> or <code>RANGE</code>.</p>
 <table class="mini"><tr><th>Part</th><th>Options</th></tr>
@@ -485,14 +540,15 @@ ${C("SELECT OrderID, OrderDate, Freight,\n       AVG(Freight) OVER (ORDER BY Ord
 ${C("SELECT OrderID, Freight,\n       SUM(Freight) OVER (ORDER BY OrderID\n           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS 'Running Total'\nFROM Orders;")}
 <h3>RANGE over dates</h3>
 <p>To average over <em>days</em> rather than rows, so two orders on the same day both count, use <code>RANGE</code>. Order by the date as a day number with <code>julianday()</code>, then give the range in days. Look at 1996-07-08, which has two orders:</p>
-${C("SELECT OrderID, OrderDate, Freight,\n       AVG(Freight) OVER (ORDER BY julianday(OrderDate)\n           RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS '3 day moving average'\nFROM Orders;")}`,
+${C("SELECT OrderID, OrderDate, Freight,\n       AVG(Freight) OVER (ORDER BY julianday(OrderDate)\n           RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS '3 day moving average'\nFROM Orders;")}
+${DIFF({title:'Averaging over days in each dialect', sqlite:'AVG(Freight) OVER (ORDER BY julianday(OrderDate)\n    RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING)', mysql:'AVG(Freight) OVER (ORDER BY OrderDate\n    RANGE BETWEEN INTERVAL 1 DAY PRECEDING\n              AND INTERVAL 1 DAY FOLLOWING)', tsql:'~RANGE only allows UNBOUNDED and CURRENT ROW, so use ROWS, or join the table to itself on a date range.'})}`,
     ex:[
       {p:'Fix the LAST_VALUE query: show each OrderID and EmployeeID with the last OrderID that employee handled.', hint:'Add ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING inside OVER ( ).', sol:"SELECT OrderID, EmployeeID,\n       LAST_VALUE(OrderID) OVER (PARTITION BY EmployeeID ORDER BY OrderID\n           ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS 'Last Order for Employee'\nFROM Orders;"},
       {p:'Total each order\'s price from `Order Details` (UnitPrice × Quantity × (1 − Discount)), join it to Orders, and show OrderID, OrderDate, the total price and a 5-point moving average of it, ordered by OrderDate then OrderID.', hint:'AVG(d.TotalPrice) OVER (ORDER BY o.OrderDate, o.OrderID ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING). The OrderID breaks ties between orders on the same day.', sol:"SELECT o.OrderID, o.OrderDate, d.TotalPrice,\n       AVG(d.TotalPrice) OVER (ORDER BY o.OrderDate, o.OrderID\n           ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS '5pt Moving Average'\nFROM Orders o\nINNER JOIN (\n    SELECT OrderID, SUM(UnitPrice * Quantity * (1 - Discount)) AS TotalPrice\n    FROM \"Order Details\"\n    GROUP BY OrderID\n) d ON o.OrderID = d.OrderID;"},
       {p:'For orders shipped to Brazil, show OrderID, Freight and a running total of freight in OrderID order.', hint:'Filter with WHERE first: the window only sees the rows that are left.', sol:"SELECT OrderID, Freight,\n       SUM(Freight) OVER (ORDER BY OrderID ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS 'Running Total'\nFROM Orders\nWHERE ShipCountry = 'Brazil';"}
     ]},
 
-  stats:{title:'Statistical functions', summary:'Percentiles, distributions and splitting rows into bands.',
+  stats:{title:'Statistical functions', summary:'Find where a row sits in a distribution, and split rows into bands.', cmds:['CUME_DIST()','PERCENT_RANK()','NTILE()'],
     learn:`
 <p>Some window functions describe where a row sits in the whole distribution:</p>
 <table class="mini"><tr><th>Function</th><th>Returns</th></tr>
@@ -503,14 +559,15 @@ ${C("SELECT ProductName, UnitPrice,\n       CUME_DIST()    OVER (ORDER BY UnitPr
 ${TIP('Look at how each one treats ties: tied prices get the same <code>CUME_DIST</code> and <code>PERCENT_RANK</code>, but <code>NTILE</code> can put them in different bands.')}
 <h3>Finding the median</h3>
 <p>SQLite has no median function, but <code>CUME_DIST</code> gets you there: the median is the smallest value whose <code>CUME_DIST</code> reaches 0.5.</p>
-${C("SELECT MIN(UnitPrice) AS 'Median (existing value)'\nFROM (SELECT UnitPrice, CUME_DIST() OVER (ORDER BY UnitPrice) AS cd FROM Products) t\nWHERE cd >= 0.5;")}`,
+${C("SELECT MIN(UnitPrice) AS 'Median (existing value)'\nFROM (SELECT UnitPrice, CUME_DIST() OVER (ORDER BY UnitPrice) AS cd FROM Products) t\nWHERE cd >= 0.5;")}
+${DIFF({title:'Percentiles in each dialect', sqlite:'~No percentile functions: use CUME_DIST(), as above.', mysql:'~No percentile functions: use CUME_DIST().', tsql:'PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY UnitPrice) OVER ()\nPERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY UnitPrice) OVER ()', note:'<code>PERCENTILE_CONT</code> works out a value in between if it has to; <code>PERCENTILE_DISC</code> always returns a value that exists in the data.'})}`,
     ex:[
       {p:'Show each product\'s ProductName, UnitPrice and its PERCENT_RANK by price (cheapest is 0).', hint:'PERCENT_RANK() OVER (ORDER BY UnitPrice)', sol:"SELECT ProductName, UnitPrice,\n       PERCENT_RANK() OVER (ORDER BY UnitPrice) AS 'Percent Rank'\nFROM Products;"},
       {p:'Split products into 4 price bands with NTILE, cheapest first. Show ProductID, ProductName, UnitPrice and the band. Use ProductID to break ties.', hint:'NTILE(4) OVER (ORDER BY UnitPrice, ProductID)', sol:"SELECT ProductID, ProductName, UnitPrice,\n       NTILE(4) OVER (ORDER BY UnitPrice, ProductID) AS 'Price Band'\nFROM Products;"},
       {p:'Which orders are in the cheapest 10% by freight? Show OrderID and Freight for orders whose CUME_DIST by freight is 0.1 or less.', hint:'Work out CUME_DIST in a subquery, then filter it in the outer WHERE.', sol:"SELECT OrderID, Freight\nFROM (\n    SELECT OrderID, Freight, CUME_DIST() OVER (ORDER BY Freight) AS cd\n    FROM Orders\n) t\nWHERE cd <= 0.1;"}
     ]},
 
-  cte:{title:'WITH (common table expressions)', summary:'Name a subquery once at the top, then use it like a table.',
+  cte:{title:'Common table expressions', summary:'Name a subquery once at the top, then use it like a table.', cmds:['WITH … AS'],
     learn:`
 <p><code>WITH</code> defines one or more named subqueries before the main query. They're usually called <strong>common table expressions</strong> (CTEs). They:</p>
 <ul class="plain"><li>make long queries easier to read</li><li>let you define a subquery once and use it several times</li><li>disappear when the query finishes</li></ul>
@@ -526,7 +583,7 @@ ${TIP('A CTE is a great place for a window function you want to filter on: rank 
       {p:'Using two chained CTEs, list each CustomerID whose total spend is above the average customer\'s total spend, with their total.', hint:'The first CTE totals spend per customer; the second averages the first.', sol:"WITH spend AS (\n    SELECT o.CustomerID, SUM(od.UnitPrice * od.Quantity * (1 - od.Discount)) AS Total\n    FROM Orders o INNER JOIN \"Order Details\" od ON o.OrderID = od.OrderID\n    GROUP BY o.CustomerID\n),\naverage AS (\n    SELECT AVG(Total) AS AvgTotal FROM spend\n)\nSELECT s.CustomerID, s.Total\nFROM spend s, average a\nWHERE s.Total > a.AvgTotal;"}
     ]},
 
-  temptables:{title:'Temporary tables', summary:'Store a result for later queries in the same session.',
+  temptables:{title:'Temporary tables', summary:'Store a result to use in later queries.', cmds:['CREATE TEMP TABLE','DROP TABLE IF EXISTS'],
     learn:`
 <p>A CTE vanishes when its query ends. If you want to keep a result for <em>several</em> queries, store it in a temporary table. Only your connection can see it, and it's dropped automatically when you disconnect. In this lab, that's when you reload the page.</p>
 <p>Create one from a query with <code>CREATE TEMP TABLE … AS SELECT</code>. The first statement stores the table, the second uses it:</p>
@@ -535,13 +592,14 @@ ${C("DROP TABLE IF EXISTS MeanAbove30;\n\nCREATE TEMP TABLE MeanAbove30 AS\nSELE
 ${C("SELECT * FROM MeanAbove30;")}
 <p><code>TEMPORARY</code> means the same as <code>TEMP</code>:</p>
 ${C("DROP TABLE IF EXISTS OrderCounts;\n\nCREATE TEMPORARY TABLE OrderCounts AS\nSELECT CustomerID, COUNT(*) AS Orders\nFROM Orders GROUP BY CustomerID;\n\nSELECT * FROM OrderCounts ORDER BY Orders DESC;")}
+${DIFF({title:'Temporary tables in each dialect', sqlite:'CREATE TEMP TABLE MeanAbove30 AS\nSELECT CategoryID FROM Products …;', mysql:'CREATE TEMPORARY TABLE MeanAbove30 AS\nSELECT CategoryID FROM Products …;', tsql:'SELECT CategoryID INTO #MeanAbove30\nFROM Products …;', note:'In T-SQL the name starts with <code>#</code> (<code>##</code> makes it visible to every connection), and the table lives in <code>tempdb</code>.'})}
 ${TIP('Creating a temporary table that already exists gives an error, so start with <code>DROP TABLE IF EXISTS</code>.')}`,
     ex:[
       {p:'Store the CategoryIDs whose average unit price is above 30 in a temporary table called MeanAbove30, then use it to list the matching ProductNames.', hint:'CREATE TEMP TABLE MeanAbove30 AS SELECT … then join Products to MeanAbove30. Start with DROP TABLE IF EXISTS MeanAbove30.', sol:"DROP TABLE IF EXISTS MeanAbove30;\nCREATE TEMP TABLE MeanAbove30 AS\nSELECT CategoryID\nFROM Products\nGROUP BY CategoryID HAVING AVG(UnitPrice) > 30;\nSELECT ProductName\nFROM Products p\nINNER JOIN MeanAbove30 m ON p.CategoryID = m.CategoryID;"},
       {p:'Store each CustomerID with its number of orders in a temporary table called OrderCounts. Then list the customers with more than 20 orders.', hint:'CREATE TEMP TABLE OrderCounts AS SELECT CustomerID, COUNT(*) AS Orders FROM Orders GROUP BY CustomerID;', sol:"DROP TABLE IF EXISTS OrderCounts;\nCREATE TEMP TABLE OrderCounts AS\nSELECT CustomerID, COUNT(*) AS Orders\nFROM Orders GROUP BY CustomerID;\nSELECT CustomerID, Orders FROM OrderCounts WHERE Orders > 20;"}
     ]},
 
-  pivot:{title:'Pivoting: long and wide data', summary:'Turn rows into columns, and columns back into rows.',
+  pivot:{title:'Pivoting', summary:'Turn rows into columns, and columns back into rows.', cmds:['SUM(CASE …)','GROUP BY','UNION ALL'],
     learn:`
 <p>To <strong>pivot</strong> is to move data from rows into columns: from <em>long</em> format to <em>wide</em>. <strong>Unpivoting</strong> goes the other way. Which you want depends on what the data is for.</p>
 <div class="two-tables"><table class="mini"><tr><th>Student</th><th>Subject</th><th>Score</th></tr><tr><td>Alice</td><td>English</td><td>60</td></tr><tr><td>Alice</td><td>Maths</td><td>70</td></tr><tr><td>Bob</td><td>English</td><td>72</td></tr><tr><td>Bob</td><td>Maths</td><td>83</td></tr></table>
@@ -551,14 +609,14 @@ ${TIP('Creating a temporary table that already exists gives an error, so start w
 ${C("WITH scores AS (\n    SELECT 'Alice' AS Student, 'English' AS Subject, 60 AS Score UNION ALL\n    SELECT 'Alice', 'Maths', 70 UNION ALL\n    SELECT 'Bob',   'English', 72 UNION ALL\n    SELECT 'Bob',   'Maths', 83\n)\nSELECT Student,\n       MAX(CASE WHEN Subject = 'English' THEN Score END) AS English,\n       MAX(CASE WHEN Subject = 'Maths'   THEN Score END) AS Maths\nFROM scores\nGROUP BY Student;")}
 <p>Unpivot with one <code>SELECT</code> per column, stacked with <code>UNION ALL</code>:</p>
 ${C("SELECT CompanyName, 'Phone' AS ContactType, Phone AS ContactNumber FROM Customers\nUNION ALL\nSELECT CompanyName, 'Fax', Fax FROM Customers\nORDER BY CompanyName;")}
-${TIP('Some databases have a <code>PIVOT</code> operator, but SQLite doesn\'t. This approach works in every database.')}`,
+${DIFF({title:'Pivoting in each dialect', sqlite:"MAX(CASE WHEN Subject = 'English' THEN Score END) AS English\n… GROUP BY Student", mysql:"MAX(CASE WHEN Subject = 'English' THEN Score END) AS English\n… GROUP BY Student", tsql:'SELECT Student, English, Maths\nFROM scores\nPIVOT (MAX(Score) FOR Subject IN (English, Maths)) p;', note:'T-SQL also has <code>UNPIVOT</code>. The <code>CASE</code> and <code>UNION ALL</code> approach works in T-SQL too, so it\'s worth knowing whichever database you use.'})}`,
     ex:[
       {p:'Unpivot the order dates: for every order show OrderID, a DateType (OrderDate, RequiredDate or ShippedDate) and the Date.', hint:'Three SELECTs, one per date column, joined with UNION ALL.', sol:"SELECT OrderID, 'OrderDate' AS DateType, OrderDate AS Date FROM Orders\nUNION ALL\nSELECT OrderID, 'RequiredDate', RequiredDate FROM Orders\nUNION ALL\nSELECT OrderID, 'ShippedDate', ShippedDate FROM Orders;"},
       {p:'Pivot the number of orders each shipper (ShipVia) carried into one column per year: ShipVia, 1996, 1997 and 1998.', hint:"SUM(CASE WHEN strftime('%Y', OrderDate) = '1996' THEN 1 ELSE 0 END) AS '1996', and so on, grouped by ShipVia.", sol:"SELECT ShipVia,\n       SUM(CASE WHEN strftime('%Y', OrderDate) = '1996' THEN 1 ELSE 0 END) AS '1996',\n       SUM(CASE WHEN strftime('%Y', OrderDate) = '1997' THEN 1 ELSE 0 END) AS '1997',\n       SUM(CASE WHEN strftime('%Y', OrderDate) = '1998' THEN 1 ELSE 0 END) AS '1998'\nFROM Orders\nGROUP BY ShipVia;"},
       {p:'For each CategoryName, show how many products are active and how many are discontinued, as two columns.', hint:'Join Products to Categories, group by CategoryName, and use SUM(CASE WHEN Discontinued = … THEN 1 ELSE 0 END) twice.', sol:"SELECT c.CategoryName,\n       SUM(CASE WHEN p.Discontinued = 0 THEN 1 ELSE 0 END) AS 'Active',\n       SUM(CASE WHEN p.Discontinued = 1 THEN 1 ELSE 0 END) AS 'Discontinued'\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nGROUP BY c.CategoryName;"}
     ]},
 
-  performance:{title:'Performance tuning and indexes', summary:'Find out why a query is slow, and use an index to fix it.',
+  performance:{title:'Performance tuning', summary:'Find out why a query is slow, and use an index to fix it.', cmds:['CREATE INDEX','EXPLAIN QUERY PLAN','PRAGMA index_list'],
     learn:`
 <p>Tuning is less about tricks and more about a process. Like diagnosing a slow car, you find the cause before swapping parts:</p>
 <ol class="order"><li>Identify the slow queries</li><li>Understand what the database is doing</li><li>Fix the root cause</li><li>Check it's actually faster</li></ol>
@@ -586,6 +644,7 @@ ${C("CREATE INDEX IF NOT EXISTS idx_customer_city ON Customers(City);\n\nEXPLAIN
 <p>List the indexes on a table with <code>PRAGMA index_list</code>, or every index in the database from <code>sqlite_master</code>:</p>
 ${C("PRAGMA index_list('Customers');")}
 ${C("SELECT name, tbl_name FROM sqlite_master WHERE type = 'index';")}
+${DIFF({title:'Query plans and indexes in each dialect', sqlite:"EXPLAIN QUERY PLAN SELECT …;\nPRAGMA index_list('Customers');", mysql:'EXPLAIN SELECT …;\nSHOW INDEX FROM Customers;', tsql:"-- Turn on the execution plan in SSMS, then run the query\nEXEC sp_helpindex 'Customers';", note:'In MySQL\'s <code>EXPLAIN</code>, <code>type = ALL</code> is a full table scan (SQLite\'s <code>SCAN</code>), and <code>ref</code> or <code>range</code> is an index seek (SQLite\'s <code>SEARCH</code>).'})}
 ${TIP('Indexes you create here last until you reload the page. Names starting <code>sqlite_autoindex</code> are created automatically for primary keys and <code>UNIQUE</code> columns.')}`,
     ex:[
       {p:'Use EXPLAIN QUERY PLAN to see how SQLite finds the orders for customer ALFKI (SELECT * FROM Orders WHERE CustomerID = \'ALFKI\'). If you haven\'t created an index yet, it should scan the whole table.', hint:"EXPLAIN QUERY PLAN SELECT * FROM Orders WHERE CustomerID = 'ALFKI';", sol:"EXPLAIN QUERY PLAN SELECT * FROM Orders WHERE CustomerID = 'ALFKI';"},
@@ -593,7 +652,7 @@ ${TIP('Indexes you create here last until you reload the page. Names starting <c
       {p:'List the indexes on the "Order Details" table.', hint:"PRAGMA index_list('Order Details');", sol:"PRAGMA index_list('Order Details');"}
     ]},
 
-  cp5:{title:'Checkpoint: advanced', summary:'Window functions, CTEs and pivots together.', checkpoint:true,
+  cp5:{title:'Checkpoint: advanced topics', summary:'Mixed practice on window functions, CTEs and pivots.', cmds:[], checkpoint:true,
     ex:[
       {p:'For each category, show the CategoryName and the name and price of its most expensive product.', hint:'Rank products by price within each category in a CTE, then keep rank 1 and join to Categories.', sol:"WITH ranked AS (\n    SELECT CategoryID, ProductName, UnitPrice,\n           RANK() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC) AS r\n    FROM Products\n)\nSELECT c.CategoryName, ranked.ProductName, ranked.UnitPrice\nFROM ranked\nINNER JOIN Categories c ON c.CategoryID = ranked.CategoryID\nWHERE r = 1;"},
       {p:'For 1997, show each EmployeeID, month (01 to 12) and number of orders, with the change from that employee\'s previous month.', hint:"Count orders per employee per strftime('%m', OrderDate) in a CTE, then use LAG(Orders) OVER (PARTITION BY EmployeeID ORDER BY Month).", sol:"WITH monthly AS (\n    SELECT EmployeeID, strftime('%m', OrderDate) AS Month, COUNT(*) AS Orders\n    FROM Orders\n    WHERE strftime('%Y', OrderDate) = '1997'\n    GROUP BY EmployeeID, strftime('%m', OrderDate)\n)\nSELECT EmployeeID, Month, Orders,\n       Orders - LAG(Orders) OVER (PARTITION BY EmployeeID ORDER BY Month) AS 'Change'\nFROM monthly;"},
