@@ -733,3 +733,26 @@ ol.why-steps{padding-left:1.3em;display:grid;gap:6px;margin:4px 0 14px}
 .ddiff-row.common{background:var(--ok-tint)}
 .ddiff-row.common .ddiff-tag{color:var(--ok)}
 .ddiff-sub{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px 14px 4px;border-top:1px solid var(--line)}
+
+/* Navigation bar at the top of each lesson */
+.lesson-nav{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;margin:4px 0 14px}
+.lesson-nav[hidden]{display:none}
+.lesson-nav button{border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;display:inline-flex;align-items:center;gap:0;white-space:pre;min-width:0;max-width:100%}
+.lesson-nav button:hover{border-color:var(--pink);color:var(--pink-dark)}
+.lesson-nav .ln-prev{justify-self:start}
+.lesson-nav .ln-next{justify-self:end}
+.lesson-nav .ln-home{justify-self:center}
+.lesson-nav .ttl{font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lesson-nav .arr{font-weight:700}
+@media (max-width:640px){ .lesson-nav .ttl{display:none} }
+
+/* Tabs inside lessons */
+.ltabs{margin:8px 0 18px}
+.ltabs-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.ltabs-list [role=tab]{border:2px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:999px;padding:5px 15px;font:inherit;font-weight:700;cursor:pointer}
+.ltabs-list [role=tab][aria-selected=true]{background:var(--ink);color:#fff}
+.ltabs-panel{background:var(--paper);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px}
+.ltabs-panel table.mini{box-shadow:none;margin:0 0 8px}
+table.dtypes tr.grp th{background:var(--mist-2);color:var(--ink);text-align:left;font-size:.85rem}
+details.answers{margin:8px 0 18px}
+details.answers summary{cursor:pointer;font-weight:700;color:var(--pink-dark)}

@@ -284,6 +284,7 @@ document.addEventListener('click', e=>{ const b=e.target.closest('[data-go]'); i
 function renderChrome(){
   const cr=$('#crumbs'), foot=$('#lessonFoot');
   const id=current.lesson;
+  const topNav=$('#lessonNav'); topNav.innerHTML=''; topNav.hidden=true;
   if (!id){
     foot.innerHTML='';
     const PAGE={install:'Install on your computer',dialects:'SQL dialects',quizzes:'Quizzes',free:'Free practice'}[current.view];
@@ -295,6 +296,12 @@ function renderChrome(){
   const k=PATH.findIndex(x=>x.id===id), item=PATH[k], L=LESSONS[id], un=UNITS.indexOf(item.unit)+1;
   cr.hidden=false; cr.innerHTML='';
   cr.append(h('a',{href:'#/path','data-testid':'breadcrumb-home'},'Home'), h('span',{class:'sep','aria-hidden':'true'},'/'), h('span',{'data-testid':'breadcrumb-unit'},`Unit ${un}: ${item.unit.title}`), h('span',{class:'pos','data-testid':'lesson-position'}, `Lesson ${k+1} of ${PATH.length}`));
+  topNav.hidden=false;
+  const prevL=k>0?PATH[k-1].id:null, nextL=k<PATH.length-1?PATH[k+1].id:null;
+  topNav.append(
+    prevL ? h('button',{class:'ln-prev',type:'button','data-go':prevL,'data-testid':'top-previous-lesson',title:LESSONS[prevL].title}, h('span',{class:'arr','aria-hidden':'true'},'← '), h('span',{class:'lbl'},'Previous'), h('span',{class:'ttl'},': '+LESSONS[prevL].title)) : h('span',{class:'ln-gap'}),
+    h('button',{class:'ln-home',type:'button','data-go':'path','data-testid':'top-home'}, h('span',{'aria-hidden':'true'},'⌂ '), 'Home'),
+    nextL ? h('button',{class:'ln-next',type:'button','data-go':nextL,'data-testid':'top-next-lesson',title:LESSONS[nextL].title}, h('span',{class:'lbl'},'Next'), h('span',{class:'ttl'},': '+LESSONS[nextL].title), h('span',{class:'arr','aria-hidden':'true'},' →')) : h('span',{class:'ln-gap'}));
   foot.innerHTML='';
   const done=lessonDone(id), [a,b]=lessonProg(id), auto=autoDone(id), manual=markedDone(id);
   const setMark = v => { P.markedDone=P.markedDone||{}; if (v) P.markedDone[id]=true; else delete P.markedDone[id]; save(); refreshChrome(); toast(v?'Marked as complete':'No longer marked as complete'); };
@@ -738,10 +745,18 @@ function renderLessonTabs(){
 }
 function setTab(k){ curTab=k; (P.tab||(P.tab={}))[curLesson]=k; save(); renderLessonTabs(); renderLessonBody(); if (innerWidth<1020) $('#lTabs').scrollIntoView({block:'start'}); }
 const draftKey=()=>curLesson+':'+curTab;
+/* Tabs inside lesson text (TABS() in lessons.js) */
+function wireTabs(root){
+  $$('[data-ltabs]',root).forEach(box=>{
+    const tabs=$$('[role=tab]',box), panels=$$('[role=tabpanel]',box);
+    const pick=k=>{ tabs.forEach((t,i)=>{ t.setAttribute('aria-selected',String(i===k)); t.tabIndex=i===k?0:-1; panels[i].hidden=i!==k; }); };
+    tabs.forEach((t,i)=>{ t.addEventListener('click',()=>pick(i)); t.addEventListener('keydown',e=>{ if (e.key==='ArrowRight'||e.key==='ArrowLeft'){ e.preventDefault(); const k=(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length; pick(k); tabs[k].focus(); } }); });
+  });
+}
 function renderLessonBody(){
   const L=LESSONS[curLesson]; const body=$('#lBody'); body.innerHTML=''; reveal={hint:false,sol:false};
   if (curTab==='learn'){
-    body.innerHTML=L.learn;
+    body.innerHTML=L.learn; wireTabs(body);
     $$('pre.ex',body).forEach((pre,n)=>{
       const sql=pre.textContent; const wrap=h('div',{class:'example','data-testid':`example-${n+1}`}); pre.replaceWith(wrap); wrap.append(pre);
       if (pre.hasAttribute('data-norun')){ wrap.classList.add('readonly'); wrap.prepend(h('span',{class:'tag'}, pre.dataset.label || 'Read only: these tables aren\'t in Northwind')); }

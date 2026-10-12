@@ -21,6 +21,10 @@ const RUN_ORDER = (highlight=['SELECT','FROM']) => {
 <text x="${rx+bw/2}" y="26" text-anchor="middle" class="ro-h">How the database runs it</text><text x="${rx+bw/2}" y="46" text-anchor="middle" class="ro-sub">processing sequence</text>
 ${lines.join('')}${written.map((c,i)=>block(c,i,lx)).join('')}${runs.map((c,i)=>block(c,i,rx)).join('')}</svg></figure>`;
 };
+/* Tabs inside a lesson. TABS([{label, html}]) — the app wires up the buttons after the lesson is drawn. */
+let TABS_N = 0;
+const TABS = tabs => { const n=++TABS_N;
+  return `<div class="ltabs" data-ltabs><div class="ltabs-list" role="tablist">${tabs.map((t,i)=>`<button type="button" role="tab" id="lt${n}-${i}" aria-controls="lp${n}-${i}" aria-selected="${i===0}" tabindex="${i===0?0:-1}" data-testid="dtype-tab-${i+1}">${t.label}</button>`).join('')}</div>${tabs.map((t,i)=>`<div class="ltabs-panel" role="tabpanel" id="lp${n}-${i}" aria-labelledby="lt${n}-${i}"${i===0?'':' hidden'}>${t.html}</div>`).join('')}</div>`; };
 const TIP = t => `<div class="tip">${t}</div>`;
 
 /* Dialect callouts, marked with the same icons as the course notes. Each value is code;
@@ -99,41 +103,96 @@ const LESSONS = {
   databases:{title:'What\'s a database', summary:'What a database is, how it\'s organised into tables, rows and columns, and what SQL is for.', cmds:[], kind:'databases'},
   flavours:{title:'SQL flavours', summary:'The dialects of SQL: MySQL, T-SQL and SQLite, what\'s the same and what changes.', cmds:[], kind:'flavours'},
   erd:{title:'Entity relationship diagrams', summary:'How to read a diagram of a database\'s tables, keys and relationships.', cmds:[], kind:'erd'},
-  datatypes:{title:'Data types', summary:'Create two tables with a type for every column, insert data, and see how SQLite stores it.', cmds:['CREATE TABLE','INSERT INTO','INTEGER','REAL','TEXT','typeof()','CAST()'], db:'mydb', rollback:true,
+  datatypes:{title:'Data types', summary:'What a data type is, the main types, how each dialect names them, and choosing the right one.', cmds:['CREATE TABLE','INSERT INTO','INTEGER','REAL','TEXT','typeof()','CAST()'], db:'mydb', rollback:true,
     learn:`
-<p>Every column has a <strong>data type</strong>, which decides what it can hold. Types matter because they affect:</p>
-<ul class="plain"><li><strong>Sorting:</strong> as text, <code>'10'</code> comes before <code>'9'</code>; as numbers, it comes after.</li><li><strong>Maths:</strong> you can add up heights, but not names.</li><li><strong>Checking:</strong> a database can refuse values that don't fit, such as text in a date column.</li><li><strong>Storage:</strong> a whole number takes less space than the same digits stored as text.</li></ul>
-<h3>A database to work with</h3>
-<p>This script creates two tables, <code>Customers</code> and <code>Orders</code>, choosing a type for every column, then inserts some data. Run it and look at the log: each statement is listed as it runs. You'll build these same tables yourself, step by step, in <a href="#/lesson/build">Creating tables</a>.</p>
+<p>When you create a table, you give every column a <strong>data type</strong>. It tells the database what kind of "stuff" will go in that column: text, whole numbers, decimals, dates and so on.</p>
+<p>Choosing the right type matters because it affects:</p>
+<ul class="plain"><li><strong>What's allowed in:</strong> a date column won't accept "next Tuesday", and a number column won't accept letters.</li><li><strong>Maths:</strong> you can add up prices stored as numbers, but not names.</li><li><strong>Sorting:</strong> as text, <code>'10'</code> comes before <code>'9'</code>; as numbers, it comes after.</li><li><strong>Space:</strong> a whole number takes less room than the same digits stored as text.</li></ul>
+<h3>The main data types</h3>
+<p>There are many types, but these are the most important. Most databases use these names:</p>
+<div class="tbl-wrap"><table class="mini dtypes"><tr><th>Type</th><th>Holds</th><th>Example</th></tr>
+<tr class="grp"><th colspan="3">Text</th></tr>
+<tr><td><code>VARCHAR(n)</code></td><td><strong>Variable</strong>-length text, up to <em>n</em> characters. It only uses the space it needs.</td><td><code>film_name VARCHAR(10)</code><br>'Jaws'</td></tr>
+<tr><td><code>CHAR(n)</code></td><td><strong>Fixed</strong>-length text: always exactly <em>n</em> characters. Good for codes that are always the same length.</td><td><code>phone CHAR(11)</code><br>'07971781325'</td></tr>
+<tr class="grp"><th colspan="3">Numbers</th></tr>
+<tr><td><code>INT</code></td><td>Whole numbers, positive or negative. <code>BIGINT</code> holds bigger ones; <code>SMALLINT</code> and <code>TINYINT</code> hold smaller ones in less space.</td><td><code>quantity INT</code><br>42</td></tr>
+<tr><td><code>DECIMAL(p,s)</code><br>or <code>NUMERIC</code></td><td><strong>Exact</strong> numbers with a fixed number of decimal places: <em>p</em> digits in total, <em>s</em> of them after the decimal point. Use it for money.</td><td><code>weight DECIMAL(6,4)</code><br>63.5029</td></tr>
+<tr><td><code>FLOAT</code></td><td><strong>Approximate</strong> numbers, including very large or very small ones, for scientific use. Not for money: it can round slightly.</td><td><code>distance FLOAT</code><br>1.496e11</td></tr>
+<tr class="grp"><th colspan="3">Dates and times</th></tr>
+<tr><td><code>DATE</code>, <code>TIME</code>, <code>DATETIME</code></td><td>A date, a time, or both. Written in quotes, year first.</td><td><code>born DATE</code><br>'1980-01-31'</td></tr>
+<tr class="grp"><th colspan="3">Other</th></tr>
+<tr><td><code>BIT</code> or <code>BOOLEAN</code></td><td>True or false: <code>1</code>, <code>0</code> (or <code>NULL</code>).</td><td><code>is_happy BIT</code><br>1</td></tr>
+<tr><td><code>BINARY</code></td><td>Raw data, such as an image or a file.</td><td><code>photo BINARY</code></td></tr></table></div>
+${TIP('<strong>The numbers in brackets:</strong> <code>VARCHAR(10)</code> means at most 10 characters. <code>DECIMAL(6,4)</code> means 6 digits in total with 4 after the decimal point, so 2 before it: the biggest value is 99.9999.')}
+<p>A missing value is <code>NULL</code>. It isn't a type of its own: any column can hold <code>NULL</code> unless you say <code>NOT NULL</code>.</p>
+<h3>Data types in each dialect</h3>
+<p>Each database has its own version of these types, and a few of its own. Pick a tab:</p>
+${TABS([
+ {label:'🪶 SQLite', html:`<p>SQLite keeps it simple. Every value is stored as one of five types: <code>INTEGER</code>, <code>REAL</code>, <code>TEXT</code>, <code>BLOB</code> or <code>NULL</code>. You can still write the usual names in <code>CREATE TABLE</code>: SQLite accepts them and stores each value as the closest of its own types.</p>
+<div class="tbl-wrap"><table class="mini"><tr><th>Kind of data</th><th>You can write</th><th>SQLite stores it as</th></tr>
+<tr><td>Text</td><td><code>VARCHAR(n)</code>, <code>CHAR(n)</code>, <code>TEXT</code></td><td><code>TEXT</code></td></tr>
+<tr><td>Whole numbers</td><td><code>INT</code>, <code>INTEGER</code>, <code>BIGINT</code></td><td><code>INTEGER</code></td></tr>
+<tr><td>Exact decimals</td><td><code>DECIMAL(p,s)</code>, <code>NUMERIC</code></td><td><code>INTEGER</code> or <code>REAL</code></td></tr>
+<tr><td>Approximate decimals</td><td><code>REAL</code>, <code>FLOAT</code>, <code>DOUBLE</code></td><td><code>REAL</code></td></tr>
+<tr><td>Dates and times</td><td><code>DATE</code>, <code>DATETIME</code>, <code>TEXT</code></td><td><code>TEXT</code>, as <code>'YYYY-MM-DD'</code></td></tr>
+<tr><td>True or false</td><td><code>BOOLEAN</code>, <code>BIT</code>, <code>INTEGER</code></td><td><code>INTEGER</code>: <code>1</code> or <code>0</code></td></tr>
+<tr><td>Files and images</td><td><code>BLOB</code></td><td><code>BLOB</code></td></tr></table></div>
+<p class="small">SQLite doesn't enforce lengths: a <code>VARCHAR(10)</code> column will happily store 20 characters. MySQL and SQL Server won't.</p>`},
+ {label:'🐬 MySQL', html:`<div class="tbl-wrap"><table class="mini"><tr><th>Kind of data</th><th>MySQL types</th><th>Notes</th></tr>
+<tr><td>Text</td><td><code>VARCHAR(n)</code>, <code>CHAR(n)</code></td><td><code>CHAR</code> holds up to 255 characters</td></tr>
+<tr><td>Long text</td><td><code>TEXT</code>, <code>MEDIUMTEXT</code>, <code>LONGTEXT</code></td><td>For anything longer, such as comments</td></tr>
+<tr><td>Whole numbers</td><td><code>TINYINT</code>, <code>SMALLINT</code>, <code>INT</code>, <code>BIGINT</code></td><td>Smallest to largest</td></tr>
+<tr><td>Exact decimals</td><td><code>DECIMAL(p,s)</code></td><td><code>NUMERIC</code> means the same</td></tr>
+<tr><td>Approximate decimals</td><td><code>FLOAT</code>, <code>DOUBLE</code></td><td><code>DOUBLE</code> is more precise</td></tr>
+<tr><td>Dates and times</td><td><code>DATE</code>, <code>TIME</code>, <code>DATETIME</code>, <code>TIMESTAMP</code></td><td>Written <code>'YYYY-MM-DD'</code></td></tr>
+<tr><td>True or false</td><td><code>BOOLEAN</code></td><td>Really a <code>TINYINT</code>: <code>TRUE</code> is 1, <code>FALSE</code> is 0</td></tr>
+<tr><td>Files and images</td><td><code>BINARY(n)</code>, <code>VARBINARY(n)</code>, <code>BLOB</code></td><td></td></tr></table></div>
+<p class="small">MySQL has no <code>VARCHAR(MAX)</code>: use <code>TEXT</code> for long text. Auto-numbered IDs use <code>INT AUTO_INCREMENT</code>.</p>`},
+ {label:'🪟 T-SQL', html:`<div class="tbl-wrap"><table class="mini"><tr><th>Kind of data</th><th>SQL Server types</th><th>Notes</th></tr>
+<tr><td>Text</td><td><code>VARCHAR(n)</code>, <code>CHAR(n)</code></td><td><code>NVARCHAR</code> and <code>NCHAR</code> for text in other alphabets</td></tr>
+<tr><td>Long text</td><td><code>VARCHAR(MAX)</code></td><td><code>TEXT</code> is deprecated: use <code>VARCHAR(MAX)</code> instead</td></tr>
+<tr><td>Whole numbers</td><td><code>TINYINT</code>, <code>SMALLINT</code>, <code>INT</code>, <code>BIGINT</code></td><td><code>TINYINT</code> is 0 to 255</td></tr>
+<tr><td>Exact decimals</td><td><code>DECIMAL(p,s)</code>, <code>NUMERIC</code></td><td>Also <code>MONEY</code></td></tr>
+<tr><td>Approximate decimals</td><td><code>FLOAT</code>, <code>REAL</code></td><td></td></tr>
+<tr><td>Dates and times</td><td><code>DATE</code>, <code>TIME</code>, <code>DATETIME</code>, <code>DATETIME2</code></td><td><code>DATETIME2</code> is more precise; prefer it for new tables</td></tr>
+<tr><td>True or false</td><td><code>BIT</code></td><td><code>1</code>, <code>0</code> or <code>NULL</code>. There's no <code>BOOLEAN</code></td></tr>
+<tr><td>Files and images</td><td><code>BINARY(n)</code>, <code>VARBINARY(n)</code>, <code>VARBINARY(MAX)</code></td><td></td></tr></table></div>
+<p class="small">To see a table's columns and types in SQL Server, run <code>EXEC sp_help 'film_table';</code>. Auto-numbered IDs use <code>INT IDENTITY(1,1)</code>.</p>`}
+])}
+<h3>Choose the data type</h3>
+<p>Which type would you give each of these columns? Decide, then check:</p>
+<div class="tbl-wrap"><table class="mini"><tr><th>Column</th><th>Description</th><th>Example</th></tr>
+<tr><td>Post code</td><td>6 to 8 characters</td><td>WV1 8JD</td></tr>
+<tr><td>Phone number</td><td>11 digits, no punctuation</td><td>07971781325</td></tr>
+<tr><td>Birth date</td><td>A date</td><td>31/01/1980</td></tr>
+<tr><td>Weight in kg</td><td>A number with 4 decimal places</td><td>63.5029</td></tr>
+<tr><td>Comments</td><td>A long block of text</td><td>Lorem ipsum dolor sit amet…</td></tr></table></div>
+<details class="answers" data-testid="dtype-answers"><summary>Show the answers</summary>
+<div class="tbl-wrap"><table class="mini"><tr><th>Column</th><th>Data type</th><th>Why</th></tr>
+<tr><td>Post code</td><td><code>VARCHAR(10)</code></td><td>The length varies, and it has letters and a space.</td></tr>
+<tr><td>Phone number</td><td><code>CHAR(11)</code></td><td>Always 11 characters. Text, not a number: as a number, the leading 0 would disappear, and you never do maths on a phone number.</td></tr>
+<tr><td>Birth date</td><td><code>DATE</code></td><td>Stored as <code>'1980-01-31'</code>, so dates sort and compare properly.</td></tr>
+<tr><td>Weight in kg</td><td><code>DECIMAL(6,4)</code></td><td>Exact, with 4 places after the decimal point.</td></tr>
+<tr><td>Comments</td><td><code>VARCHAR(MAX)</code> in T-SQL; <code>TEXT</code> in MySQL and SQLite</td><td>Long text with no sensible limit.</td></tr></table></div></details>
+<h3>Trying it out</h3>
+<p>Here's a script that creates two tables, choosing a type for every column, then adds some data. Run it and look at the log: each statement is listed as it runs. You'll build these same tables yourself, step by step, in <a href="#/lesson/build">Creating tables</a>.</p>
 ${C(MYDB_SEED.replace('CREATE TABLE Customers', 'DROP TABLE IF EXISTS Orders;\nDROP TABLE IF EXISTS Customers;\n\nCREATE TABLE Customers') + "\n\nSELECT * FROM Customers;")}
-<p>In this lesson the tables are always there, with this data, and every run starts from a fresh copy:</p>
+<p>In this lesson those tables are always there, with this data, and every run starts from a fresh copy:</p>
 ${MYDB_TABLES}
-<p>Now insert a row of your own. Each value has to suit its column's type: text in quotes, numbers without:</p>
+<p>Insert a row of your own. Each value has to suit its column: text in quotes, numbers without:</p>
 ${C("INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Ana Lopez', 1.62, 0);\n\nSELECT * FROM Customers;")}
-<h3>The types you'll meet</h3>
-<table class="mini"><tr><th>Kind of data</th><th>Type in SQLite</th><th>In our tables</th></tr>
-<tr><td>Whole numbers</td><td><code>INTEGER</code></td><td><code>customer_id</code>, <code>order_number</code></td></tr>
-<tr><td>Numbers with decimals</td><td><code>REAL</code></td><td><code>height</code>: <code>1.85</code></td></tr>
-<tr><td>Text</td><td><code>TEXT</code></td><td><code>customer_name</code>: <code>'Nish Mandal'</code></td></tr>
-<tr><td>Dates and times</td><td><code>TEXT</code>, written <code>'YYYY-MM-DD'</code></td><td>(none yet)</td></tr>
-<tr><td>True or false</td><td><code>INTEGER</code>: <code>1</code> or <code>0</code></td><td><code>is_happy</code></td></tr>
-<tr><td>Files, images</td><td><code>BLOB</code></td><td>(none)</td></tr>
-<tr><td>Nothing</td><td><code>NULL</code></td><td>A missing value</td></tr></table>
-${DIFF({title:'The same types in each dialect', common:'INT, DECIMAL(10,2), VARCHAR(255), DATE', otherTitle:'What each dialect calls its own types', sqlite:'INTEGER, REAL, TEXT\nTEXT for dates (YYYY-MM-DD)\nINTEGER 1 or 0 for true and false', mysql:'INT, BIGINT, DECIMAL, DOUBLE\nVARCHAR(255), TEXT\nDATE, DATETIME\nBOOLEAN', tsql:'INT, BIGINT, DECIMAL, FLOAT\nVARCHAR(255), NVARCHAR(255)\nDATE, DATETIME2\nBIT', note:'The names in the green row work in all three: SQLite accepts them and stores the value as one of its own types. Sizes go in brackets: <code>VARCHAR(255)</code> is text up to 255 characters, and <code>DECIMAL(7,3)</code> is up to 7 digits, 3 after the decimal point (the course notes use it for <code>height</code>).'})}
 <h3>Seeing a column's type</h3>
-<p><code>PRAGMA table_info</code> lists a table's columns and their declared types:</p>
+<p><code>PRAGMA table_info</code> lists a table's columns and their declared types (SQL Server uses <code>sp_help</code>; MySQL uses <code>DESCRIBE</code>):</p>
 ${C("PRAGMA table_info('Customers');")}
 <p><code>typeof()</code> shows how SQLite actually stored a value:</p>
 ${C("SELECT typeof(42), typeof(1.85), typeof('Nish'), typeof(NULL);")}
-${C("SELECT customer_name, typeof(customer_name), height, typeof(height)\nFROM Customers;")}
 <h3>Converting with CAST</h3>
-<p><code>CAST(value AS type)</code> changes a value from one type to another:</p>
+<p><code>CAST(value AS type)</code> changes a value from one type to another. It works in all three dialects:</p>
 ${C("SELECT CAST('42' AS INTEGER)  AS 'Text to number',\n       CAST(1.85 AS INTEGER)  AS 'Decimals dropped',\n       CAST(42 AS TEXT)       AS 'Number to text';")}
 <h3>The whole-number division trap</h3>
 <p>Divide two whole numbers and SQLite gives a whole number, dropping anything after the decimal point. Make one of them a decimal to get the full answer:</p>
-${C("SELECT 7 / 2         AS 'Whole numbers',\n       7 / 2.0       AS 'One decimal',\n       CAST(7 AS REAL) / 2 AS 'Using CAST';")}
-${DIFF({title:'7 / 2 in each dialect', common:'7 / 2.0       -- 3.5\n7 * 1.0 / 2   -- 3.5', sqlite:'7 / 2    -- 3', mysql:'7 / 2    -- 3.5000\n7 DIV 2  -- 3', tsql:'7 / 2    -- 3', note:'Making one side a decimal gives the full answer everywhere. Two whole numbers give a whole number in SQLite and T-SQL, but a decimal in MySQL. <code>CAST</code> works in all three too.'})}
-${TIP('SQLite is relaxed about types: it will store text in an <code>INTEGER</code> column if it can\'t convert it. MySQL and SQL Server refuse. Choosing the right type is still worth it, because it\'s what the next person to read your table expects.')}`,
+${C("SELECT 7 / 2   AS 'Whole numbers',\n       7 / 2.0 AS 'One decimal';")}
+${DIFF({title:'7 / 2 in each dialect', common:'7 / 2.0       -- 3.5\n7 * 1.0 / 2   -- 3.5', sqlite:'7 / 2    -- 3', mysql:'7 / 2    -- 3.5000\n7 DIV 2  -- 3', tsql:'7 / 2    -- 3', note:'Making one side a decimal gives the full answer everywhere. Two whole numbers give a whole number in SQLite and T-SQL, but a decimal in MySQL. <code>CAST</code> works in all three too.'})}`,
     ex:[
       {p:'Insert a customer called Ana Lopez, 1.62 tall and not happy (0). Then show her customer_name with the storage type (typeof) of her customer_id, height and is_happy.', hint:"INSERT INTO Customers (customer_name, height, is_happy) VALUES ('Ana Lopez', 1.62, 0); then SELECT customer_name, typeof(customer_id), typeof(height), typeof(is_happy) … WHERE customer_name = 'Ana Lopez';", sol:"INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Ana Lopez', 1.62, 0);\nSELECT customer_name, typeof(customer_id), typeof(height), typeof(is_happy)\nFROM Customers\nWHERE customer_name = 'Ana Lopez';"},
       {p:'Insert Tom Brown, but write his height as text, in quotes: \'1.90\', and make him happy. Then show his name and typeof(height). What did SQLite store?', hint:"INSERT … VALUES ('Tom Brown', '1.90', 1); then SELECT customer_name, typeof(height) … WHERE customer_name = 'Tom Brown';  SQLite turns the text into a REAL because the column is REAL.", sol:"INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Tom Brown', '1.90', 1);\nSELECT customer_name, typeof(height)\nFROM Customers\nWHERE customer_name = 'Tom Brown';"},
