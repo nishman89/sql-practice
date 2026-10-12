@@ -25,7 +25,7 @@ tablets and phones.
 | **Meet Northwind** | The full Northwind ERD. Select a table to see its columns, its keys, what it links to and its first five rows. |
 | **Lessons** (24) | A **Learn** tab with a short explanation and worked examples, each with a **Run this** button, then one tab per exercise. The editor and results sit alongside. |
 | **Checkpoints** | The last lesson in units 2–5. No new teaching: mixed exercises on the whole unit. |
-| **Query quiz** | **Quiz A** and **Quiz B** (10 query tasks each) and **Mixed practice** (10 exercises picked at random from the lessons). Nothing is marked until you submit. Optional 30- or 45-minute timer, a score for each unit and a full review. |
+| **Quizzes** | The **Query quiz** (20 query-writing tasks, one for every topic) and the **Multiple-choice quiz** (40 questions on ERDs, how queries run, filtering, grouping, joins, subqueries and MySQL vs T-SQL). Nothing is marked until you submit. Optional timer, a score for each unit and a full review. |
 | **Free practice** | Run any query against Northwind. Nothing is marked. |
 
 ### The learning path
@@ -56,18 +56,30 @@ tablets and phones.
 Answers are marked on what they **return**, not how they're written. Column names and aliases don't matter, extra
 columns are fine, and row order only matters when the exercise asks for it (for example "most expensive first").
 
-### How the query quiz works
+### How the quizzes work
 
-1. Choose **Quiz A**, **Quiz B** or **Mixed practice**, then a time limit: **30 minutes**, **45 minutes** or **no limit**.
+| Quiz | Questions | Time limits | You answer by |
+|---|---|---|---|
+| **Query quiz** | 20, one for every topic on the path | 45 min, 60 min or none | Writing a query |
+| **Multiple-choice quiz** | 40, across all six units | 60 min, 75 min or none | Selecting ONE option |
+
+1. Choose a quiz on the **Quizzes** page, then a time limit.
 2. Press **Start the quiz**. Questions are shown one at a time; the numbered buttons at the top jump between them and fill in once a question has an answer.
-3. Write a query for each task. You can **Run** it as often as you like to see its results, but you **won't be told whether it's right** until you submit.
-4. Press **Submit answers**. If time runs out, the quiz is submitted automatically. A countdown sits in the bar at the bottom and turns pink in the last five minutes.
-5. You get your score and whether you passed (the pass mark is **65%**), the time taken and a **score for each unit**, with a link to revise each one.
-6. Every question then shows your query, a model answer, and why yours was marked right or wrong.
-7. Tick **Show only questions I got wrong** to focus on mistakes, or press **Retake quiz** to try again.
+3. Answer each question. In the Query quiz you can **Run** your query as often as you like to see its results, but you **won't be told whether it's right** until you submit.
+4. Every question has a **Northwind ERD** button. It opens the diagram over the question, so you can check table and column names without leaving the quiz (the timer keeps running). Press **Esc** or **Close** to go back.
+5. Press **Submit answers**. If time runs out, the quiz is submitted automatically. A countdown sits in the bar at the bottom and turns pink in the last five minutes.
+6. You get your score and whether you passed (the pass mark is **65%**), the time taken and a **score for each unit**, with a link to revise each one.
+7. Every question then shows your answer and the right one with an explanation: for the Query quiz, your query next to a model answer; for the Multiple-choice quiz, every option with the correct one marked.
+8. Tick **Show only questions I got wrong** to focus on mistakes, or press **Retake quiz** to try again.
 
-Your answer to each question is whatever is in its editor when you submit. Queries run during a quiz can't change the
-data: each one is rolled back as soon as it finishes.
+In the Query quiz, your answer to each task is whatever is in its editor when you submit. Queries run during a quiz
+can't change the data: each one is rolled back as soon as it finishes.
+
+### The Northwind ERD while you work
+
+The **Northwind ERD** button opens the full diagram in a pop-up from every lesson (next to the editor and in each
+exercise), from Free practice, and from every quiz question. Select a table to see its columns, keys and the tables it
+links to.
 
 ### Which SQL does it run?
 
@@ -94,7 +106,7 @@ T-SQL `LIKE '[ABC]%'` character list and T-SQL `FORMAT`. Practise these in MySQL
 
 ### Finding your way around
 
-- **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Query quiz** and **Free practice** on every page. On phones they move into a **Menu** button.
+- **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
 - **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 27").
@@ -133,8 +145,8 @@ Each page has its own address after the `#`, so you can link straight to it:
 |---|---|
 | Learning path | `…/#/path` |
 | A lesson | `…/#/lesson/<id>`, e.g. `#/lesson/innerjoin` (ids are in `src/content/lessons.js`) |
-| Query quiz list | `…/#/quiz` |
-| A quiz | `…/#/quiz/a`, `…/#/quiz/b`, `…/#/quiz/mix` |
+| Quizzes | `…/#/quiz` |
+| A quiz | `…/#/quiz/queries`, `…/#/quiz/mcq` |
 | Free practice | `…/#/free` |
 
 ### On your own computer (step by step)
@@ -309,33 +321,44 @@ syntax is fine; see [Which SQL does it run?](#which-sql-does-it-run)).
 ### Quiz questions – `src/content/quizzes.js`
 
 ```js
-const QUIZ_SETTINGS = { passMark: 65, timeLimits: [30, 45, 0], defaultLimit: 30, mixSize: 10 };
+const QUIZ_SETTINGS = { passMark: 65 };
 
 const QUIZZES = [
-  { id:'a', title:'Quiz A', blurb:'Ten queries covering every unit…', questions:[
-    { unit: 2,                                           // which unit it counts towards in "Score by unit"
+  { id:'queries', type:'query', title:'Query quiz', timeLimits:[45, 60, 0], defaultLimit:45, blurb:'…', questions:[
+    { lesson: 'select',                                  // the lesson it tests (also sets its unit in "Score by unit")
       p:    'List the CompanyName and City of every supplier based in the USA.',
       sol:  "SELECT CompanyName, City\nFROM Suppliers\nWHERE Country = 'USA';",
       why:  'A single WHERE condition on Country…' },   // shown in the review after submitting
     …
   ]},
+  { id:'mcq', type:'mcq', title:'Multiple-choice quiz', timeLimits:[60, 75, 0], defaultLimit:60, blurb:'…', questions:[
+    { unit: 3,                                           // 1-6, for "Score by unit"
+      q:    'Which condition finds customers who have no Region?',
+      code: 'SELECT …',                                  // optional: a query shown under the question
+      options: ["WHERE Region = ''", 'WHERE Region = NULL', "WHERE Region IS 'NULL'", 'WHERE Region IS NULL'],
+      answer: 3,                                         // index of the right option: 0 = a … 3 = d
+      why:  'NULL means "unknown"…' },
+    …
+  ]},
 ];
 ```
 
-To add a quiz, add another `{ id, title, blurb, questions }` to `QUIZZES`. It appears on the Query quiz page and gets
-its own address (`#/quiz/<id>`). **Mixed practice** builds itself from the lesson exercises, so it needs no editing.
+`timeLimits` are minutes, and `0` means no limit. To add a quiz, add another object to `QUIZZES` with a new `id`; it
+gets a card on the Quizzes page and its own address (`#/quiz/<id>`). Spread the right answers across a–d: the checks
+print how often each letter is used.
 
 **Safety net:** `npm run build` refuses to build if the content is broken. It runs every model answer and every
 **Run this** example against Northwind, and fails if one gives an error, if a lesson in `UNITS` doesn't exist, if an
-exercise is missing its task, hint or answer, if `ordered` points at a column that isn't there, or if a quiz id is
-used twice. It also warns when a model answer returns no rows. Run `npm run check` after editing.
+exercise is missing its task, hint or answer, if `ordered` points at a column that isn't there, if a quiz id is
+used twice, or if a multiple-choice question doesn't have exactly four different options and a valid `answer`. It also warns when a model answer returns no rows. Run `npm run check` after editing.
 
 ### Other things you might change
 
 | To change… | Edit… |
 |---|---|
 | Colours and fonts | `src/styles.css` (the variables at the top) |
-| Pass mark, time limits, Mixed practice size | `QUIZ_SETTINGS` in `src/content/quizzes.js` |
+| Pass mark | `QUIZ_SETTINGS` in `src/content/quizzes.js` |
+| A quiz's time limits | `timeLimits` and `defaultLimit` on the quiz in `src/content/quizzes.js` |
 | The What's an ERD page and its questions | The `v-erd` section of `src/index.html`, and `drawLesson()` in `src/app.js` |
 | The Create tables steps | `BUILD_STEPS` in `src/app.js` |
 | The Northwind table notes and diagram layout | `NW_NOTES` and `NW_POS` in `src/app.js` |
@@ -370,7 +393,7 @@ nothing to host except that one file.
     ├── assets/                    Sparta Global logos and favicon (inlined into the page by the build)
     └── content/
         ├── lessons.js             Units, lessons, examples and exercises
-        └── quizzes.js             Quiz A, Quiz B and the quiz settings
+        └── quizzes.js             The Query quiz, the Multiple-choice quiz and the pass mark
 ```
 
 The lessons were written from the Sparta Global SQL lesson notes (`SQL Querying` and `Creating Tables and Connecting
@@ -397,6 +420,7 @@ Every important element has a stable hook:
 | **Home hero** | `hero` · `hero-start` · `hero-quiz` · `hero-free` |
 | **Learning path** | `continue-card` · `overall-progress` (with `data-lessons-done` and `data-exercises-done`) · `continue` · `reset-progress` · `unit-1` … `unit-6` · `lesson-<id>` (with `data-status`: `done`, `next`, `started` or `todo`) · `lesson-link-<id>` · `lesson-status-<id>` |
 | **Any lesson** | `breadcrumb` · `breadcrumb-path` · `breadcrumb-unit` · `lesson-position` · `lesson-footer` · `lesson-status` (with `data-done`) · `previous-lesson` · `next-lesson` |
+| **Northwind ERD pop-up** | Open buttons: `lesson-open-erd` · `exercise-open-erd` · `free-open-erd` · `question-N-open-erd` (quizzes) · the pop-up: `erd-dialog` · `erd-dialog-close` · `erd-dialog-diagram` · each table `dialog-table-customers`, `dialog-table-order-details` … · `erd-dialog-detail` · `erd-dialog-table` (the selected table's name) |
 | **Lesson tabs** | `lesson-title` · `lesson-tabs` · `tab-learn` · `tab-exercise-1` … (with `data-done`) · `lesson-body` |
 | **Learn tab** | `example-1` … · `run-example-1` … · `start-exercises` |
 | **Exercise tab** | `exercise-number` · `exercise-prompt` · `solved` · `show-hint` · `hint` · `show-answer` · `answer` · `copy-answer` · `verdict` (with `data-correct`) · `verdict-next` |
@@ -405,17 +429,19 @@ Every important element has a stable hook:
 | **What's an ERD** | `check-yourself` · `check-question-1` … `check-question-3` (with `data-answer`) · options `check-question-N-option-a` (the label) and `check-question-N-option-a-input` (the radio) · `check-question-N-feedback` |
 | **Create tables** | `build-step-1` … `build-step-6` (with `data-done`) · `step-checklist` · `step-check-1` … (with `data-done`) · `use-lesson-code` · `build-start-again` · `build-erd` · each table in the diagram `build-table-customers`, `build-table-orders` |
 | **Meet Northwind** | `northwind-erd` · each table `northwind-table-customers`, `northwind-table-order-details` … · `table-detail` · `query-table` |
-| **Free practice** | `free-open-erd` · `restore-northwind` |
-| **Query quiz list** | `quizzes-title` · `quiz-card-a` / `quiz-card-b` / `quiz-card-mix` · `quiz-card-a-count` · `quiz-card-a-last` · `quiz-card-a-best` · `open-quiz-a` / `open-quiz-b` / `open-quiz-mix` |
-| **Quiz start** | `back-to-quizzes` · `quiz-title` · `quiz-start` · `question-count` · `pass-mark` · `last-attempt` · `time-limit` (`<select name="time-limit">`: `30`, `45`, `0`) · `start-quiz` |
-| **Quiz question** (N = 1, 2, 3…) | `question-nav` · `question-nav-N` · `question-N` (with `data-solution` and `data-unit`) · `question-N-number` · `question-N-unit` · `question-N-prompt` · `question-N-input` · `question-N-run` · `question-N-results` |
+| **Free practice** | `restore-northwind` |
+| **Quizzes page** | `quizzes-title` · `quiz-card-queries` / `quiz-card-mcq` · `quiz-card-<id>-count` · `quiz-card-<id>-last` · `quiz-card-<id>-best` · `open-quiz-queries` / `open-quiz-mcq` |
+| **Quiz start** | `back-to-quizzes` · `quiz-title` · `quiz-start` · `question-count` · `pass-mark` · `last-attempt` · `time-limit` (`<select name="time-limit">`: Query quiz `45`, `60`, `0`; Multiple-choice quiz `60`, `75`, `0`) · `start-quiz` |
+| **Quiz question** (N = 1, 2, 3…) | `question-nav` · `question-nav-N` · `question-N` (with `data-unit`) · `question-N-number` · `question-N-unit` · `question-N-prompt` · `question-N-open-erd` |
+| **Query quiz question** | `question-N` has `data-solution` · `question-N-input` · `question-N-run` · `question-N-results` |
+| **Multiple-choice question** | `question-N` has `data-answer` (`a`–`d`) · `question-N-code` (when there's a query) · `question-N-instruction` ("Select ONE") · options `question-N-option-a` (the label) and `question-N-option-a-input` (the radio, `name="question-N"`, with `data-option`) |
 | **Submit bar** | `submit-bar` · `answered-count` · `previous-question` · `question-position` · `next-question` · `timer` · `submit-answers` |
-| **Quiz results** | `results` · `quiz-verdict` · `score` · `score-total` · `score-percent` · `time-taken` · `unit-breakdown` · `breakdown-unit-N` / `breakdown-unit-N-score` · `only-wrong-toggle` · `retake` · `all-quizzes` · per question `question-N-review` (with `data-state`: `right`, `wrong` or `blank`) · `question-N-verdict` · `question-N-your-answer` · `question-N-model-answer` · `question-N-explanation` |
+| **Quiz results** | `results` · `quiz-verdict` · `score` · `score-total` · `score-percent` · `time-taken` · `unit-breakdown` · `breakdown-unit-N` / `breakdown-unit-N-score` · `only-wrong-toggle` · `retake` · `all-quizzes` · per question `question-N-review` (with `data-state`: `right`, `wrong` or `blank`) · `question-N-verdict` · `question-N-explanation` · Query quiz: `question-N-your-answer` · `question-N-model-answer` · Multiple-choice: `question-N-review-option-a` … |
 
 ### Things worth knowing when you write tests
 
 - **Below 48rem wide the header links move into `mobile-menu`.** Click its `<summary>` first, then `mobile-nav-…`.
-- **Pages are addresses after `#`.** Go straight to `#/quiz/a` or `#/lesson/select` rather than clicking through.
+- **Pages are addresses after `#`.** Go straight to `#/quiz/queries` or `#/lesson/select` rather than clicking through.
 - **The quiz shows one question at a time.** Only the current question's `question-N` elements exist; use
   `next-question` / `previous-question` or `question-nav-N` to move. Your typing is kept when you move.
 - **The editors are `<textarea>` elements** under a syntax-highlighting layer. Selenium's `sendKeys` and Playwright's
@@ -423,10 +449,11 @@ Every important element has a stable hook:
 - **Submitting with unanswered questions** opens a browser `confirm()` dialog - your test must accept or dismiss it.
   So do **Start again** (Create tables), **Restore Northwind** and **Reset my progress**.
 - **Answers are checked by result, not by text.** Any query that returns the right rows passes.
-- **The model answers are in the page** as `data-solution` on `question-N` (quizzes) and on `lesson-body` (lesson
-  exercises) - handy for writing a test that scores 100%. On the ERD page, `data-answer` on `check-question-N` holds
-  the right option.
-- **Mixed practice picks different questions every time.** Use Quiz A or B for tests that need to be repeatable.
+- **The answers are in the page**: `data-solution` on `question-N` in the Query quiz and on `lesson-body` for lesson
+  exercises, and `data-answer` on `question-N` in the Multiple-choice quiz (and on `check-question-N` on the ERD
+  page) - handy for writing a test that scores 100%.
+- **The ERD pop-up is a `<dialog>`.** While it's open the page behind can't be clicked, so close it (`erd-dialog-close`
+  or Esc) before carrying on.
 - **The timer submits automatically at 0:00.** Pick `0` (no limit) in `time-limit` unless you're testing the timer.
 - **Progress is saved in `localStorage`** under the key `sqlPracticeLab.v1`. Clear it (or click `reset-progress`)
   between tests so they start from a clean state.
@@ -443,7 +470,7 @@ import org.openqa.selenium.support.ui.*;
 import java.time.Duration;
 import static org.junit.jupiter.api.Assertions.*;
 
-class QuizATest {
+class QueryQuizTest {
     WebDriver driver;
 
     static By testId(String id) {
@@ -455,13 +482,13 @@ class QuizATest {
 
     @Test
     void scoresFullMarksWhenEveryModelAnswerIsSubmitted() {
-        driver.get("https://nishman89.github.io/sql-practice/#/quiz/a");
+        driver.get("https://nishman89.github.io/sql-practice/#/quiz/queries");
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
         new Select(wait.until(ExpectedConditions.elementToBeClickable(testId("time-limit")))).selectByValue("0");
-        driver.findElement(testId("start-quiz")).click();
 
-        int total = 10;
+        int total = Integer.parseInt(driver.findElement(testId("question-count")).getText());   // 20
+        driver.findElement(testId("start-quiz")).click();
         for (int i = 1; i <= total; i++) {
             String sql = driver.findElement(testId("question-" + i)).getAttribute("data-solution");
             WebElement editor = driver.findElement(testId("question-" + i + "-input"));
@@ -485,18 +512,29 @@ class QuizATest {
 ```ts
 import { test, expect } from '@playwright/test';
 
-test('scores 100% when every model answer is submitted', async ({ page }) => {
-  await page.goto('https://nishman89.github.io/sql-practice/#/quiz/a');
+test('scores 100% on the multiple-choice quiz', async ({ page }) => {
+  await page.goto('https://nishman89.github.io/sql-practice/#/quiz/mcq');
   await page.getByTestId('time-limit').selectOption('0');
   await page.getByTestId('start-quiz').click();
 
-  for (let i = 1; i <= 10; i++) {
-    const sql = await page.getByTestId(`question-${i}`).getAttribute('data-solution');
-    await page.getByTestId(`question-${i}-input`).fill(sql!);
-    if (i < 10) await page.getByTestId('next-question').click();
+  for (let i = 1; i <= 40; i++) {
+    const answer = await page.getByTestId(`question-${i}`).getAttribute('data-answer');   // 'a'-'d'
+    await page.getByTestId(`question-${i}-option-${answer}`).click();
+    if (i < 40) await page.getByTestId('next-question').click();
   }
   await page.getByTestId('submit-answers').click();
   await expect(page.getByTestId('score-percent')).toHaveText('100%');
+});
+
+test('the ERD can be opened during a quiz without losing the answer', async ({ page }) => {
+  await page.goto('https://nishman89.github.io/sql-practice/#/quiz/queries');
+  await page.getByTestId('start-quiz').click();
+  await page.getByTestId('question-1-input').fill('SELECT * FROM Suppliers;');
+  await page.getByTestId('question-1-open-erd').click();
+  await page.getByTestId('dialog-table-suppliers').click();
+  await expect(page.getByTestId('erd-dialog-table')).toHaveText('Suppliers');
+  await page.getByTestId('erd-dialog-close').click();
+  await expect(page.getByTestId('question-1-input')).toHaveValue('SELECT * FROM Suppliers;');
 });
 
 test('a wrong answer explains what is different', async ({ page }) => {

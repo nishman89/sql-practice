@@ -55,7 +55,7 @@ after `#`, shows one section, and calls its render function.
 
 After every route change, `renderChrome()` draws the breadcrumb and the lesson footer (previous / next lesson and what's
 left to complete). Any element with a `data-go` attribute navigates when clicked: `data-go="select"` opens a lesson,
-`data-go="path"`, `data-go="quiz"`, `data-go="quiz/a"` and `data-go="free"` open the other pages.
+`data-go="path"`, `data-go="quiz"`, `data-go="quiz/mcq"` and `data-go="free"` open the other pages.
 
 ---
 
@@ -82,13 +82,17 @@ const PATH    = UNITS.flatMap(…);                                             
 ### Quizzes: `src/content/quizzes.js`
 
 ```js
-const QUIZ_SETTINGS = { passMark: 65, timeLimits: [30, 45, 0], defaultLimit: 30, mixSize: 10 };
-const QUIZZES = [ { id: 'a', title, blurb, questions: [ { unit, p, sol, why, ordered? }, … ] }, … ];
+const QUIZ_SETTINGS = { passMark: 65 };
+const QUIZZES = [
+  { id:'queries', type:'query', title, blurb, timeLimits:[45, 60, 0], defaultLimit:45,
+    questions: [ { lesson, p, sol, why, ordered? }, … ] },              // 20: one per topic
+  { id:'mcq',     type:'mcq',   title, blurb, timeLimits:[60, 75, 0], defaultLimit:60,
+    questions: [ { unit, q, code?, options:[4 strings], answer:0-3, why }, … ] },   // 40
+];
 ```
 
-`unit` is the path unit a question belongs to (2–6), used for the "Score by unit" table. `why` is shown in the review.
-**Mixed practice** (`id: 'mix'`) isn't in the file: `mixQuiz()` in `src/quiz.js` builds it from the lesson exercises,
-using each exercise's `hint` as its `why`.
+A query question's unit comes from its `lesson` (the unit that lesson is in), and the review links back to that lesson.
+A multiple-choice question names its `unit` directly. `timeLimits` are minutes, with `0` meaning no limit.
 
 ### The rules the checks enforce
 
@@ -100,7 +104,12 @@ using each exercise's `hint` as its `why`.
 - a model answer or a runnable example gives an error against Northwind
 - `ordered` refers to a column the model answer doesn't return
 - a model answer doesn't pass when compared with itself
-- two quizzes share an id, or one is called `mix`
+- two quizzes share an id, a quiz has no questions, or its `defaultLimit` isn't one of its `timeLimits`
+- a query question's `lesson` isn't a lesson with exercises
+- a multiple-choice question doesn't have exactly four different options, a `unit` of 1–6, or an `answer` of 0–3
+
+After the checks it prints how often each letter (a–d) is the right answer in each multiple-choice quiz, so you can
+keep them evenly spread.
 
 It **warns** (but still builds) when a model answer returns no rows, because any query returning nothing would then be
 marked correct, and when a lesson isn't in any unit.
@@ -177,25 +186,33 @@ distinct token. Each failure returns a message and a tip ("Check your ORDER BY, 
 
 ## 6. The quiz engine (`src/quiz.js`)
 
+One engine runs both quiz types; `QZ.def.type` decides how a question is shown and marked.
+
 ```
- Start screen                 In progress                          Results
- ────────────                 ───────────                          ───────
- question count, pass mark    one question at a time               score, pass/fail (65%), time taken
- last / best attempt          editor per question: Run shows       score by unit, with "Revise this unit"
- time limit: 30 / 45 / none   results, but nothing is marked       review: your query, model answer, why
-        │                     answers kept in QZ.answers[]         "Show only questions I got wrong"
-        └── startQuiz() ────► countdown; auto-submit at 0:00 ────► submitQuiz(): mark every answer with compare(),
-                              Submit (confirm if any are blank)    save the attempt to localStorage
+ Start screen                 In progress                            Results
+ ────────────                 ───────────                            ───────
+ question count, pass mark    one question at a time                 score, pass/fail (65%), time taken
+ last / best attempt          query:  editor; Run shows results,     score by unit, with "Revise this unit"
+ time limit from the quiz's           but nothing is marked          review: query → your query, model answer, why
+ timeLimits                   mcq:    four options, select ONE               mcq   → every option, right one marked, why
+        │                     Northwind ERD button on every question "Show only questions I got wrong"
+        └── startQuiz() ────► countdown; auto-submit at 0:00 ──────► submitQuiz(): mark every answer, save the attempt
+                              Submit (confirm if any are blank)
 ```
 
-- All quiz state is in one object, `QZ`: the questions, the answers, the current question, the start time, the limit
-  and, after submitting, the marks.
+- All quiz state is in one object, `QZ`: the definition, the answers (query text, or the chosen option's index), the
+  current question, the start time, the limit and, after submitting, the marks.
+- **Marking:** a query answer is run with `runSafe()` and checked with `compare()` (section 5); a multiple-choice
+  answer is compared with the question's `answer` index.
 - **Queries can't change the data.** `runSafe()` wraps every quiz query, whether run by the learner or for marking, in
   `SAVEPOINT quiz_run` … `ROLLBACK TO quiz_run`.
-- A question counts as answered when its editor holds anything other than comments.
+- A query question counts as answered when its editor holds anything other than comments; a multiple-choice question
+  when an option is selected.
+- **The Northwind ERD pop-up** (`openErd()` in `src/app.js`) is a `<dialog>` drawn over the quiz, so opening it keeps
+  the attempt, the timer and the learner's typing. The same pop-up is used by lessons and Free practice.
 - Leaving the quiz page (`route()` to any other view) stops the timer and drops the attempt.
-- **The model answers are in the page** (`data-solution`). That's fine for practice; if a quiz ever counts towards an
-  assessment, marking would have to move to a server.
+- **The answers are in the page** (`data-solution`, `data-answer`). That's fine for practice; if a quiz ever counts
+  towards an assessment, marking would have to move to a server.
 
 ---
 
@@ -338,7 +355,9 @@ to configure.
 | Add a unit | Add an entry to `UNITS`. The path, progress and quiz unit names update automatically. |
 | Add a quiz question | Add `{ unit, p, sol, why }` to a quiz in `src/content/quizzes.js`. |
 | Add a quiz | Add `{ id, title, blurb, questions }` to `QUIZZES`. It gets a card and the address `#/quiz/<id>`. |
-| Change the pass mark or time limits | `QUIZ_SETTINGS` in `src/content/quizzes.js`. |
+| Change the pass mark | `QUIZ_SETTINGS` in `src/content/quizzes.js`. |
+| Change a quiz's time limits | `timeLimits` and `defaultLimit` on that quiz. |
+| Add a multiple-choice question | Add `{ unit, q, options, answer, why }` (and optional `code`) to the `mcq` quiz. |
 | Accept more MySQL/T-SQL syntax | A statement rewrite in `transform()`, a function rewrite in `rewriteFns()`, or a new function in `addFns()` (`src/engine.js`). |
 | Explain a new kind of error | Add a pattern to `friendlyError()` in `src/engine.js`. |
 | Change a Create tables step | `BUILD_STEPS` in `src/app.js` (`title`, `short`, `why`, `starter`, `example`, `checks`). |
@@ -422,7 +441,7 @@ There is no server. Everything a visitor sees comes from the one file; the only 
 | `src/assets/` | Sparta Global logos (`sparta-logo.png`, `sparta-logo-white.png`) and `favicon.svg`, shared with the ISTQB site | - |
 | `src/engine.js` | Dialect layer, `runScript()`, `friendlyError()`, extra SQL functions, `expected()` and `compare()` | - (no DOM) |
 | `src/content/lessons.js` | `UNITS`, `LESSONS`, `PATH`, and the `C()` / `TIP()` helpers | `esc()` from `engine.js` |
-| `src/content/quizzes.js` | `QUIZ_SETTINGS` and `QUIZZES` | - |
+| `src/content/quizzes.js` | `QUIZ_SETTINGS` and `QUIZZES` (the Query quiz and the Multiple-choice quiz) | - |
 | `src/app.js` | Progress, header behaviour (back-to-top, menu), databases, results tables, editor, ERD renderer, routing, path, lessons, Foundations pages, Free practice, boot | engine, content |
 | `src/quiz.js` | Quiz list, start screen, questions, timer, marking, results and review | engine, content, `app.js` helpers |
 | `.github/workflows/deploy.yml` | Check, build and publish on every push to `main` | - |
