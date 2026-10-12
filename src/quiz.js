@@ -99,7 +99,7 @@ function renderQuizDoing(v){
   const card=h('section',{class:'qcard','data-testid':`question-${N}`,'data-unit':String(qUnit(q))});
   if (type==='mcq') card.setAttribute('data-answer', LETTERS[q.answer]); else card.setAttribute('data-solution', q.sol);
   card.append(h('div',{class:'ex-num'}, h('span',{'data-testid':`question-${N}-number`},`Question ${N} of ${n}`), h('span',{class:'qunit','data-testid':`question-${N}-unit`}, unitTitle(qUnit(q))),
-      h('button',{class:'btn small erd-btn',type:'button','data-testid':`question-${N}-open-erd`,onclick:openErd},'Northwind ERD')));
+      erdButton(`question-${N}-open-erd`)));
   card.append(h('p',{class:'ex-prompt','data-testid':`question-${N}-prompt`}, ...fmtPrompt(type==='mcq'?q.q:q.p)));
   v.append(card);
   if (type==='mcq'){

@@ -4,9 +4,9 @@
 const K = s => `<code>${esc(s)}</code>`;
 
 const DIALECT_INFO = {
-  mysql:{name:'MySQL', who:'Open source, owned by Oracle. Very common behind websites and web apps.', tool:'MySQL Workbench'},
-  tsql:{name:'T-SQL', who:'Transact-SQL: Microsoft\'s dialect, used by SQL Server and Azure SQL.', tool:'SQL Server Management Studio (SSMS)'},
-  lab:{name:'This dialect: SQLite', who:'SQLite, a small database engine built into phones, apps and browsers. It\'s the dialect this course uses, and it runs right here in your browser.', tool:'This website'}
+  mysql:{name:'🐬 MySQL', who:'Open source, owned by Oracle. Very common behind websites and web apps.', tool:'MySQL Workbench'},
+  tsql:{name:'🪟 T-SQL', who:'Transact-SQL: Microsoft\'s dialect, used by SQL Server and Azure SQL.', tool:'SQL Server Management Studio (SSMS)'},
+  lab:{name:'🪶 This dialect: SQLite', who:'SQLite, a small database engine built into phones, apps and browsers. It\'s the dialect this course uses, and it runs right here in your browser.', tool:'This website'}
 };
 
 const DIALECTS = [
@@ -57,9 +57,9 @@ const FLAVOURS_LEARN = `
 <p>SQL is an international standard (ISO/ANSI). Each database product implements that standard, then adds its own extras: extra functions, its own way of limiting rows, its own procedural code. A query you write for one database will usually run on another, but not always.</p>
 <h3>Three flavours you'll meet</h3>
 <div class="flavour-cards">
-  <div class="flavour"><b>MySQL</b><span>Open source, owned by Oracle. Very common behind websites. Used with MySQL Workbench.</span></div>
-  <div class="flavour"><b>T-SQL</b><span>Transact-SQL, Microsoft's dialect for SQL Server and Azure SQL. Used with SSMS.</span></div>
-  <div class="flavour this"><b>SQLite</b><span>A small engine built into phones, apps and browsers. <strong>This course uses SQLite</strong>, and it runs right here.</span></div>
+  <div class="flavour mysql"><b><span class="ficon" aria-hidden="true">🐬</span> MySQL</b><span>Open source, owned by Oracle. Very common behind websites. Used with MySQL Workbench.</span></div>
+  <div class="flavour tsql"><b><span class="ficon" aria-hidden="true">🪟</span> T-SQL</b><span>Transact-SQL, Microsoft's dialect for SQL Server and Azure SQL. Used with SSMS.</span></div>
+  <div class="flavour sqlite this"><b><span class="ficon" aria-hidden="true">🪶</span> SQLite</b><span>A small engine built into phones, apps and browsers. <strong>This course uses SQLite</strong>, and it runs right here.</span></div>
 </div>
 <p>There are others, too: PostgreSQL is popular for newer applications, and Oracle Database has its own dialect, PL/SQL. Once you know one flavour well, picking up another is mostly a matter of looking up the differences.</p>
 <div class="two-col">
@@ -68,6 +68,8 @@ const FLAVOURS_LEARN = `
 </div>
 <h3>This course uses SQLite</h3>
 <p>Every lesson, example, exercise and quiz is written in SQLite, and everything runs in your browser, so there's nothing to install. If you type MySQL or T-SQL out of habit, such as <code>TOP 10</code> or <code>YEAR(OrderDate)</code>, you'll get a message showing the SQLite way to write it.</p>
+<p>Where the three dialects write something differently, the lessons show all three, marked with the same icons as the course notes:</p>
+${DIFF({title:'Example: returning only the first 10 rows', sqlite:'SELECT ProductName FROM Products LIMIT 10;', mysql:'SELECT ProductName FROM Products LIMIT 10;', tsql:'SELECT TOP 10 ProductName FROM Products;', note:'🪶 SQLite is the one that runs here. 🐬 MySQL and 🪟 T-SQL are there so you know what to write when you use those databases.'})}
 <p>The table below compares MySQL, T-SQL and SQLite. Use the tabs to see one dialect at a time; on the <strong>This dialect: SQLite</strong> tab, <strong>Try it</strong> opens an example in Free practice. The same table is always available from <strong>SQL dialects</strong> in the header.</p>`;
 
 const FLAVOURS_CHECK = [

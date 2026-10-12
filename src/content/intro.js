@@ -60,3 +60,42 @@ const DATABASES_CHECK = [
   {q:'In the Customers table, what is one row?', a:['Every customer\'s City','The whole table','One customer, with all of their details'], c:2, why:'A row (record) is one item: one customer. A column (field) is one fact about every customer, such as City.'},
   {q:'Which SQL statement reads data without changing it?', a:['SELECT','UPDATE','INSERT'], c:0, why:'SELECT reads. INSERT, UPDATE and DELETE change the data, and CREATE, ALTER and DROP change the structure.'}
 ];
+
+/* ---------- Introduction: how to use the site ---------- */
+const SITE_INTRO = `
+<p class="lede">This site teaches SQL by doing it. You read a short explanation, run worked examples, then write your own queries against a real database, and they're checked straight away. Everything runs in your browser, so there's nothing to install.</p>
+
+<h2 class="dot">How it's organised</h2>
+<div class="intro-cards">
+  <a class="intro-card" href="#/path" data-testid="intro-card-path"><b>Learning path</b><span>Seven units, from what a database is to window functions and performance tuning. Work through them in order, or jump to any lesson.</span></a>
+  <a class="intro-card" href="#/dialects" data-testid="intro-card-dialects"><b>SQL dialects</b><span>How MySQL, T-SQL and SQLite write the same things, side by side.</span></a>
+  <a class="intro-card" href="#/quiz" data-testid="intro-card-quizzes"><b>Quizzes</b><span>A short quiz for each unit, plus two final quizzes. Nothing is marked until you submit.</span></a>
+  <a class="intro-card" href="#/free" data-testid="intro-card-free"><b>Free practice</b><span>Run any query you like against the Northwind database. Nothing is marked.</span></a>
+</div>
+
+<h2 class="dot">Inside a lesson</h2>
+<ol class="steps-list">
+  <li><b>The title, what it's for, and the commands it uses.</b> Every lesson starts with these, so you can see at a glance what it covers.</li>
+  <li><b>Learn.</b> A short explanation with worked examples. Press <strong>Run this</strong> on any example to load it into the editor and run it, then change it and run it again.</li>
+  <li><b>Exercises.</b> A task to solve with a query. Press <strong>Run</strong> (or <kbd>Ctrl</kbd> + <kbd>Enter</kbd>) and your result is checked at once. If it isn't right yet, you're told what's different. <strong>Show a hint</strong> and <strong>Show the answer</strong> are there if you're stuck.</li>
+  <li><b>Lesson complete.</b> Solve every exercise, and the lesson is ticked off on the learning path. The footer always links to the next lesson.</li>
+</ol>
+<p>Answers are marked on what your query <em>returns</em>, not how it's written. Column names and aliases don't matter, extra columns are fine, and the order of rows only matters when the task asks for it.</p>
+
+<h2 class="dot">The Northwind ERD</h2>
+<p>All the exercises use Northwind, a sample database for a small food trading company. When you can't remember a table or column name, press the <strong>Show Northwind ERD</strong> button. It's above every editor and on every quiz question:</p>
+<p data-intro-erd></p>
+<p>It opens a diagram of every table and how they link. Select a table to see its columns, then press <kbd>Esc</kbd> or <strong>Close</strong> to carry on where you were. In a quiz, your answers and the timer are kept while it's open.</p>
+
+<h2 class="dot">Which SQL this uses</h2>
+<p>The lessons use <strong>SQLite</strong>, which runs here in your browser. SQL comes in several flavours, and where MySQL or T-SQL write something differently, the lessons show all three, marked with these icons:</p>
+<ul class="dialect-legend">
+  <li><span class="ddiff-tag sqlite"><span aria-hidden="true">🪶</span> SQLite</span> runs here. This is the version to practise.</li>
+  <li><span class="ddiff-tag mysql"><span aria-hidden="true">🐬</span> MySQL</span> for comparison: you'd run it in MySQL Workbench.</li>
+  <li><span class="ddiff-tag tsql"><span aria-hidden="true">🪟</span> T-SQL</span> for comparison: you'd run it in SQL Server Management Studio.</li>
+</ul>
+<p>If you type MySQL or T-SQL out of habit, such as <code>TOP 10</code> or <code>YEAR(OrderDate)</code>, you'll get a message showing the SQLite way.</p>
+
+<h2 class="dot">Your progress</h2>
+<p>Your solved exercises, your drafts, the tables you build and your quiz scores are saved in <strong>this browser on this device</strong>. Nothing is sent anywhere. Another browser, or a private window, starts fresh. <strong>Reset my progress</strong> at the bottom of the learning path clears everything.</p>
+`;

@@ -227,12 +227,14 @@ const FOUND = {
   build:{need:'Complete all six steps.', prog:()=>[BUILD_STEPS.filter((s,i)=>P.buildDone[i]).length, BUILD_STEPS.length], label:'6 guided steps'},
   map:{need:'Select at least three tables in the diagram to look inside them.', prog:()=>[Math.min(3,(P.mapTables||[]).length),3], label:'Explore the diagram'}
 };
-function lessonProg(id){ if (FOUND[id]) return FOUND[id].prog(); const L=LESSONS[id]; return [L.ex.filter((_,i)=>P.exDone[id+'.'+i]).length, L.ex.length]; }
+function lessonProg(id){ if (FOUND[id]) return FOUND[id].prog(); const L=LESSONS[id];
+  if (!L.ex) return [(P.checkDone||{})[id]?1:0, 1];
+  return [L.ex.filter((_,i)=>P.exDone[id+'.'+i]).length, L.ex.length]; }
 function lessonDone(id){ const [a,b]=lessonProg(id); return a>=b; }
 function nextLesson(){ return PATH.find(x=>!lessonDone(x.id)); }
 
 /* ---------- Routing ---------- */
-const VIEWS=['path','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
+const VIEWS=['path','intro','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
 let current={view:'path',lesson:null};
 function route(){
   const parts=location.hash.replace(/^#\/?/,'').split('/');
@@ -240,17 +242,19 @@ function route(){
   if (parts[0]==='lesson' && LESSONS[parts[1]]){ lid=parts[1]; view=LESSONS[lid].kind||'lesson'; }
   else if (parts[0]==='free') view='free';
   else if (parts[0]==='dialects') view='dialects';
+  else if (parts[0]==='intro') view='intro';
   else if (parts[0]==='quiz') view = parts[1] ? 'quiz' : 'quizzes';
   if (view!=='quiz') stopTimer();
   current={view,lesson:lid};
   VIEWS.forEach(v=>$('#v-'+v).classList.toggle('on', v===view));
-  const section = view==='free'?'free' : view==='dialects'?'dialects' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
+  const section = view==='free'?'free' : view==='dialects'?'dialects' : view==='intro'?'intro' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
   $$('[data-nav]').forEach(b=>{ if (b.dataset.nav===section) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   $('#pathHero').hidden = view!=='path'; $('#main').classList.toggle('on-path', view==='path');
   if (lid){ P.last=lid; save(); }
   if (view==='path') renderPath();
   if (view==='map') drawMap();
   if (view==='databases') drawDatabases();
+  if (view==='intro') drawIntro();
   if (view==='flavours') drawFlavours();
   if (view==='dialects') renderDialectTabs($('#dialectsTabs'), 'dialects');
   if (view==='build') buildEd.sync();
@@ -263,7 +267,7 @@ function route(){
   const h1=view==='path'?$('#h-path'):$('#v-'+view+' h1'); if (h1){ h1.setAttribute('tabindex','-1'); h1.focus({preventScroll:true}); }
 }
 addEventListener('hashchange', route);
-function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
+function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='intro'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-go]'); if (b){ e.preventDefault(); goto(b.dataset.go); } });
 
 function renderChrome(){
@@ -286,6 +290,7 @@ function renderChrome(){
 function refreshChrome(){ renderChrome(); if (current.view==='lesson') renderLessonTabs(); }
 
 /* ---------- Path page ---------- */
+const cmdChips = (L, tid) => (L.cmds && L.cmds.length) ? h('span',{class:'cmds','data-testid':tid}, h('span',{class:'sr'},'Commands: '), ...L.cmds.map(c=>h('code',{},c))) : null;
 function renderPath(){
   const v=$('#v-path'); v.innerHTML='';
   const doneL=PATH.filter(x=>lessonDone(x.id)).length;
@@ -304,6 +309,7 @@ function renderPath(){
   v.append(h('div',{class:'path-hero'}, card));
   const ha=$('#heroActions'); ha.innerHTML='';
   ha.append(h('button',{class:'btn primary',type:'button','data-go':nxt?nxt.id:'free','data-testid':'hero-start'}, nxt?(doneL?'Continue learning':'Start the learning path'):'Free practice'),
+    h('button',{class:'btn light',type:'button','data-go':'intro','data-testid':'hero-intro'},'How this site works'),
     h('button',{class:'btn light',type:'button','data-go':'quiz','data-testid':'hero-quiz'},'Take a quiz'),
     h('button',{class:'btn light',type:'button','data-go':'free','data-testid':'hero-free'},'Free practice'));
   let num=0;
@@ -313,10 +319,10 @@ function renderPath(){
     u.lessons.forEach(id=>{
       const L=LESSONS[id]; num++;
       const isDone=lessonDone(id), isNext=nxt&&nxt.id===id; const [a,b]=lessonProg(id);
-      const status = isDone?'Done' : isNext?'Up next' : a>0 ? (FOUND[id]?'Started':`${a} of ${b} solved`) : (FOUND[id]?FOUND[id].label:`${b} exercises`);
+      const status = isDone?'Done' : isNext?'Up next' : a>0 ? (FOUND[id]?'Started':`${a} of ${b} solved`) : (FOUND[id]?FOUND[id].label: L.ex?`${b} exercises`:`Read and ${L.check.length} questions`);
       const node=h('span',{class:'node','aria-hidden':'true'}, isDone?h('span',{class:'tick'}):h('span',{}, L.checkpoint?'':String(num)));
       ol.append(h('li',{class:(isDone?'done ':'')+(isNext?'next ':'')+(L.checkpoint?'cp':''),'data-testid':`lesson-${id}`,'data-status':isDone?'done':isNext?'next':a>0?'started':'todo'},
-        h('a',{href:'#/lesson/'+id,'data-testid':`lesson-link-${id}`}, node, h('span',{class:'t'}, L.title, h('small',{},L.summary)), h('span',{class:'s','data-testid':`lesson-status-${id}`},status))));
+        h('a',{href:'#/lesson/'+id,'data-testid':`lesson-link-${id}`}, node, h('span',{class:'t'}, L.title, h('small',{},L.summary), cmdChips(L, `lesson-cmds-${id}`)), h('span',{class:'s','data-testid':`lesson-status-${id}`},status))));
     });
     v.append(h('section',{class:'unit','aria-label':`Unit ${ui+1}: ${u.title}`,'data-testid':`unit-${ui+1}`},
       h('div',{class:'unit-h'}, h('div',{class:'n'},`Unit ${ui+1}`), h('h2',{},u.title), h('p',{},u.blurb), h('div',{class:'meta'}, `${done} of ${u.lessons.length} lessons complete`),
@@ -334,7 +340,7 @@ function resetAll(){
 }
 
 /* ---------- SQL flavours lesson and the SQL dialects page ---------- */
-const DTABS=[['side','Side by side'],['mysql','MySQL'],['tsql','T-SQL'],['lab','This dialect: SQLite']];
+const DTABS=[['side','Side by side'],['mysql','🐬 MySQL'],['tsql','🪟 T-SQL'],['lab','🪶 This dialect: SQLite']];
 function renderDialectTabs(host, tp){
   let cur=host.dataset.tab||'side';
   const draw=()=>{
@@ -353,7 +359,7 @@ function renderDialectTabs(host, tp){
         if (r.group!==group){ group=r.group; tb.append(h('tr',{class:'grp'}, h('th',{colspan:'4',scope:'colgroup'}, group))); }
         tb.append(h('tr',{'data-testid':`${tp}-row-${i+1}`}, h('td',{},r.task), h('td',{html:r.mysql}), h('td',{html:r.tsql}), h('td',{class:'this-col',html:r.lab})));
       });
-      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},h('tr',{},h('th',{},'Task'),h('th',{},'MySQL'),h('th',{},'T-SQL'),h('th',{class:'this-col'},'SQLite (this dialect)'))), tb)));
+      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},h('tr',{},h('th',{},'Task'),h('th',{},'🐬 MySQL'),h('th',{},'🪟 T-SQL'),h('th',{class:'this-col'},'🪶 SQLite (this dialect)'))), tb)));
     } else {
       const info=DIALECT_INFO[cur];
       panel.append(h('p',{class:'dinfo'}, h('b',{},info.name+'. '), info.who+' ', h('span',{class:'muted'},`Tool: ${info.tool}.`)));
@@ -390,6 +396,10 @@ function renderCheck(form, Q, tp, saved, onAnswer){
     fs.append(fb); form.append(fs);
     if (saved[qi]!=null) mark(saved[qi], true);
   });
+}
+function drawIntro(){
+  const b=$('#introBody'); b.innerHTML=SITE_INTRO;
+  const slot=$('[data-intro-erd]',b); if (slot) slot.append(erdButton('intro-open-erd'));
 }
 function drawDatabases(){
   $('#databasesBody').innerHTML=DATABASES_LEARN;
@@ -622,11 +632,12 @@ function openLesson(id){
   const L=LESSONS[id];
   if (curLesson!==id){ curLesson=id; const saved=(P.tab||{})[id]; curTab = saved!=null ? saved : (L.checkpoint?0:'learn'); }
   $('#lTitle').textContent=L.title; $('#lSummary').textContent=L.summary;
+  const lc=$('#lCmds'); lc.innerHTML=''; if (L.cmds && L.cmds.length) lc.append(h('span',{class:'cmds-label'},'Commands'), ...L.cmds.map(c=>h('code',{},c)));
   renderLessonTabs(); renderLessonBody();
 }
 function renderLessonTabs(){
   const L=LESSONS[curLesson]; const t=$('#lTabs'); t.innerHTML='';
-  const tabs=(L.checkpoint?[]:['learn']).concat(L.ex.map((_,i)=>i));
+  const tabs=(L.checkpoint?[]:['learn']).concat((L.ex||[]).map((_,i)=>i));
   for (const k of tabs){
     const done = k!=='learn' && P.exDone[curLesson+'.'+k];
     const b=h('button',{type:'button',role:'tab','aria-selected':String(curTab===k),class:done?'done':'','data-testid':k==='learn'?'tab-learn':`tab-exercise-${k+1}`,'data-done':k==='learn'?null:String(!!done)},
@@ -646,7 +657,13 @@ function renderLessonBody(){
       if (pre.hasAttribute('data-norun')){ wrap.classList.add('readonly'); wrap.prepend(h('span',{class:'tag'}, pre.dataset.label || 'Read only: these tables aren\'t in Northwind')); }
       else { wrap.classList.add('has-run'); wrap.append(h('button',{class:'btn small run',type:'button','data-testid':`run-example-${n+1}`,onclick:()=>{ lEd.value=sql; P.drafts[draftKey()]=sql; save(); runLesson(); if (innerWidth<1020) $('#lEditor').scrollIntoView({block:'start'}); }},'Run this')); }
     });
-    body.append(h('p',{style:'margin-top:26px'}, h('button',{class:'btn primary',type:'button','data-testid':'start-exercises',onclick:()=>setTab(0)}, `Start the exercises (${L.ex.length})`)));
+    if (L.ex) body.append(h('p',{style:'margin-top:26px'}, h('button',{class:'btn primary',type:'button','data-testid':'start-exercises',onclick:()=>setTab(0)}, `Start the exercises (${L.ex.length})`)));
+    else if (L.check){
+      const form=h('form',{class:'quiz',onsubmit:e=>e.preventDefault(),'data-testid':'lesson-check'});
+      body.append(h('div',{class:'rule'}), h('h2',{class:'dot'},'Check yourself'), form);
+      P.checks=P.checks||{}; const saved=(P.checks[curLesson]=P.checks[curLesson]||{}); const id=curLesson;
+      renderCheck(form, L.check, 'lesson-check', saved, (qi,ai)=>{ saved[qi]=ai; (P.checkDone=P.checkDone||{})[id]=L.check.every((x,i)=>saved[i]===x.c); save(); refreshChrome(); });
+    }
     const first=$('pre.ex:not([data-norun])',body);
     lEd.value = P.drafts[draftKey()] ?? (first?first.textContent:'');
     lEd.setLabel('Try it here');
@@ -662,7 +679,7 @@ function renderLessonBody(){
     h('button',{class:'btn small',type:'button',id:'bHint','data-testid':'show-hint',onclick:()=>{ reveal.hint=!reveal.hint; drawReveal(); }},'Show a hint'),
     h('button',{class:'btn small',type:'button',id:'bSol','data-testid':'show-answer',onclick:()=>{ reveal.sol=!reveal.sol; drawReveal(); }},'Show the answer')));
   body.append(h('div',{id:'lReveal'}));
-  if (!L.checkpoint && i===0) body.append(h('p',{class:'small'}, 'Stuck? The ', h('button',{type:'button',class:'linkish',onclick:()=>setTab('learn')},'Learn tab'), ' has worked examples. The ', h('button',{type:'button',class:'linkish','data-testid':'exercise-open-erd',onclick:openErd},'Northwind ERD'), ' shows every table and column.'));
+  if (!L.checkpoint && i===0) body.append(h('p',{class:'small'}, 'Stuck? The ', h('button',{type:'button',class:'linkish',onclick:()=>setTab('learn')},'Learn tab'), ' has worked examples. The ', h('button',{type:'button',class:'linkish','data-testid':'exercise-open-erd',onclick:openErd},'Show the Northwind ERD'), ' to see every table and column.'));
   lEd.value = P.drafts[draftKey()] ?? `-- ${L.checkpoint?'Checkpoint question':'Exercise'} ${i+1}\n\n`;
   lEd.setLabel(`Your answer to ${L.checkpoint?'question':'exercise'} ${i+1}`);
   renderReport($('#lOut'), emptyRep(), {empty:'Run your query. It\'s checked against the expected result automatically.'});
@@ -709,6 +726,8 @@ function runLesson(){
 }
 
 /* ---------- Northwind ERD pop-up (lessons, quizzes and Free practice) ---------- */
+const ERD_ICON='<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1.5" width="6" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9.5" width="6" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 4h2.5a1.5 1.5 0 0 1 1.5 1.5V9.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+function erdButton(tid){ return h('button',{class:'btn small erd-btn',type:'button','data-testid':tid,title:'Opens a diagram of every Northwind table and how they link',onclick:openErd,html:ERD_ICON+'<span>Show Northwind ERD</span>'}); }
 let dlgSel='Orders';
 function openErd(){
   const d=$('#erdDialog'); drawDialog();
@@ -741,7 +760,7 @@ $('#erdDialog').addEventListener('click',e=>{ if (e.target===$('#erdDialog')) cl
 function openFree(sql){ P.drafts.free=sql; save(); fEd.value=sql; goto('free'); }
 function runFree(){ const rep=runScript(nw, fEd.value, 'nw'); if (rep.ran.some(s=>/^(CREATE|DROP|ALTER)\s+TABLE\b/i.test(s))) nwModel=null; renderReport($('#fOut'), rep); }
 function makeStrip(host, getEd, key, tp){
-  host.append(h('button',{class:'btn small erd-btn',type:'button','data-testid':`${tp}-open-erd`,onclick:openErd},'Northwind ERD'), ' Tables: ');
+  host.append(erdButton(`${tp}-open-erd`), ' Tables: ');
   for (const t of ['Customers','Orders','Order Details','Products','Categories','Suppliers','Employees','Shippers']){
     host.append(h('button',{class:'chip',type:'button','data-testid':`${tp}-insert-table-${t.toLowerCase().replace(/\s+/g,'-')}`,title:`Insert ${t} at the cursor`,onclick:()=>{ const ed=getEd(), ta=ed.ta; const txt=/\s/.test(t)?'"'+t+'"':t; ta.focus(); ta.setRangeText(txt, ta.selectionStart, ta.selectionEnd, 'end'); ed.sync(); P.drafts[key()]=ta.value; save(); }}, t));
   }
