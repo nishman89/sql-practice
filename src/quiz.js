@@ -1,38 +1,35 @@
-/* ---------- Query quiz ----------
-   A quiz is a list of query tasks. Learners can run their queries while they work, but nothing is
-   marked until they submit. Every query runs inside a SAVEPOINT that is rolled back, so a quiz can't
-   change the data. */
+/* ---------- Quizzes ----------
+   Two kinds (see src/content/quizzes.js):
+   - 'query': learners write a query per task. They can run it while they work, but nothing is marked until
+     they submit. Every query runs inside a SAVEPOINT that is rolled back, so a quiz can't change the data.
+   - 'mcq':   multiple choice, select ONE.
+   Both show one question at a time, have an optional timer, a 65% pass mark, a score by unit and a review. */
 let QZ=null, qEd=null;
+const LETTERS='abcd';
 const fmtTime = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 const unitTitle = n => UNITS[n-1] ? UNITS[n-1].title : `Unit ${n}`;
-const isAnswered = sql => !!stripComments(sql||'').trim();
-
-function mixQuiz(){
-  const pool=[];
-  for (const u of UNITS.slice(1)) for (const id of u.lessons){ const L=LESSONS[id]; if (!L.ex) continue;
-    L.ex.forEach(ex=>pool.push({unit:UNITS.indexOf(u)+1, p:ex.p, sol:ex.sol, ordered:ex.ordered, why:ex.hint})); }
-  for (let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
-  return pool.slice(0, QUIZ_SETTINGS.mixSize).sort((a,b)=>a.unit-b.unit);
-}
-function quizDef(id){
-  if (id==='mix') return {id:'mix', title:'Mixed practice', blurb:`${QUIZ_SETTINGS.mixSize} exercises picked at random from the lessons. Different every time.`, questions:null};
-  return QUIZZES.find(q=>q.id===id);
-}
+const unitOfLesson = id => { const k=UNITS.findIndex(u=>u.lessons.includes(id)); return k+1; };
+const qUnit = q => q.unit || unitOfLesson(q.lesson);
+const quizDef = id => QUIZZES.find(q=>q.id===id);
 const quizRecord = id => (P.quizzes||{})[id];
 const attemptText = a => `${a.score} of ${a.total} (${a.percent}%), ${a.passed?'passed':'not passed'}`;
+const isAnsweredFor = (type, a) => type==='mcq' ? a!=null : !!stripComments(a||'').trim();
+const isAnswered = a => isAnsweredFor(QZ.def.type, a);
 
 /* ----- Quiz list ----- */
 function renderQuizList(){
   const v=$('#v-quizzes'); v.innerHTML='';
-  v.append(h('h1',{class:'dot',id:'h-quizzes','data-testid':'quizzes-title'},'Query quiz'),
-    h('p',{class:'lede'},`Test yourself without the hints. Each quiz is a set of query tasks across the whole path. You can run your queries as you go, but you won't see whether they're right until you submit. The pass mark is ${QUIZ_SETTINGS.passMark}%.`));
+  v.append(h('h1',{class:'dot',id:'h-quizzes','data-testid':'quizzes-title'},'Quizzes'),
+    h('p',{class:'lede'},`Test yourself without the hints. You won't see whether your answers are right until you submit. The pass mark is ${QUIZ_SETTINGS.passMark}%.`));
   const grid=h('div',{class:'quiz-cards'});
-  for (const q of [...QUIZZES, quizDef('mix')]){
-    const rec=quizRecord(q.id); const n=q.questions?q.questions.length:QUIZ_SETTINGS.mixSize;
-    const units=q.questions?[...new Set(q.questions.map(x=>x.unit))].map(unitTitle):['Any unit from 2 to 6'];
+  for (const q of QUIZZES){
+    const rec=quizRecord(q.id);
+    const units=[...new Set(q.questions.map(qUnit))].sort().map(unitTitle);
     grid.append(h('article',{class:'quiz-card','data-testid':`quiz-card-${q.id}`},
       h('h2',{},q.title), h('p',{},q.blurb),
-      h('dl',{}, h('dt',{},'Questions'), h('dd',{'data-testid':`quiz-card-${q.id}-count`},String(n)), h('dt',{},'Covers'), h('dd',{},units.join(', ')),
+      h('dl',{}, h('dt',{},'Questions'), h('dd',{'data-testid':`quiz-card-${q.id}-count`},String(q.questions.length)),
+        h('dt',{},'Type'), h('dd',{}, q.type==='mcq'?'Multiple choice':'Write a query'),
+        h('dt',{},'Covers'), h('dd',{},units.join(', ')),
         h('dt',{},'Last attempt'), h('dd',{'data-testid':`quiz-card-${q.id}-last`}, rec?attemptText(rec.last):'Not tried yet'),
         rec ? h('dt',{},'Best') : null, rec ? h('dd',{'data-testid':`quiz-card-${q.id}-best`}, `${rec.best.percent}%`) : null),
       h('button',{class:'btn primary',type:'button','data-go':'quiz/'+q.id,'data-testid':`open-quiz-${q.id}`}, rec?'Try again':'Start')));
@@ -44,36 +41,36 @@ function renderQuizList(){
 function openQuiz(id){
   stopTimer();
   const def=quizDef(id); if (!def){ goto('quiz'); return; }
-  QZ={id, def, questions:null, answers:[], i:0, started:0, limit:0, phase:'start', results:null, onlyWrong:false};
+  QZ={id, def, questions:def.questions, answers:[], runs:[], i:0, started:0, limit:0, phase:'start', results:null, onlyWrong:false};
   renderQuiz();
 }
 function renderQuiz(){
   const v=$('#v-quiz'); v.innerHTML='';
-  const d=QZ.def, n=d.questions?d.questions.length:QUIZ_SETTINGS.mixSize;
-  v.append(h('nav',{class:'crumbs','aria-label':'Breadcrumb'}, h('a',{href:'#/quiz','data-testid':'back-to-quizzes'},'Query quiz'), h('span',{class:'sep','aria-hidden':'true'},'/'), h('span',{},d.title)));
+  const d=QZ.def;
+  v.append(h('nav',{class:'crumbs','aria-label':'Breadcrumb'}, h('a',{href:'#/quiz','data-testid':'back-to-quizzes'},'Quizzes'), h('span',{class:'sep','aria-hidden':'true'},'/'), h('span',{},d.title)));
   v.append(h('h1',{class:'dot',id:'h-quiz','data-testid':'quiz-title'}, d.title));
-  if (QZ.phase==='start') return renderQuizStart(v, n);
+  if (QZ.phase==='start') return renderQuizStart(v);
   if (QZ.phase==='doing') return renderQuizDoing(v);
   renderQuizResults(v);
 }
-function renderQuizStart(v, n){
-  const rec=quizRecord(QZ.id);
+function renderQuizStart(v){
+  const d=QZ.def, rec=quizRecord(QZ.id);
   const sel=h('select',{name:'time-limit',id:'time-limit','data-testid':'time-limit'},
-    QUIZ_SETTINGS.timeLimits.map(m=>h('option',{value:String(m),selected:m===QUIZ_SETTINGS.defaultLimit}, m?`${m} minutes`:'No time limit')));
-  v.append(h('p',{class:'lede'},QZ.def.blurb));
+    d.timeLimits.map(m=>h('option',{value:String(m),selected:m===d.defaultLimit}, m?`${m} minutes`:'No time limit')));
+  v.append(h('p',{class:'lede'},d.blurb));
   v.append(h('section',{class:'quiz-start','data-testid':'quiz-start'},
     h('ul',{class:'facts'},
-      h('li',{}, h('b',{'data-testid':'question-count'},String(n)), ' questions'),
+      h('li',{}, h('b',{'data-testid':'question-count'},String(d.questions.length)), d.type==='mcq'?' multiple-choice questions':' query tasks'),
       h('li',{}, 'Pass mark ', h('b',{'data-testid':'pass-mark'},`${QUIZ_SETTINGS.passMark}%`)),
-      h('li',{}, 'Your answer to each question is the last query in its editor when you submit.'),
+      d.type==='query' ? h('li',{}, 'Your answer to each task is the last query in its editor when you submit.') : h('li',{}, 'Select one answer for each question.'),
+      h('li',{}, 'The Northwind ERD is available on every question.'),
       h('li',{}, 'Leaving this page ends the attempt without saving it.')),
     rec ? h('p',{'data-testid':'last-attempt'}, `Last attempt: ${attemptText(rec.last)}. Best: ${rec.best.percent}%.`) : null,
     h('label',{class:'field'}, h('span',{},'Time limit'), sel),
     h('button',{class:'btn primary',type:'button',id:'start-quiz','data-testid':'start-quiz',onclick:()=>startQuiz(+sel.value)},'Start the quiz')));
 }
 function startQuiz(limit){
-  QZ.questions = QZ.def.questions ? QZ.def.questions : mixQuiz();
-  QZ.answers = QZ.questions.map(()=> '');
+  QZ.answers = QZ.questions.map(()=> QZ.def.type==='mcq' ? null : '');
   QZ.runs = QZ.questions.map(()=>null);
   QZ.phase='doing'; QZ.i=0; QZ.limit=limit*60; QZ.started=Date.now();
   renderQuiz();
@@ -87,29 +84,43 @@ function tick(){
   if (!QZ.limit){ t.textContent=fmtTime(elapsed()); return; }
   const left=QZ.limit-elapsed();
   t.textContent=fmtTime(Math.max(0,left)); t.classList.toggle('low', left<=300);
-  if (left<=0){ stopTimer(); toast('Time\'s up. Your answers have been submitted.'); submitQuiz(true); }
+  if (left<=0){ stopTimer(); closeErd(); toast('Time\'s up. Your answers have been submitted.'); submitQuiz(true); }
 }
-function saveCurrent(){ if (qEd && QZ && QZ.phase==='doing') QZ.answers[QZ.i]=qEd.value; }
+function saveCurrent(){ if (QZ && QZ.phase==='doing' && QZ.def.type==='query' && qEd) QZ.answers[QZ.i]=qEd.value; }
 function renderQuizDoing(v){
-  const q=QZ.questions[QZ.i], n=QZ.questions.length;
+  const q=QZ.questions[QZ.i], n=QZ.questions.length, N=QZ.i+1, type=QZ.def.type;
   const navq=h('ol',{class:'qnav','aria-label':'Questions','data-testid':'question-nav'});
   QZ.questions.forEach((_,k)=>navq.append(h('li',{}, h('button',{type:'button',class:(isAnswered(QZ.answers[k])?'ans ':'')+(k===QZ.i?'cur':''),'aria-current':k===QZ.i?'step':null,'data-testid':`question-nav-${k+1}`,'aria-label':`Question ${k+1}${isAnswered(QZ.answers[k])?', answered':''}`,onclick:()=>goQ(k)}, String(k+1)))));
   v.append(navq);
-  const card=h('section',{class:'qcard','data-testid':`question-${QZ.i+1}`,'data-solution':q.sol,'data-unit':String(q.unit)},
-    h('div',{class:'ex-num'}, h('span',{'data-testid':`question-${QZ.i+1}-number`},`Question ${QZ.i+1} of ${n}`), h('span',{class:'qunit','data-testid':`question-${QZ.i+1}-unit`}, unitTitle(q.unit))),
-    h('p',{class:'ex-prompt','data-testid':`question-${QZ.i+1}-prompt`}, ...fmtPrompt(q.p)));
+  const card=h('section',{class:'qcard','data-testid':`question-${N}`,'data-unit':String(qUnit(q))});
+  if (type==='mcq') card.setAttribute('data-answer', LETTERS[q.answer]); else card.setAttribute('data-solution', q.sol);
+  card.append(h('div',{class:'ex-num'}, h('span',{'data-testid':`question-${N}-number`},`Question ${N} of ${n}`), h('span',{class:'qunit','data-testid':`question-${N}-unit`}, unitTitle(qUnit(q))),
+      h('button',{class:'btn small erd-btn',type:'button','data-testid':`question-${N}-open-erd`,onclick:openErd},'Northwind ERD')));
+  card.append(h('p',{class:'ex-prompt','data-testid':`question-${N}-prompt`}, ...fmtPrompt(type==='mcq'?q.q:q.p)));
   v.append(card);
-  const edHost=h('div',{class:'editor-wrap'}); const out=h('div',{class:'out',id:'quiz-results','data-testid':`question-${QZ.i+1}-results`});
-  v.append(edHost, out);
-  qEd=makeEditor(edHost,{ label:`Your answer to question ${QZ.i+1}`, onRun:()=>{ saveCurrent(); const rep=runSafe(qEd.value); QZ.runs[QZ.i]=rep; renderReport(out, rep); refreshAnswered(); }, onChange:()=>{ saveCurrent(); refreshAnswered(); }, id:'quiz' });
-  qEd.ta.setAttribute('data-testid',`question-${QZ.i+1}-input`); qEd.runBtn.setAttribute('data-testid',`question-${QZ.i+1}-run`);
-  qEd.value=QZ.answers[QZ.i] || `-- Question ${QZ.i+1}\n\n`;
-  if (QZ.runs[QZ.i]) renderReport(out, QZ.runs[QZ.i]); else renderReport(out, emptyRep(), {empty:'Run your query to check it does what you expect. It won\'t be marked until you submit.'});
+  if (type==='mcq'){
+    if (q.code) card.append(h('pre',{class:'qcode','data-testid':`question-${N}-code`}, q.code));
+    card.append(h('div',{class:'q-instr','data-testid':`question-${N}-instruction`},'Select ONE'));
+    const opts=h('div',{class:'mcq-opts',role:'radiogroup','aria-label':`Question ${N} options`});
+    q.options.forEach((text,k)=>{
+      const inp=h('input',{type:'radio',name:`question-${N}`,id:`question-${N}-option-${LETTERS[k]}`,value:LETTERS[k],'data-option':LETTERS[k],'data-testid':`question-${N}-option-${LETTERS[k]}-input`,checked:QZ.answers[QZ.i]===k});
+      inp.addEventListener('change',()=>{ QZ.answers[QZ.i]=k; refreshAnswered(); });
+      opts.append(h('label',{class:'mcq-opt',for:`question-${N}-option-${LETTERS[k]}`,'data-testid':`question-${N}-option-${LETTERS[k]}`}, inp, h('span',{class:'key'},LETTERS[k]+')'), h('span',{}, ...fmtPrompt(text))));
+    });
+    card.append(opts);
+  } else {
+    const edHost=h('div',{class:'editor-wrap'}); const out=h('div',{class:'out',id:'quiz-results','data-testid':`question-${N}-results`});
+    v.append(edHost, out);
+    qEd=makeEditor(edHost,{ label:`Your answer to question ${N}`, onRun:()=>{ saveCurrent(); const rep=runSafe(qEd.value); QZ.runs[QZ.i]=rep; renderReport(out, rep); refreshAnswered(); }, onChange:()=>{ saveCurrent(); refreshAnswered(); }, id:'quiz' });
+    qEd.ta.setAttribute('data-testid',`question-${N}-input`); qEd.runBtn.setAttribute('data-testid',`question-${N}-run`);
+    qEd.value=QZ.answers[QZ.i] || `-- Question ${N}\n\n`;
+    if (QZ.runs[QZ.i]) renderReport(out, QZ.runs[QZ.i]); else renderReport(out, emptyRep(), {empty:'Run your query to check it does what you expect. It won\'t be marked until you submit.'});
+  }
   const bar=h('div',{class:'submit-bar','data-testid':'submit-bar'},
     h('span',{class:'answered'}, h('b',{id:'answered-count','data-testid':'answered-count'},'0'), ` of ${n} answered`),
     h('div',{class:'mid'},
       h('button',{class:'btn small',type:'button',id:'previous-question','data-testid':'previous-question',disabled:QZ.i===0,onclick:()=>goQ(QZ.i-1)},'Previous'),
-      h('span',{id:'question-position','data-testid':'question-position'},`${QZ.i+1} / ${n}`),
+      h('span',{id:'question-position','data-testid':'question-position'},`${N} / ${n}`),
       h('button',{class:'btn small',type:'button',id:'next-question','data-testid':'next-question',disabled:QZ.i===n-1,onclick:()=>goQ(QZ.i+1)},'Next')),
     h('span',{class:'timer-wrap'}, QZ.limit?'Time left ':'Time ', h('b',{id:'timer','data-testid':'timer'},'')),
     h('button',{class:'btn primary',type:'button',id:'submit-answers','data-testid':'submit-answers',onclick:()=>submitQuiz(false)},'Submit answers'));
@@ -126,30 +137,34 @@ function runSafe(sql){
   try { return runScript(nw, sql, 'nw'); }
   finally { nw.run('ROLLBACK TO quiz_run'); nw.run('RELEASE quiz_run'); }
 }
+function markQuery(q, sql){
+  if (!isAnsweredFor('query', sql)) return {state:'blank', msg:'Not answered.'};
+  const rep=runSafe(sql);
+  if (rep.error) return {state:'wrong', msg:`Your query gave an error: ${rep.error.message}`};
+  const last=rep.results[rep.results.length-1];
+  if (!last) return {state:'wrong', msg:'Your query didn\'t return a result to mark.'};
+  try { const v=compare(nw, q, last); return v.ok?{state:'right', msg:v.extra?'You returned some extra columns too, which is fine.':''}:{state:'wrong', msg:v.msg+(v.tip?' '+v.tip:'')}; }
+  catch(e){ return {state:'wrong', msg:'Couldn\'t mark this answer: '+e.message}; }
+}
 function submitQuiz(timeUp){
   saveCurrent();
   const missing=QZ.answers.filter(a=>!isAnswered(a)).length;
   if (!timeUp && missing && !confirm(`You haven't answered ${missing} question${missing===1?'':'s'}. Submit anyway?`)) return;
   stopTimer();
   const marks=QZ.questions.map((q,k)=>{
-    const sql=QZ.answers[k];
-    if (!isAnswered(sql)) return {state:'blank', msg:'Not answered.'};
-    const rep=runSafe(sql);
-    if (rep.error) return {state:'wrong', msg:`Your query gave an error: ${rep.error.message}`};
-    const last=rep.results[rep.results.length-1];
-    if (!last) return {state:'wrong', msg:'Your query didn\'t return a result to mark.'};
-    try { const v=compare(nw, q, last); return v.ok?{state:'right', msg:v.extra?'Correct. You returned some extra columns too, which is fine.':'Correct.'}:{state:'wrong', msg:v.msg+(v.tip?' '+v.tip:'')}; }
-    catch(e){ return {state:'wrong', msg:'Couldn\'t mark this answer: '+e.message}; }
+    const a=QZ.answers[k];
+    if (QZ.def.type==='mcq') return a==null ? {state:'blank',msg:''} : {state:a===q.answer?'right':'wrong',msg:''};
+    return markQuery(q, a);
   });
   const score=marks.filter(m=>m.state==='right').length, total=marks.length, percent=Math.round(score/total*100);
   const attempt={score,total,percent,passed:percent>=QUIZ_SETTINGS.passMark,seconds:elapsed(),date:new Date().toISOString(),units:{}};
-  QZ.questions.forEach((q,k)=>{ const u=attempt.units[q.unit]||(attempt.units[q.unit]=[0,0]); u[1]++; if (marks[k].state==='right') u[0]++; });
+  QZ.questions.forEach((q,k)=>{ const u=attempt.units[qUnit(q)]||(attempt.units[qUnit(q)]=[0,0]); u[1]++; if (marks[k].state==='right') u[0]++; });
   P.quizzes=P.quizzes||{}; const rec=P.quizzes[QZ.id]||{attempts:0,best:attempt};
   rec.attempts++; rec.last=attempt; if (attempt.percent>=rec.best.percent) rec.best=attempt; P.quizzes[QZ.id]=rec; save();
   QZ.results={marks, attempt}; QZ.phase='done'; renderQuiz(); window.scrollTo({top:0});
 }
 function renderQuizResults(v){
-  const {marks, attempt}=QZ.results;
+  const {marks, attempt}=QZ.results, type=QZ.def.type;
   v.append(h('section',{class:'results '+(attempt.passed?'pass':'fail'),'data-testid':'results'},
     h('div',{class:'verdict-big','data-testid':'quiz-verdict'}, attempt.passed?'Passed':'Not passed yet'),
     h('div',{class:'score-line'}, 'You scored ', h('b',{id:'score','data-testid':'score'},String(attempt.score)), ' out of ', h('b',{'data-testid':'score-total'},String(attempt.total)), ' (', h('span',{'data-testid':'score-percent'},`${attempt.percent}%`), `). The pass mark is ${QUIZ_SETTINGS.passMark}%.`),
@@ -163,16 +178,30 @@ function renderQuizResults(v){
   v.append(h('div',{class:'review-tools'}, h('h2',{class:'dot'},'Review'), h('label',{class:'toggle'}, toggle, ' Show only questions I got wrong'),
     h('div',{style:'margin-left:auto;display:flex;gap:8px;flex-wrap:wrap'}, h('button',{class:'btn primary',type:'button','data-testid':'retake',onclick:()=>openQuiz(QZ.id)},'Retake quiz'), h('button',{class:'btn',type:'button','data-go':'quiz','data-testid':'all-quizzes'},'All quizzes'))));
   QZ.questions.forEach((q,k)=>{
-    const m=marks[k]; const label={right:'Correct',wrong:'Incorrect',blank:'Not answered'}[m.state];
-    const r=h('article',{class:'review '+m.state,'data-state':m.state,'data-testid':`question-${k+1}-review`,hidden:QZ.onlyWrong&&m.state==='right'},
-      h('div',{class:'ex-num'}, `Question ${k+1}`, h('span',{class:'qunit'}, unitTitle(q.unit))),
-      h('p',{class:'ex-prompt'}, ...fmtPrompt(q.p)),
-      h('div',{class:'rv-verdict','data-testid':`question-${k+1}-verdict`}, h('b',{},label+'.'), m.state==='wrong'?' '+m.msg:''),
-      h('div',{class:'rv-cols'},
-        h('div',{}, h('div',{class:'rv-h'},'Your query'), h('pre',{'data-testid':`question-${k+1}-your-answer`}, isAnswered(QZ.answers[k])?QZ.answers[k].trim():'(blank)')),
-        h('div',{}, h('div',{class:'rv-h'},'One possible answer'), h('pre',{'data-testid':`question-${k+1}-model-answer`}, q.sol))),
-      h('p',{class:'rv-why','data-testid':`question-${k+1}-explanation`}, q.why||''),
-      h('button',{class:'btn small',type:'button',onclick:()=>openFree(isAnswered(QZ.answers[k])?QZ.answers[k]:q.sol)},'Open in Free practice'));
+    const m=marks[k], N=k+1; const label={right:'Correct',wrong:'Incorrect',blank:'Not answered'}[m.state];
+    const r=h('article',{class:'review '+m.state,'data-state':m.state,'data-testid':`question-${N}-review`,hidden:QZ.onlyWrong&&m.state==='right'},
+      h('div',{class:'ex-num'}, `Question ${N}`, h('span',{class:'qunit'}, unitTitle(qUnit(q)))),
+      h('p',{class:'ex-prompt'}, ...fmtPrompt(type==='mcq'?q.q:q.p)),
+      h('div',{class:'rv-verdict','data-testid':`question-${N}-verdict`}, h('b',{},label+'.'), m.msg?' '+m.msg:''));
+    if (type==='mcq'){
+      if (q.code) r.append(h('pre',{class:'qcode'}, q.code));
+      const ul=h('ul',{class:'rv-opts'});
+      q.options.forEach((text,j)=>{
+        const mine=QZ.answers[k]===j, right=q.answer===j;
+        ul.append(h('li',{class:(right?'is-right ':'')+(mine&&!right?'is-wrong':''),'data-testid':`question-${N}-review-option-${LETTERS[j]}`},
+          h('span',{class:'key'},LETTERS[j]+')'), h('span',{}, ...fmtPrompt(text)),
+          h('span',{class:'flag'}, right?'Correct answer':mine?'Your answer':'' , right&&mine?' (your answer)':'')));
+      });
+      r.append(ul, h('p',{class:'rv-why','data-testid':`question-${N}-explanation`}, q.why));
+    } else {
+      r.append(h('div',{class:'rv-cols'},
+          h('div',{}, h('div',{class:'rv-h'},'Your query'), h('pre',{'data-testid':`question-${N}-your-answer`}, isAnsweredFor('query',QZ.answers[k])?QZ.answers[k].trim():'(blank)')),
+          h('div',{}, h('div',{class:'rv-h'},'One possible answer'), h('pre',{'data-testid':`question-${N}-model-answer`}, q.sol))),
+        h('p',{class:'rv-why','data-testid':`question-${N}-explanation`}, q.why),
+        h('div',{style:'display:flex;gap:8px;flex-wrap:wrap'},
+          h('button',{class:'btn small',type:'button',onclick:()=>openFree(isAnsweredFor('query',QZ.answers[k])?QZ.answers[k]:q.sol)},'Open in Free practice'),
+          h('a',{class:'btn small',href:'#/lesson/'+q.lesson},`Revise: ${LESSONS[q.lesson].title}`)));
+    }
     v.append(r);
   });
 }

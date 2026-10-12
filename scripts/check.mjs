@@ -65,11 +65,26 @@ for (const id of Object.keys(LESSONS)) if (!seen.has(id)) warn(id, 'is in LESSON
 if (!(QUIZ_SETTINGS.passMark > 0 && QUIZ_SETTINGS.passMark <= 100)) fail('QUIZ_SETTINGS', 'passMark must be between 1 and 100');
 const quizIds = new Set();
 for (const q of QUIZZES) {
-  if (quizIds.has(q.id) || q.id === 'mix') fail(`quiz ${q.id}`, 'id must be unique and not "mix"');
+  const where = `quiz ${q.id}`;
+  if (!q.id || quizIds.has(q.id)) fail(where, 'id must be set and unique');
   quizIds.add(q.id);
+  if (!['query', 'mcq'].includes(q.type)) fail(where, 'type must be "query" or "mcq"');
+  if (!q.title || !q.blurb) fail(where, 'needs a title and a blurb');
+  if (!Array.isArray(q.timeLimits) || !q.timeLimits.length || !q.timeLimits.includes(q.defaultLimit)) fail(where, 'timeLimits must be a list of minutes (0 = no limit) that includes defaultLimit');
+  if (!Array.isArray(q.questions) || !q.questions.length) { fail(where, 'needs questions'); continue; }
   q.questions.forEach((t, i) => {
-    if (!(t.unit >= 1 && t.unit <= UNITS.length)) fail(`quiz ${q.id}, question ${i + 1}`, `unit must be 1-${UNITS.length}`);
-    questions += checkTask(`quiz ${q.id}, question ${i + 1}`, t, ['p', 'sol', 'why']);
+    const at = `${where}, question ${i + 1}`;
+    if (q.type === 'query') {
+      if (!LESSONS[t.lesson] || LESSONS[t.lesson].kind) fail(at, `lesson "${t.lesson}" must be the id of a lesson with exercises`);
+      questions += checkTask(at, t, ['p', 'sol', 'why']);
+    } else {
+      for (const f of ['q', 'why']) if (typeof t[f] !== 'string' || !t[f].trim()) fail(at, `"${f}" is missing`);
+      if (!(t.unit >= 1 && t.unit <= UNITS.length)) fail(at, `unit must be 1-${UNITS.length}`);
+      if (!Array.isArray(t.options) || t.options.length !== 4) fail(at, 'needs exactly 4 options');
+      else if (new Set(t.options).size !== 4) fail(at, 'has two identical options');
+      if (!(Number.isInteger(t.answer) && t.answer >= 0 && t.answer <= 3)) fail(at, 'answer must be 0, 1, 2 or 3 (the index of the right option)');
+      questions++;
+    }
   });
 }
 
@@ -80,3 +95,4 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(`✓ ${lessons} lessons, ${exercises} exercises, ${examples} examples and ${QUIZZES.length} quizzes (${questions} questions) checked`);
+for (const q of QUIZZES) if (q.type === 'mcq') { const spread = [0, 1, 2, 3].map((k) => q.questions.filter((t) => t.answer === k).length); console.log(`  ${q.title}: answers a-d used ${spread.join(' / ')} times`); }
