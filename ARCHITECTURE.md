@@ -45,6 +45,7 @@ after `#`, shows one section, and calls its render function.
 | Address | View (section id) | Rendered by |
 |---|---|---|
 | `#/path` | `v-path` | `renderPath()` |
+| `#/intro` | `v-intro` | `drawIntro()`: `SITE_INTRO` from `src/content/intro.js` |
 | `#/lesson/databases` | `v-databases` | `drawDatabases()`: lesson text and `renderCheck()` |
 | `#/lesson/flavours` | `v-flavours` | `drawFlavours()`: lesson text, `renderDialectTabs()`, `renderCheck()` |
 | `#/dialects` | `v-dialects` | `renderDialectTabs()` |
@@ -77,6 +78,8 @@ const PATH    = UNITS.flatMap(…);                                             
 | Lesson field | Meaning |
 |---|---|
 | `title`, `summary` | Shown on the path and at the top of the lesson |
+| `cmds` | The commands the lesson uses, shown as chips under the summary |
+| `check` | Questions instead of exercises, for a lesson that can't run here (Stored procedures) |
 | `learn` | HTML for the Learn tab. `C(sql)` makes a runnable example, `C(sql, false)` a read-only one, `TIP(html)` a tip box |
 | `ex` | The exercises: `p` (the task), `hint`, `sol` (a model answer) and optionally `ordered` |
 | `checkpoint: true` | A checkpoint: no Learn tab, shown as a diamond on the path |
@@ -98,7 +101,9 @@ const FLAVOURS_LEARN = `…`;  const FLAVOURS_CHECK = [ { q, a:[3], c, why }, �
 `renderDialectTabs(host, prefix)` draws the four tabs (Side by side, MySQL, T-SQL, This dialect: SQLite) from `DIALECTS`; the SQLite column is highlighted. The same
 data feeds the SQL flavours lesson and the SQL dialects page; a row's `try` adds a **Try it** button on the lab tab.
 
-Read-only examples in a lesson use `C(sql, false, label)`, for SQL that isn't meant to run against Northwind.
+Read-only examples in a lesson use `C(sql, false, label)`; `READ_ONLY('mysql' | 'tsql', tool)` makes a label with the
+dialect's icon. `DIFF({ title, sqlite, mysql, tsql, note })` draws a callout showing the same job in each dialect, with
+the icons 🪶 SQLite, 🐬 MySQL and 🪟 T-SQL from the course notes. Values are code; start one with `~` for plain text.
 
 ### Quizzes: `src/content/quizzes.js`
 
