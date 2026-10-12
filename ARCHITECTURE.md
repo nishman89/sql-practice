@@ -110,7 +110,8 @@ the icons 🪶 SQLite, 🐬 MySQL and 🪟 T-SQL from the course notes. Values a
 `CERR(sql)` is a runnable example that's meant to fail, such as a delete blocked by a foreign key; the checks fail the
 build if it *doesn't* error. `SAME(extra)` is the note for lessons where nothing differs, and `BUILD_DIFF()` is the comparison drawn on the Creating
 tables page. `VENN(regions, label)` draws a join Venn diagram as inline SVG (each one gets unique clip and mask ids), and
-`FAKE` is the `WITH` block that builds the made-up student and course tables used in Introduction to joins.
+`FAKE` is the `WITH` block that builds the made-up student and course tables used in Introduction to joins. `SHOP` does the same
+for the made-up café (products and sales) in Introduction to subqueries.
 
 ### Quizzes: `src/content/quizzes.js`
 

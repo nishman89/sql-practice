@@ -28,7 +28,7 @@ tablets and phones.
 | **What's an ERD** | Entities, attributes, primary and foreign keys, crow's foot notation and the three kinds of relationship, with an interactive diagram and three **Check yourself** questions. |
 | **Create tables and connect them** | Six guided steps that build a `Customers` and an `Orders` table, insert data, join them, trigger a foreign key error and add columns. The ERD beside the editor redraws itself from the learner's tables after every run. |
 | **Meet Northwind** | The full Northwind ERD. Select a table to see its columns, its keys, what it links to and its first five rows. |
-| **Lessons** (38) | A **Learn** tab with a short explanation and worked examples, each with a **Run this** button, then one tab per exercise. The editor and results sit alongside. |
+| **Lessons** (39) | A **Learn** tab with a short explanation and worked examples, each with a **Run this** button, then one tab per exercise. The editor and results sit alongside. |
 | **Checkpoints** | The last lesson in units 2–5 and 7. No new teaching: mixed exercises on the whole unit. |
 | **Quizzes** | An **end-of-unit quiz** for each of the 7 units (8 questions each: multiple choice, plus 3 queries to write from unit 2 on), and two final quizzes: the **Query quiz** (28 query-writing tasks, one for every topic, including the advanced ones) and the **Multiple-choice quiz** (40 questions on ERDs, how queries run, filtering, grouping, joins, subqueries, advanced topics and MySQL vs T-SQL). Nothing is marked until you submit. Optional timer, a score for each unit and a full review. |
 | **Free practice** | Run any query against Northwind. Nothing is marked. |
@@ -41,15 +41,17 @@ tablets and phones.
 | **2. Querying one table** | Simple queries · Operators · Sorting data · Removing duplicates and limiting results · Wildcards · Concatenation · Arithmetic operators · *Checkpoint* |
 | **3. Summarising data** | Aggregate functions · GROUP BY · HAVING · Working with NULL values · *Checkpoint* |
 | **4. Combining tables** | Introduction to joins · Inner joins · Left joins · Table aliases and multiple joins · *Checkpoint* |
-| **5. Subqueries** | Subqueries in WHERE · Subqueries in FROM and SELECT · EXISTS and NOT EXISTS · *Checkpoint* |
+| **5. Subqueries** | Introduction to subqueries · Subqueries in WHERE · Subqueries in FROM and SELECT · EXISTS and NOT EXISTS · *Checkpoint* |
 | **6. Going further** | CASE statements · Date and string functions · Views · Stored procedures |
 | **7. Advanced topics** | Window functions · Ranking functions · Comparing rows · Window frames · Statistical functions · Common table expressions · Temporary tables · Pivoting · Performance tuning · *Checkpoint* |
 
-43 lessons, 126 exercises and 111 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
+44 lessons, 132 exercises and 118 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
 exercises. **Inserting, updating and deleting data** undoes every run straight afterwards, so learners can practise
 `INSERT`, `UPDATE` and `DELETE` on Northwind without changing it. **Introduction to joins** uses Venn diagrams and two small made-up tables (students and courses, built with
-`WITH` so they run here) to show inner, left, right, full outer and cross joins, and why to avoid `RIGHT JOIN`.
+`WITH` so they run here) to show inner, left, right, full outer and cross joins, and why to avoid `RIGHT JOIN`. **Introduction to subqueries** does the same for subqueries with a small made-up café
+(products and sales): an inside-out diagram, what a subquery can return (one value, a list or a table), where it can
+go, correlated subqueries and `EXISTS`.
 
 Every lesson says how the dialects compare: either a 🪶 🐬 🪟 callout showing the difference, or a short
 **Same in SQLite, MySQL and T-SQL** note. Creating tables ends with a full comparison of the three.
@@ -74,7 +76,7 @@ columns are fine, and row order only matters when the exercise asks for it (for 
 | Quiz | Questions | Time limits | You answer by |
 |---|---|---|---|
 | **Unit 1 quiz** | 10 multiple-choice | 15 min, 20 min or none | Selecting ONE option |
-| **Unit 2–7 quizzes** | 8 each (units 4 and 6 have 9): multiple-choice plus 3 queries | 20 min, 30 min or none | Both |
+| **Unit 2–7 quizzes** | 8 each (units 4, 5 and 6 have 9): multiple-choice plus 3 queries | 20 min, 30 min or none | Both |
 | **Query quiz** | 28, one for every topic on the path | 60 min, 75 min or none | Writing a query |
 | **Multiple-choice quiz** | 40, across all six units | 60 min, 75 min or none | Selecting ONE option |
 
@@ -127,7 +129,7 @@ showing the SQLite way:
 - **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Introduction**, **SQL dialects**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
-- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 43").
+- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 44").
 - **SQL dialects** – the header tab with the MySQL / T-SQL / SQLite comparison, available from every page.
 - **Next lesson** – the footer of every lesson links to the previous and next lessons.
 - **Tables** – the buttons above the editor insert a table name at the cursor (`Order Details` comes with the backticks it needs).
