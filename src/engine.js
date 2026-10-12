@@ -76,6 +76,9 @@ const OTHER_DIALECTS = [
   [/\bRANGE\s+BETWEEN\s+INTERVAL\b/i, 'RANGE … INTERVAL is MySQL, not SQLite.', 'Order the window by julianday(OrderDate) and use numbers of days: RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING.'],
   [/\b(LEFT|RIGHT)\s*\(/i, 'SQLite has no LEFT() or RIGHT() function.', 'Use substr(s, 1, 3) for the first 3 characters and substr(s, -3) for the last 3.'],
   [/\bISNULL\s*\(/i, 'ISNULL() is T-SQL, not SQLite.', 'Use IFNULL(x, y) or COALESCE(x, y).'],
+  [/''\s*\+(?!\s*\d)|[\w)\]]\s*\+\s*''/, 'In SQLite, + adds numbers: it doesn\'t join text (T-SQL uses + for that).', "Join text with || or CONCAT(): FirstName || ' ' || LastName"],
+  [/\bLIKE\s+'[^']*\[[^']*\]/i, 'LIKE with [ ] character sets is T-SQL. In SQLite the brackets are matched literally.', "Use GLOB, which understands sets: CategoryName GLOB '[BS]*'", 'raw'],
+  [/\bFORMAT\s*\([^)]*'[^']*(dd|MM|yyyy|C')/, 'FORMAT() with a date or currency pattern is T-SQL.', "In SQLite, format dates with strftime('%d/%m/%Y', OrderDate), and numbers with printf('%.2f', amount).", 'raw'],
   [/\bINTERVAL\s+-?\d+\s+(DAY|MONTH|YEAR|WEEK)S?\b/i, 'INTERVAL is MySQL, not SQLite.', "In SQLite, add to a date with date(OrderDate, '+5 days')."],
   [/^\s*ALTER\s+TABLE\s+\S+\s+ADD\s+(CONSTRAINT|FOREIGN\s+KEY|PRIMARY\s+KEY|UNIQUE|INDEX|KEY|CHECK)\b/i, 'SQLite can\'t add a key or constraint to an existing table.', 'Update your CREATE TABLE script and run it again: DROP TABLE, then CREATE TABLE with the constraint included.']
 ];
@@ -104,7 +107,7 @@ const FN_HINTS = {
 
 function transform(stmt, mode, notes){
   const s=stmt.trim(), code=codeOnly(s);
-  for (const [re, msg, hint] of OTHER_DIALECTS) if (re.test(code)) throw new LabError(msg, hint);
+  for (const [re, msg, hint, raw] of OTHER_DIALECTS) if (re.test(raw ? s : code)) throw new LabError(msg, hint);
   if (/^\s*ALTER\s+TABLE\s+\S+\s+ADD\s+/i.test(code) && splitTopLevel(code.replace(/^\s*ALTER\s+TABLE\s+\S+\s+ADD\s+(COLUMN\s+)?/i,'')).length>1)
     throw new LabError('SQLite adds one column per ALTER TABLE statement.', 'Write one statement per column: ALTER TABLE Customers ADD COLUMN email TEXT; ALTER TABLE Customers ADD COLUMN age INTEGER;');
   if (/^\s*EXPLAIN\s+(?!QUERY\s+PLAN\b)/i.test(code)) notes.push('Plain EXPLAIN shows SQLite\'s internal steps. EXPLAIN QUERY PLAN shows how it finds the rows, which is usually what you want.');
@@ -123,6 +126,9 @@ function describeStmt(sql, changes){
   if ((m=sql.match(/^DELETE\s+FROM\s+(\S+)/i))) return `Deleted ${changes} row${changes===1?'':'s'} from ${nm(m[1])}`;
   if ((m=sql.match(/^ALTER\s+TABLE\s+([`"\[][^`"\]]+[`"\]]|\S+)\s+ADD\s+COLUMN\s+(\S+)/i))) return `Added column ${nm(m[2])} to ${nm(m[1])}`;
   if ((m=sql.match(/^ALTER\s+TABLE\s+(\S+)/i))) return `Altered table ${nm(m[1])}`;
+  if ((m=sql.match(/^SAVEPOINT\s+(\S+)/i))) return `Savepoint ${nm(m[1])} set`;
+  if ((m=sql.match(/^ROLLBACK\s+(?:TRANSACTION\s+)?TO\s+(?:SAVEPOINT\s+)?(\S+)/i))) return `Rolled back to ${nm(m[1])}: the changes since then are undone`;
+  if ((m=sql.match(/^RELEASE\s+(?:SAVEPOINT\s+)?(\S+)/i))) return `Savepoint ${nm(m[1])} released`;
   return 'Statement ran';
 }
 
