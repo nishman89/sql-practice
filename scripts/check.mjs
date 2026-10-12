@@ -49,9 +49,13 @@ for (const u of UNITS) for (const id of u.lessons) {
   seen.add(id); lessons++;
   if (!L.title || !L.summary) fail(id, 'needs a title and a summary');
   if (L.kind) continue; // Foundations lessons have their own pages
-  if (!Array.isArray(L.ex) || !L.ex.length) { fail(id, 'needs at least one exercise in "ex"'); continue; }
+  if (!L.ex && Array.isArray(L.check)) {
+    // A read-and-check lesson (such as Stored procedures): questions instead of exercises
+    if (!L.learn) fail(id, 'needs "learn" content');
+    L.check.forEach((q, i) => { if (!(q.q && Array.isArray(q.a) && q.a[q.c] != null && q.why)) fail(`${id}, check question ${i + 1}`, 'needs q, a (options), a valid c and why'); });
+  } else if (!Array.isArray(L.ex) || !L.ex.length) { fail(id, 'needs at least one exercise in "ex" (or check questions in "check")'); continue; }
   if (!L.checkpoint && !L.learn) fail(id, 'needs "learn" content (or checkpoint: true)');
-  L.ex.forEach((ex, i) => { exercises += checkTask(`${id}, exercise ${i + 1}`, ex, ['p', 'hint', 'sol']); });
+  (L.ex || []).forEach((ex, i) => { exercises += checkTask(`${id}, exercise ${i + 1}`, ex, ['p', 'hint', 'sol']); });
   // Run the lesson's examples in order, as a learner would (one can rely on an earlier one), then undo them all
   db.run('SAVEPOINT ex');
   let n = 0;
