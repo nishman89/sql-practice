@@ -693,7 +693,8 @@ function drawReveal(){
 }
 function nextUnsolved(after){ const L=LESSONS[curLesson]; for (let k=1;k<=L.ex.length;k++){ const j=(after+k)%L.ex.length; if (!P.exDone[curLesson+'.'+j]) return j; } return null; }
 function runLesson(){
-  const rep=runScript(nw, lEd.value, 'nw'); const out=$('#lOut'); renderReport(out, rep);
+  // Lessons that change data (INSERT, UPDATE, DELETE) undo every run, so Northwind stays as it was
+  const rep = LESSONS[curLesson].rollback ? runSafe(lEd.value) : runScript(nw, lEd.value, 'nw'); const out=$('#lOut'); renderReport(out, rep);
   if (rep.ran.some(s=>/^(CREATE|DROP|ALTER)\s+TABLE\b/i.test(s))) nwModel=null;
   if (curTab==='learn' || rep.error) return;
   const L=LESSONS[curLesson], i=curTab, ex=L.ex[i];

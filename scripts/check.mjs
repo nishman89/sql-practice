@@ -59,10 +59,13 @@ for (const u of UNITS) for (const id of u.lessons) {
   // Run the lesson's examples in order, as a learner would (one can rely on an earlier one), then undo them all
   db.run('SAVEPOINT ex');
   let n = 0;
-  for (const m of (L.learn || '').matchAll(/<pre class="ex"(?! data-norun)>([\s\S]*?)<\/pre>/g)) {
+  for (const m of (L.learn || '').matchAll(/<pre class="ex"([^>]*)>([\s\S]*?)<\/pre>/g)) {
+    if (m[1].includes('data-norun')) continue;
     examples++; n++;
-    const rep = runScript(db, unescape(m[1]), 'nw');
-    if (rep.error) fail(`${id}, example ${n}`, `gives an error: ${rep.error.message}`);
+    const rep = runScript(db, unescape(m[2]), 'nw');
+    const meantToFail = m[1].includes('data-expect-error');
+    if (rep.error && !meantToFail) fail(`${id}, example ${n}`, `gives an error: ${rep.error.message}`);
+    if (!rep.error && meantToFail) fail(`${id}, example ${n}`, 'is marked CERR (meant to fail) but ran without an error');
   }
   db.run('ROLLBACK TO ex'); db.run('RELEASE ex');
 }

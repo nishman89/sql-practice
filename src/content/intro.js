@@ -36,7 +36,7 @@ const DATABASES_LEARN = `
     <li><span class="sw sw-pk"></span><span><b>Primary key</b>: CustomerID. Unique for every row and never empty, so each customer can be identified.</span></li>
   </ul>
 </div>
-<p>Every column has a <strong>data type</strong>, which decides what it can hold:</p>
+<p>Every column has a <strong>data type</strong>, which decides what it can hold. The <a href="#/lesson/datatypes">Data types</a> lesson covers them properly; here are the main ones:</p>
 <table class="mini"><tr><th>Data type</th><th>Holds</th><th>Example</th></tr>
 <tr><td><code>INT</code></td><td>Whole numbers</td><td><code>42</code></td></tr>
 <tr><td><code>DECIMAL(10,2)</code></td><td>Exact numbers with decimals, such as money</td><td><code>18.99</code></td></tr>
