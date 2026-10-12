@@ -3,6 +3,12 @@
    C(sql) is a runnable example. C(sql, false) is read-only; pass a label to say why (default: tables not in Northwind). */
 const C = (sql, run=true, label) => `<pre class="ex"${run?'':' data-norun'}${label?` data-label="${esc(label)}"`:''}>${esc(sql)}</pre>`;
 const CERR = sql => `<pre class="ex" data-expect-error>${esc(sql)}</pre>`;
+/* The order you write a query vs the order the database runs it. highlight: clauses to pick out; later: show "(Unit 3)" notes */
+const RUN_ORDER = (highlight=[], later=false) => {
+  const rows=[['SELECT','1','5','Picks the columns to show, and works out calculations and aliases'],['FROM','2','1','Chooses the table'],['WHERE','3','2','Filters the rows'],['GROUP BY','4','3','Puts the rows into groups'],['HAVING','5','4','Filters the groups'],['ORDER BY','6','6','Sorts the result'],['LIMIT','7','7','Keeps only the first few rows']];
+  const unit3=later?' <span class="later">(Unit 3)</span>':'';
+  return `<div class="tbl-wrap"><table class="mini run-order"><tr><th>Clause</th><th>The order you write it</th><th>The order it runs</th><th>What it does</th></tr>${rows.map(([c,w,r,d])=>`<tr class="${highlight.includes(c)?'hl':''}"><td><code>${c}</code>${(c==='GROUP BY'||c==='HAVING')?unit3:''}</td><td class="num">${w}</td><td class="num run">${r}</td><td>${d}</td></tr>`).join('')}</table></div>`;
+};
 const TIP = t => `<div class="tip">${t}</div>`;
 
 /* Dialect callouts, marked with the same icons as the course notes. Each value is code;
@@ -328,9 +334,9 @@ ${C('SELECT ProductName, UnitPrice\nFROM Products\nORDER BY UnitPrice DESC;')}
 <p>Add more columns to break ties. Here customers are sorted by country, and alphabetically within each country:</p>
 ${C('SELECT Country, CompanyName\nFROM Customers\nORDER BY Country ASC, CompanyName ASC;')}
 <h3>The order SQL runs in</h3>
-<p>You write <code>SELECT</code> first, but the database runs it fifth:</p>
-<ol class="order"><li><code>FROM</code></li><li><code>WHERE</code></li><li><code>GROUP BY</code></li><li><code>HAVING</code></li><li><code>SELECT</code></li><li><code>ORDER BY</code></li></ol>
-<p class="small">You'll meet <code>GROUP BY</code> and <code>HAVING</code> in Unit 3; they slot in between <code>WHERE</code> and <code>SELECT</code>.</p>
+<p>The order you <em>write</em> a query isn't the order the database <em>runs</em> it. You write <code>SELECT</code> first, but it runs fifth, after the rows have been found and filtered:</p>
+${RUN_ORDER(['SELECT','ORDER BY'], true)}
+<p class="small">You'll meet <code>GROUP BY</code> and <code>HAVING</code> in Unit 3.</p>
 <p>Because <code>ORDER BY</code> runs last, it can use an alias you created in <code>SELECT</code>:</p>
 ${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products\nORDER BY \"Stock Value\" DESC;")}
 ${TIP('You can also write <code>ORDER BY 2</code> to sort by the second column, but avoid it. If someone reorders the columns later, it silently sorts the wrong one.')}
@@ -513,7 +519,7 @@ ${DIFF({title:'Selecting a column that isn\'t grouped or aggregated', sqlite:'~R
 <p><code>WHERE</code> filters rows before grouping. <code>HAVING</code> filters the groups afterwards, so it's the one to use when your condition involves an aggregate.</p>
 ${C("SELECT SupplierID,\n       SUM(UnitsOnOrder) AS 'Total On Order',\n       AVG(UnitsOnOrder) AS 'Avg On Order'\nFROM Products\nGROUP BY SupplierID\nHAVING AVG(UnitsOnOrder) > 5;")}
 <p>Try moving that condition into <code>WHERE</code>: it fails, because when <code>WHERE</code> runs the groups don't exist yet.</p>
-<ol class="order"><li><code>FROM</code></li><li><code>WHERE</code> filters rows</li><li><code>GROUP BY</code></li><li><code>HAVING</code> filters groups</li><li><code>SELECT</code></li><li><code>ORDER BY</code></li></ol>
+${RUN_ORDER(['WHERE','HAVING'])}
 ${TIP('Repeating the full expression in <code>HAVING</code> (<code>HAVING AVG(UnitsOnOrder) &gt; 5</code>) is the clearest way to write it.')}
 <p>You can use both in one query: <code>WHERE</code> to pick rows, <code>HAVING</code> to pick groups.</p>
 ${C("SELECT Country, COUNT(*) AS 'Customers'\nFROM Customers\nWHERE ContactTitle LIKE '%Sales%'\nGROUP BY Country\nHAVING COUNT(*) >= 3;")}

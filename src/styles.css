@@ -716,3 +716,9 @@ mark.x{background:#fff3cf;color:inherit;border-radius:3px;padding:0 2px;font-wei
 .install-callout{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border-left:8px solid var(--pink);padding:16px 22px;margin:28px 0}
 .install-callout h2{font-size:1.35rem;margin:0 0 8px}
 .install-callout .btn{text-decoration:none}
+/* Written order vs run order */
+table.run-order td.num{text-align:center;font-weight:700;width:7.5rem}
+table.run-order td.run{color:var(--pink-dark)}
+table.run-order th:nth-child(2),table.run-order th:nth-child(3){text-align:center}
+table.run-order tr.hl td{background:var(--pink-tint)}
+table.run-order .later{font-size:.78rem;color:var(--muted);white-space:nowrap}
