@@ -144,7 +144,7 @@ ${MYDB_TABLES}
 <p><code>DELETE</code> picks rows with <code>WHERE</code>:</p>
 ${C("DELETE FROM Orders\nWHERE customer_id = 3;\n\nSELECT * FROM Orders;")}
 <p>Without <code>WHERE</code>, it deletes every row, but the table itself stays:</p>
-${C("DELETE FROM Orders;\n\nSELECT COUNT(*) AS 'Orders left' FROM Orders;")}
+${C("DELETE FROM Orders;\n\n-- COUNT(*) counts the rows\nSELECT COUNT(*) AS 'Orders left' FROM Orders;")}
 <p><code>DROP</code> removes the table altogether, so the <code>SELECT</code> afterwards fails:</p>
 ${CERR("DROP TABLE Orders;\n\nSELECT * FROM Orders;")}
 ${DIFF({title:'Emptying a table in each dialect', sqlite:'DELETE FROM Orders;', mysql:'TRUNCATE TABLE Orders;', tsql:'TRUNCATE TABLE Orders;', note:'SQLite has no <code>TRUNCATE</code>. A <code>DELETE</code> without <code>WHERE</code> does the same job, and SQLite speeds it up for you behind the scenes.'})}
@@ -245,7 +245,7 @@ ${DIFF({title:'Getting the ID of the row you just inserted', sqlite:'SELECT last
 <table class="mini"><tr><th colspan="2">Actors</th></tr><tr><th class="hl-key">actor</th><th>born</th></tr><tr><td>Tim Robbins</td><td>1958</td></tr><tr><td>Morgan Freeman</td><td>1937</td></tr><tr><td>Brad Pitt</td><td>1963</td></tr><tr><td>Edward Norton</td><td>1969</td></tr><tr><td>George Clooney</td><td>1961</td></tr><tr><td>Julia Roberts</td><td>1967</td></tr></table>
 <table class="mini"><tr><th colspan="3">Roles</th></tr><tr><th class="hl-key">title</th><th class="hl-key">actor</th><th>role</th></tr><tr><td>The Shawshank Redemption</td><td>Tim Robbins</td><td>Andy Dufresne</td></tr><tr><td>The Shawshank Redemption</td><td>Morgan Freeman</td><td>Red</td></tr><tr><td>Se7en</td><td>Brad Pitt</td><td>Detective Mills</td></tr><tr><td>Se7en</td><td>Morgan Freeman</td><td>Detective Somerset</td></tr><tr><td>Fight Club</td><td>Brad Pitt</td><td>Tyler Durden</td></tr><tr><td>Fight Club</td><td>Edward Norton</td><td>The Narrator</td></tr><tr><td>Ocean's Eleven</td><td>George Clooney</td><td>Danny Ocean</td></tr><tr><td>Ocean's Eleven</td><td>Brad Pitt</td><td>Rusty Ryan</td></tr><tr><td>Ocean's Eleven</td><td>Julia Roberts</td><td>Tess Ocean</td></tr></table>
 </div>
-<p>Brad Pitt's birth year is now stored once, and an actor can be added before they're in any film. <code>Roles</code> is a <strong>junction table</strong>: a film has many actors and an actor is in many films, so this many-to-many relationship needs a table in between, just like <code>Order Details</code> sits between <code>Orders</code> and <code>Products</code> in Northwind.</p>
+<p>Brad Pitt's birth year is now stored once, and an actor can be added before they're in any film. <code>Roles</code> is a <strong>junction table</strong>: a film has many actors and an actor is in many films, so this many-to-many relationship needs a table in between, just as, in the Northwind database you'll meet in Unit 2, <code>Order Details</code> sits between <code>Orders</code> and <code>Products</code>.</p>
 <h3>Third normal form (3NF): nothing but the key</h3>
 <p>In 3NF, no column may depend on another column that isn't the key. In <code>Movies</code>, <code>director_born</code> depends on the <code>director</code>, not on the film: this is called a <strong>transitive dependency</strong>, and it's why David Fincher's birth year is still stored twice. So directors get a table of their own, and each film just names its director as a <strong>foreign key</strong>:</p>
 <div class="two-tables">
@@ -330,10 +330,11 @@ ${C('SELECT Country, CompanyName\nFROM Customers\nORDER BY Country ASC, CompanyN
 <h3>The order SQL runs in</h3>
 <p>You write <code>SELECT</code> first, but the database runs it fifth:</p>
 <ol class="order"><li><code>FROM</code></li><li><code>WHERE</code></li><li><code>GROUP BY</code></li><li><code>HAVING</code></li><li><code>SELECT</code></li><li><code>ORDER BY</code></li></ol>
+<p class="small">You'll meet <code>GROUP BY</code> and <code>HAVING</code> in Unit 3; they slot in between <code>WHERE</code> and <code>SELECT</code>.</p>
 <p>Because <code>ORDER BY</code> runs last, it can use an alias you created in <code>SELECT</code>:</p>
-${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products\nORDER BY `Stock Value` DESC;")}
+${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products\nORDER BY \"Stock Value\" DESC;")}
 ${TIP('You can also write <code>ORDER BY 2</code> to sort by the second column, but avoid it. If someone reorders the columns later, it silently sorts the wrong one.')}
-${DIFF({title:'Putting NULLs last in each dialect', sqlite:'ORDER BY Region NULLS LAST', mysql:'ORDER BY Region IS NULL, Region', tsql:'ORDER BY CASE WHEN Region IS NULL THEN 1 ELSE 0 END, Region', note:'All three put NULLs first when sorting A to Z, and <code>ORDER BY</code>, <code>ASC</code> and <code>DESC</code> work the same. Only SQLite has <code>NULLS FIRST</code> and <code>NULLS LAST</code>.'})}`,
+${DIFF({title:'Sorting in each dialect', sqlite:'ORDER BY Country, CompanyName DESC\nORDER BY Region NULLS LAST', mysql:'ORDER BY Country, CompanyName DESC', tsql:'ORDER BY Country, CompanyName DESC', note:'<code>ORDER BY</code>, <code>ASC</code> and <code>DESC</code> work the same in all three. One small difference: a missing value (NULL, see <a href="#/lesson/nulls">Working with NULL values</a>) sorts first in all three, but only SQLite lets you move them to the end with <code>NULLS LAST</code>.'})}`,
     ex:[
       {p:'List every product\'s name and unit price, most expensive first.', hint:'ORDER BY UnitPrice DESC', ordered:[1], sol:'SELECT ProductName, UnitPrice\nFROM Products\nORDER BY UnitPrice DESC;'},
       {p:'Show the City and CompanyName of every customer in Germany, sorted by city, then by company name.', hint:'Two columns in ORDER BY: the first sorts, the second breaks ties.', ordered:[0,1], sol:"SELECT City, CompanyName\nFROM Customers\nWHERE Country = 'Germany'\nORDER BY City, CompanyName;"},

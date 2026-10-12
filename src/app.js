@@ -800,7 +800,7 @@ function runLesson(){
     let btn=null, sub;
     if (nowDone && !was){
       sub='That\'s the last one. Lesson complete.';
-      btn = k<PATH.length-1 ? h('button',{class:'btn small primary',type:'button','data-go':PATH[k+1].id},'Next lesson') : h('button',{class:'btn small primary',type:'button','data-go':'path'},'Back to the path');
+      btn = k<PATH.length-1 ? h('button',{class:'btn small primary',type:'button','data-go':PATH[k+1].id},'Next lesson') : h('button',{class:'btn small primary',type:'button','data-go':'path'},'Back to home');
       toast('Lesson complete');
     } else {
       sub = v.extra?'You returned some extra columns too, which is fine.':'Your result matches the expected answer.';

@@ -158,7 +158,7 @@
     <div class="rels">
       <article><h3>One to many</h3><p>The most common. One customer, many orders. The foreign key always lives on the "many" side, in <code>Orders</code>.</p></article>
       <article><h3>One to one</h3><p>Each row matches at most one row in the other table, for example a user and their profile settings. Often merged into one table.</p></article>
-      <article><h3>Many to many</h3><p>An order holds many products, and a product appears on many orders. You can't link them directly, so a junction table sits in between. In Northwind that's <code>Order Details</code>.</p></article>
+      <article><h3>Many to many</h3><p>An order holds many products, and a product appears on many orders. You can't link them directly, so a junction table sits in between. You'll build one in the Normalisation lesson, and meet another in Northwind later on.</p></article>
     </div>
 
     <div class="rule"></div>
@@ -169,7 +169,7 @@
 
   <!-- 2. Build -->
   <section class="view" id="v-build" aria-labelledby="h-build">
-    <h1 id="h-build" class="dot">Create tables and connect them</h1>
+    <h1 id="h-build" class="dot">Creating tables</h1>
     <p class="lede">Build the <code>Customers</code> and <code>Orders</code> tables step by step. The diagram beside the editor redraws itself from your tables after every run, so you can see each table and relationship appear as you create it.</p>
     <div class="bench" style="margin-top:24px">
       <div>
@@ -179,7 +179,7 @@
         <div class="out" id="buildOut" data-testid="build-results"></div>
         <div class="build-diff">
           <h2 class="dot">Creating tables in each dialect</h2>
-          <p>The lessons above use SQLite. Creating tables is where the dialects differ most, so here's how MySQL and T-SQL write the same things. More comparisons are on the <a href="#/dialects">SQL dialects</a> page.</p>
+          <p>This lesson uses SQLite. Creating tables is where the dialects differ most, so here's how MySQL and T-SQL write the same things. More comparisons are on the <a href="#/dialects">SQL dialects</a> page.</p>
           <div id="buildDiff" data-testid="build-dialects"></div>
         </div>
       </div>
@@ -195,7 +195,7 @@
   <!-- 3. Map -->
   <section class="view" id="v-map" aria-labelledby="h-map">
     <h1 id="h-map" class="dot">The Northwind database</h1>
-    <p class="lede">Northwind is a sample database for a small food trading company: who bought what, who sold it, who supplied it and how it was shipped. All the practice queries in step 4 run against it.</p>
+    <p class="lede">Northwind is a sample database for a small food trading company: who bought what, who sold it, who supplied it and how it was shipped. From here on, every example and exercise runs against it.</p>
     <div style="margin-top:24px">
       <div class="panel">
         <div class="panel-h">

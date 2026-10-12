@@ -22,6 +22,7 @@ const DATABASES_LEARN = `
 
 <h3>Relational databases: tables, rows and columns</h3>
 <p>Most business databases are <strong>relational</strong>: the data is split into <strong>tables</strong>, one for each kind of thing (customers, orders, products), and the tables are linked together. This course is about relational databases.</p>
+<p>These rows come from <strong>Northwind</strong>, the sample database you'll query from Unit 2:</p>
 <div class="anatomy">
   <table class="mini anatomy-table">
     <tr><th class="hl-pk">CustomerID</th><th>CompanyName</th><th class="hl-col">City</th><th>Country</th></tr>
@@ -68,7 +69,7 @@ const SITE_INTRO = `
 
 <h2 class="dot">How it's organised</h2>
 <div class="intro-cards">
-  <a class="intro-card" href="#/path" data-testid="intro-card-path"><b>Learning path</b><span>Seven units, from what a database is to window functions and performance tuning. Work through them in order, or jump to any lesson.</span></a>
+  <a class="intro-card" href="#/path" data-testid="intro-card-path"><b>Learning path</b><span>Eight units, from what a database is to window functions and performance tuning, finishing with a capstone project. Work through them in order, or jump to any lesson.</span></a>
   <a class="intro-card" href="#/dialects" data-testid="intro-card-dialects"><b>SQL dialects</b><span>How MySQL, T-SQL and SQLite write the same things, side by side.</span></a>
   <a class="intro-card" href="#/quiz" data-testid="intro-card-quizzes"><b>Quizzes</b><span>A short quiz for each unit, plus two final quizzes. Nothing is marked until you submit.</span></a>
   <a class="intro-card" href="#/free" data-testid="intro-card-free"><b>Free practice</b><span>Run any query you like against the Northwind database. Nothing is marked.</span></a>
@@ -84,7 +85,7 @@ const SITE_INTRO = `
 <p>Answers are marked on what your query <em>returns</em>, not how it's written. Column names and aliases don't matter, extra columns are fine, and the order of rows only matters when the task asks for it.</p>
 
 <h2 class="dot">The Northwind ERD</h2>
-<p>All the exercises use Northwind, a sample database for a small food trading company. When you can't remember a table or column name, press the <strong>Show Northwind ERD</strong> button. It's above every editor and on every quiz question:</p>
+<p>From Unit 2 onwards, the exercises use Northwind, a sample database for a small food trading company. When you can't remember a table or column name, press the <strong>Show Northwind ERD</strong> button. It's above every editor and on every quiz question:</p>
 <p data-intro-erd></p>
 <p>It opens a diagram of every table and how they link. Select a table to see its columns, then press <kbd>Esc</kbd> or <strong>Close</strong> to carry on where you were. In a quiz, your answers and the timer are kept while it's open.</p>
 
