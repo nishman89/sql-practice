@@ -225,6 +225,7 @@ function renderERD(host, tables, {testPrefix='erd', positions, selected, onSelec
 
 /* ---------- Path progress ---------- */
 const FOUND = {
+  intro:{need:'Read through, then press Got it, start learning (or Mark lesson as complete).', prog:()=>[P.introDone?1:0,1], label:'Read'},
   capstone:{need:'Tick every task in the checklist when it\'s done (exercise 3 is optional).', prog:()=>{ const req=CAPSTONE_TASKS.filter(t=>!t[2]); return [req.filter(t=>(P.capstone||{})[t[0]]).length, req.length]; }, label:'Project'},
   databases:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.dbDone?1:0,1], label:'Intro and quiz'},
   flavours:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.flavDone?1:0,1], label:'Intro and quiz'},
@@ -249,7 +250,7 @@ function route(){
   if (parts[0]==='lesson' && LESSONS[parts[1]]){ lid=parts[1]; view=LESSONS[lid].kind||'lesson'; }
   else if (parts[0]==='free') view='free';
   else if (parts[0]==='dialects') view='dialects';
-  else if (parts[0]==='intro') view='intro';
+  else if (parts[0]==='intro'){ location.replace('#/lesson/intro'); return; }
   else if (parts[0]==='install') view='install';
   else if (parts[0]==='quiz') view = parts[1] ? 'quiz' : 'quizzes';
   if (view!=='quiz') stopTimer();
@@ -277,7 +278,7 @@ function route(){
   const h1=view==='path'?$('#h-path'):$('#v-'+view+' h1'); if (h1){ h1.setAttribute('tabindex','-1'); h1.focus({preventScroll:true}); }
 }
 addEventListener('hashchange', route);
-function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='intro'||to==='install'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
+function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='install'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-go]'); if (b){ e.preventDefault(); goto(b.dataset.go); } });
 
 function renderChrome(){
@@ -285,7 +286,7 @@ function renderChrome(){
   const id=current.lesson;
   if (!id){
     foot.innerHTML='';
-    const PAGE={intro:'Introduction',install:'Install on your computer',dialects:'SQL dialects',quizzes:'Quizzes',free:'Free practice'}[current.view];
+    const PAGE={install:'Install on your computer',dialects:'SQL dialects',quizzes:'Quizzes',free:'Free practice'}[current.view];
     if (!PAGE){ cr.hidden=true; return; }
     cr.hidden=false; cr.innerHTML='';
     cr.append(h('a',{href:'#/path','data-testid':'breadcrumb-home'},'Home'), h('span',{class:'sep','aria-hidden':'true'},'/'), h('span',{'data-testid':'breadcrumb-page'},PAGE));
@@ -468,6 +469,7 @@ function drawCapstone(){
 $('#capPrint').addEventListener('click',()=>window.print());
 function drawIntro(){
   const b=$('#introBody'); b.innerHTML=SITE_INTRO;
+  const go=$('#introStart'); go.onclick=()=>{ P.introDone=true; save(); goto('databases'); };
   const slot=$('[data-intro-erd]',b); if (slot) slot.append(erdButton('intro-open-erd'));
 }
 function drawDatabases(){

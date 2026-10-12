@@ -45,7 +45,7 @@ after `#`, shows one section, and calls its render function.
 | Address | View (section id) | Rendered by |
 |---|---|---|
 | `#/path` | `v-path` | `renderPath()` |
-| `#/intro` | `v-intro` | `drawIntro()`: `SITE_INTRO` from `src/content/intro.js` |
+| `#/lesson/intro` | `v-intro` | `drawIntro()`: `SITE_INTRO` from `src/content/intro.js`. It's lesson 1 (How this site works); `#/intro` redirects here, and Got it, start learning sets `P.introDone` |
 | `#/lesson/capstone` | `v-capstone` | `drawCapstone()`: `CAPSTONE_HTML` and a checklist from `CAPSTONE_TASKS`, ticks saved in `P.capstone` |
 | `#/install` | `v-install` | `drawInstall()`: `INSTALL_INTRO` and one tab per entry in `INSTALL_OPTIONS` (`src/content/install.js`); `addCopyButtons()` adds a Copy button to every `pre.cmd` |
 | `#/lesson/databases` | `v-databases` | `drawDatabases()`: lesson text and `renderCheck()` |

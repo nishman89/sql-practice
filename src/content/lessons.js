@@ -60,7 +60,7 @@ const BUILD_DIFF = () => [
 ].join('');
 
 const UNITS = [
-  {id:'u1', title:'Foundations', blurb:'What a database is, the flavours of SQL, database diagrams, data types and the kinds of SQL command. Then build your own tables, add, change and remove data, and learn how to design tables well with normalisation.', lessons:['databases','flavours','erd','datatypes','sqlcommands','build','changedata','normal']},
+  {id:'u1', title:'Foundations', blurb:'How this site works, what a database is, the flavours of SQL, database diagrams, data types and the kinds of SQL command. Then build your own tables, add, change and remove data, and learn how to design tables well with normalisation.', lessons:['intro','databases','flavours','erd','datatypes','sqlcommands','build','changedata','normal']},
   {id:'u2', title:'Introduction to querying', blurb:'Meet Northwind, the database the rest of the course uses, then choose the columns and rows you need, and sort, trim, search and calculate.', lessons:['map','select','operators','sorting','distinct','wildcards','concat','arithmetic','cp1']},
   {id:'u3', title:'Summarising data', blurb:'Turn hundreds of rows into totals, averages and counts, and deal with missing values.', lessons:['aggregates','groupby','having','nulls','cp2']},
   {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['joinsintro','innerjoin','leftjoin','multijoin','cp3']},
@@ -71,6 +71,7 @@ const UNITS = [
 ];
 
 const LESSONS = {
+  intro:{title:'How this site works', summary:'How the lessons, exercises, quizzes and dialect notes work, and how to install SQL on your own computer.', cmds:[], kind:'intro'},
   capstone:{title:'Capstone project', summary:'Design tables, draw an ERD and answer nine Northwind questions, in your own SQL Server, MySQL or SQLite.', cmds:['CREATE TABLE','INSERT','JOIN','GROUP BY','CREATE VIEW','CREATE PROCEDURE'], kind:'capstone'},
   databases:{title:'What\'s a database', summary:'What a database is, how it\'s organised into tables, rows and columns, and what SQL is for.', cmds:[], kind:'databases'},
   flavours:{title:'SQL flavours', summary:'The dialects of SQL: MySQL, T-SQL and SQLite, what\'s the same and what changes.', cmds:[], kind:'flavours'},

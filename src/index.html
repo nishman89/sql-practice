@@ -26,7 +26,7 @@
     <nav class="nav-desktop" id="main-nav" data-testid="main-nav" aria-label="Main">
       <ul>
         <li><a href="#/path" data-nav="path" data-testid="nav-path">Home</a></li>
-        <li><a href="#/intro" data-nav="intro" data-testid="nav-intro">Introduction</a></li>
+        <li><a href="#/lesson/intro" data-nav="intro" data-testid="nav-intro">Introduction</a></li>
         <li><a href="#/dialects" data-nav="dialects" data-testid="nav-dialects">SQL dialects</a></li>
         <li><a href="#/install" data-nav="install" data-testid="nav-install">Install</a></li>
         <li><a href="#/quiz" data-nav="quiz" data-testid="nav-quiz">Quizzes</a></li>
@@ -40,7 +40,7 @@
       <nav aria-label="Main (mobile)">
         <ul>
           <li><a href="#/path" data-nav="path" data-testid="mobile-nav-path">Home</a></li>
-          <li><a href="#/intro" data-nav="intro" data-testid="mobile-nav-intro">Introduction</a></li>
+          <li><a href="#/lesson/intro" data-nav="intro" data-testid="mobile-nav-intro">Introduction</a></li>
           <li><a href="#/dialects" data-nav="dialects" data-testid="mobile-nav-dialects">SQL dialects</a></li>
           <li><a href="#/install" data-nav="install" data-testid="mobile-nav-install">Install</a></li>
           <li><a href="#/quiz" data-nav="quiz" data-testid="mobile-nav-quiz">Quizzes</a></li>
@@ -66,9 +66,9 @@
 
   <!-- Introduction: how to use the site -->
   <section class="view" id="v-intro" aria-labelledby="h-intro">
-    <h1 id="h-intro" class="dot" data-testid="intro-title">Introduction</h1>
+    <h1 id="h-intro" class="dot" data-testid="intro-title">How this site works</h1>
     <div class="prose intro" id="introBody" data-testid="intro-body"></div>
-    <p style="margin-top:28px"><button class="btn primary" type="button" data-go="path" data-testid="intro-start">Go to the learning path</button></p>
+    <p style="margin-top:28px"><button class="btn primary" type="button" id="introStart" data-testid="intro-start">Got it, start learning</button></p>
   </section>
 
   <!-- Capstone project -->

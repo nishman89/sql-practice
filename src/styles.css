@@ -713,3 +713,6 @@ details.step-answers .ddiff{margin-top:8px}
 details.step-answers .ddiff-row{grid-template-columns:minmax(0,1fr);gap:4px}
 details.step-answers .ddiff-row pre{white-space:pre;overflow-x:auto}
 mark.x{background:#fff3cf;color:inherit;border-radius:3px;padding:0 2px;font-weight:600}
+.install-callout{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);border-left:8px solid var(--pink);padding:16px 22px;margin:28px 0}
+.install-callout h2{font-size:1.35rem;margin:0 0 8px}
+.install-callout .btn{text-decoration:none}
