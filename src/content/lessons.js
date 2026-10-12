@@ -530,9 +530,18 @@ ${DIFF({title:'Selecting a column that isn\'t grouped or aggregated', sqlite:'~R
     learn:`
 <p><code>WHERE</code> filters rows before grouping. <code>HAVING</code> filters the groups afterwards, so it's the one to use when your condition involves an aggregate.</p>
 ${C("SELECT SupplierID,\n       SUM(UnitsOnOrder) AS 'Total On Order',\n       AVG(UnitsOnOrder) AS 'Avg On Order'\nFROM Products\nGROUP BY SupplierID\nHAVING AVG(UnitsOnOrder) > 5;")}
-<p>Try moving that condition into <code>WHERE</code>: it fails, because when <code>WHERE</code> runs the groups don't exist yet.</p>
-${RUN_ORDER(['WHERE','HAVING'])}
-<p><code>WHERE</code> runs before the rows are grouped, and <code>HAVING</code> runs after, which is why only <code>HAVING</code> can use <code>COUNT</code>, <code>SUM</code> and <code>AVG</code>.</p>
+<h3>Why not put it in WHERE?</h3>
+<p>It seems natural to filter on the average with <code>WHERE</code>, like any other condition. Run it and the database refuses:</p>
+${CERR("SELECT SupplierID, AVG(UnitsOnOrder) AS 'Avg On Order'\nFROM Products\nWHERE AVG(UnitsOnOrder) > 5\nGROUP BY SupplierID;")}
+<p>The reason is the order the database runs a query in, which you saw in <a href="#/lesson/sorting">Sorting data</a>. Look where <code>WHERE</code>, <code>GROUP BY</code> and <code>HAVING</code> come on the right:</p>
+${RUN_ORDER(['WHERE','GROUP BY','HAVING'])}
+<ol class="why-steps">
+<li><strong><code>FROM</code> (1)</strong> fetches every row of Products.</li>
+<li><strong><code>WHERE</code> (2)</strong> checks the rows <em>one at a time</em>. The groups haven't been made yet, so there's no average to compare with: <code>AVG()</code> has nothing to work on.</li>
+<li><strong><code>GROUP BY</code> (3)</strong> puts the rows that are left into groups, one per supplier.</li>
+<li><strong><code>HAVING</code> (4)</strong> checks <em>each group</em>. Now the average exists, so <code>HAVING AVG(UnitsOnOrder) &gt; 5</code> works.</li>
+</ol>
+${TIP('<strong>Rule of thumb:</strong> a condition about a <em>single row</em> (<code>Country = \'UK\'</code>, <code>UnitPrice &gt; 20</code>) goes in <code>WHERE</code>. A condition about a <em>group</em>, which means it uses <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code> or <code>MAX</code>, goes in <code>HAVING</code>.')}
 ${TIP('Repeating the full expression in <code>HAVING</code> (<code>HAVING AVG(UnitsOnOrder) &gt; 5</code>) is the clearest way to write it.')}
 <p>You can use both in one query: <code>WHERE</code> to pick rows, <code>HAVING</code> to pick groups.</p>
 ${C("SELECT Country, COUNT(*) AS 'Customers'\nFROM Customers\nWHERE ContactTitle LIKE '%Sales%'\nGROUP BY Country\nHAVING COUNT(*) >= 3;")}

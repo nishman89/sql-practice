@@ -728,3 +728,4 @@ figure.run-order svg{width:100%;height:auto;display:block}
 .run-order .ro-block.hl rect{stroke:var(--ink);stroke-width:2}
 .run-order .ro-link{fill:none;stroke:var(--line);stroke-width:2}
 .run-order .ro-link.hl{stroke:var(--ink);stroke-width:3}
+ol.why-steps{padding-left:1.3em;display:grid;gap:6px;margin:4px 0 14px}

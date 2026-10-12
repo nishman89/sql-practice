@@ -145,7 +145,7 @@ function friendlyError(msg, mode){
   if (/UNIQUE constraint failed/i.test(msg)) return 'That primary key value already exists. Each row needs a unique key.';
   if (/NOT NULL constraint failed: (.+)/i.test(msg)) return `${msg.match(/NOT NULL constraint failed: (.+)/i)[1]} is NOT NULL, so you must give it a value.`;
   if (/(table|view|index) (.+) already exists/i.test(msg)) return 'That already exists. Start your script with DROP TABLE IF EXISTS (or DROP VIEW IF EXISTS), or press Start again in the Create tables lesson.';
-  if (/misuse of aggregate|aggregate functions are not allowed in the GROUP BY/i.test(msg)) return 'Aggregates such as SUM() and AVG() can\'t go in WHERE. Filter groups with HAVING instead.';
+  if (/misuse of aggregate|aggregate functions are not allowed in the GROUP BY/i.test(msg)) return 'COUNT, SUM, AVG, MIN and MAX can\'t go in WHERE: WHERE runs before the rows are grouped, so there\'s nothing to count or average yet. Put the condition in HAVING, after GROUP BY. (The HAVING lesson shows why.)';
   if (/near "(\w+)": syntax error/i.test(msg)){ const w=msg.match(/near "(\w+)"/)[1];
     return `SQL didn't expect "${w}" there. Check the clause order (SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY) and for a missing comma or bracket.`; }
   if (/incomplete input/i.test(msg)) return 'The query ends too early. Look for an unclosed quote or bracket.';
