@@ -40,9 +40,9 @@ const FAKE_START = FAKE + "-- Write your SELECT below, using student and course\
 
 /* The Customers and Orders tables from Creating tables (same names and data as the course notes).
    Lessons with db:'mydb' run on a fresh copy of these, and every run is rolled back. */
-const MYDB_SEED = "CREATE TABLE Customers (\n    customer_id    INTEGER PRIMARY KEY AUTOINCREMENT,\n    customer_name  TEXT NOT NULL,\n    height         REAL,\n    is_happy       INTEGER\n);\nCREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);\nINSERT INTO Customers (customer_name, height, is_happy) VALUES\n    ('Nish Mandal', 1.85, 1), ('Cathy French', 1.70, 0), ('Phil Windridge', 1.80, 1);\nINSERT INTO Orders (order_number, customer_id) VALUES\n    (1001, 1), (1002, 2), (1003, 3), (1004, 1), (1005, 2), (1006, 3);";
+const MYDB_SEED = "CREATE TABLE Customers (\n    customer_id    INTEGER PRIMARY KEY AUTOINCREMENT,\n    customer_name  TEXT NOT NULL,\n    height         REAL,\n    is_happy       INTEGER\n);\nCREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);\nINSERT INTO Customers (customer_name, height, is_happy) VALUES\n    ('Nish Mandal', 1.85, 1), ('Cathy French', 1.70, 0), ('Rich Gurney', 1.80, 1);\nINSERT INTO Orders (order_number, customer_id) VALUES\n    (1001, 1), (1002, 2), (1003, 3), (1004, 1), (1005, 2), (1006, 3);";
 const MYDB_TABLES = `<div class="two-tables">
-<table class="mini"><tr><th colspan="4">Customers</th></tr><tr><th>customer_id</th><th>customer_name</th><th>height</th><th>is_happy</th></tr><tr><td>1</td><td>Nish Mandal</td><td>1.85</td><td>1</td></tr><tr><td>2</td><td>Cathy French</td><td>1.7</td><td>0</td></tr><tr><td>3</td><td>Phil Windridge</td><td>1.8</td><td>1</td></tr></table>
+<table class="mini"><tr><th colspan="4">Customers</th></tr><tr><th>customer_id</th><th>customer_name</th><th>height</th><th>is_happy</th></tr><tr><td>1</td><td>Nish Mandal</td><td>1.85</td><td>1</td></tr><tr><td>2</td><td>Cathy French</td><td>1.7</td><td>0</td></tr><tr><td>3</td><td>Rich Gurney</td><td>1.8</td><td>1</td></tr></table>
 <table class="mini"><tr><th colspan="3">Orders</th></tr><tr><th>order_id</th><th>order_number</th><th>customer_id</th></tr><tr><td>1</td><td>1001</td><td>1</td></tr><tr><td>2</td><td>1002</td><td>2</td></tr><tr><td>3</td><td>1003</td><td>3</td></tr><tr><td>4</td><td>1004</td><td>1</td></tr><tr><td>5</td><td>1005</td><td>2</td></tr><tr><td>6</td><td>1006</td><td>3</td></tr></table>
 </div>`;
 
@@ -75,12 +75,17 @@ const LESSONS = {
   databases:{title:'What\'s a database', summary:'What a database is, how it\'s organised into tables, rows and columns, and what SQL is for.', cmds:[], kind:'databases'},
   flavours:{title:'SQL flavours', summary:'The dialects of SQL: MySQL, T-SQL and SQLite, what\'s the same and what changes.', cmds:[], kind:'flavours'},
   erd:{title:'Entity relationship diagrams', summary:'How to read a diagram of a database\'s tables, keys and relationships.', cmds:[], kind:'erd'},
-  datatypes:{title:'Data types', summary:'What each column can hold, how SQLite stores it, and how to convert between types.', cmds:['INTEGER','REAL','TEXT','typeof()','CAST()'], db:'mydb', rollback:true,
+  datatypes:{title:'Data types', summary:'Create two tables with a type for every column, insert data, and see how SQLite stores it.', cmds:['CREATE TABLE','INSERT INTO','INTEGER','REAL','TEXT','typeof()','CAST()'], db:'mydb', rollback:true,
     learn:`
 <p>Every column has a <strong>data type</strong>, which decides what it can hold. Types matter because they affect:</p>
 <ul class="plain"><li><strong>Sorting:</strong> as text, <code>'10'</code> comes before <code>'9'</code>; as numbers, it comes after.</li><li><strong>Maths:</strong> you can add up heights, but not names.</li><li><strong>Checking:</strong> a database can refuse values that don't fit, such as text in a date column.</li><li><strong>Storage:</strong> a whole number takes less space than the same digits stored as text.</li></ul>
-<p>This lesson uses the two tables you'll build in <a href="#/lesson/build">Creating tables</a>, so you can see the types in action. Here's what's in them:</p>
+<h3>A database to work with</h3>
+<p>This script creates two tables, <code>Customers</code> and <code>Orders</code>, choosing a type for every column, then inserts some data. Run it and look at the log: each statement is listed as it runs. You'll build these same tables yourself, step by step, in <a href="#/lesson/build">Creating tables</a>.</p>
+${C(MYDB_SEED.replace('CREATE TABLE Customers', 'DROP TABLE IF EXISTS Orders;\nDROP TABLE IF EXISTS Customers;\n\nCREATE TABLE Customers') + "\n\nSELECT * FROM Customers;")}
+<p>In this lesson the tables are always there, with this data, and every run starts from a fresh copy:</p>
 ${MYDB_TABLES}
+<p>Now insert a row of your own. Each value has to suit its column's type: text in quotes, numbers without:</p>
+${C("INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Ana Lopez', 1.62, 0);\n\nSELECT * FROM Customers;")}
 <h3>The types you'll meet</h3>
 <table class="mini"><tr><th>Kind of data</th><th>Type in SQLite</th><th>In our tables</th></tr>
 <tr><td>Whole numbers</td><td><code>INTEGER</code></td><td><code>customer_id</code>, <code>order_number</code></td></tr>
@@ -106,10 +111,10 @@ ${C("SELECT 7 / 2         AS 'Whole numbers',\n       7 / 2.0       AS 'One deci
 ${DIFF({title:'7 / 2 in each dialect', sqlite:'7 / 2    -- 3\n7 / 2.0  -- 3.5', mysql:'7 / 2    -- 3.5000\n7 DIV 2  -- 3', tsql:'7 / 2    -- 3\n7 / 2.0  -- 3.500000', note:'MySQL always gives the decimal answer (use <code>DIV</code> for whole-number division). SQLite and T-SQL drop the decimals when both numbers are whole. <code>CAST</code> works the same in all three, and T-SQL also has <code>CONVERT(INT, value)</code>.'})}
 ${TIP('SQLite is relaxed about types: it will store text in an <code>INTEGER</code> column if it can\'t convert it. MySQL and SQL Server refuse. Choosing the right type is still worth it, because it\'s what the next person to read your table expects.')}`,
     ex:[
-      {p:'Show Nish Mandal\'s customer_name with the storage type (typeof) of his customer_name, height and is_happy.', hint:"typeof(customer_name), typeof(height), typeof(is_happy) WHERE customer_name = 'Nish Mandal'", sol:"SELECT customer_name, typeof(customer_name), typeof(height), typeof(is_happy)\nFROM Customers\nWHERE customer_name = 'Nish Mandal';"},
+      {p:'Insert a customer called Ana Lopez, 1.62 tall and not happy (0). Then show her customer_name with the storage type (typeof) of her customer_id, height and is_happy.', hint:"INSERT INTO Customers (customer_name, height, is_happy) VALUES ('Ana Lopez', 1.62, 0); then SELECT customer_name, typeof(customer_id), typeof(height), typeof(is_happy) … WHERE customer_name = 'Ana Lopez';", sol:"INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Ana Lopez', 1.62, 0);\nSELECT customer_name, typeof(customer_id), typeof(height), typeof(is_happy)\nFROM Customers\nWHERE customer_name = 'Ana Lopez';"},
+      {p:'Insert Tom Brown, but write his height as text, in quotes: \'1.90\', and make him happy. Then show his name and typeof(height). What did SQLite store?', hint:"INSERT … VALUES ('Tom Brown', '1.90', 1); then SELECT customer_name, typeof(height) … WHERE customer_name = 'Tom Brown';  SQLite turns the text into a REAL because the column is REAL.", sol:"INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Tom Brown', '1.90', 1);\nSELECT customer_name, typeof(height)\nFROM Customers\nWHERE customer_name = 'Tom Brown';"},
       {p:'Show each customer\'s name and their height in centimetres as a whole number (1.85 becomes 185).', hint:'CAST(height * 100 AS INTEGER)', sol:"SELECT customer_name, CAST(height * 100 AS INTEGER) AS 'Height (cm)'\nFROM Customers;"},
-      {p:'Which columns in the Orders table are declared as INTEGER? Show their names.', hint:"pragma_table_info('Orders') can be used like a table: SELECT name FROM pragma_table_info('Orders') WHERE type = 'INTEGER';", sol:"SELECT name\nFROM pragma_table_info('Orders')\nWHERE type = 'INTEGER';"},
-      {p:'Each customer has 2 orders. Show each customer\'s name and their height divided by their 2 orders, so Nish shows 0.925 (not 0).', hint:'height is already REAL, so height / 2 keeps the decimals. Try CAST(height AS INTEGER) / 2 to see the trap.', sol:"SELECT customer_name, height / 2 AS 'Height per order'\nFROM Customers;"}
+      {p:'Which columns in the Orders table are declared as INTEGER? Show their names.', hint:"pragma_table_info('Orders') can be used like a table: SELECT name FROM pragma_table_info('Orders') WHERE type = 'INTEGER';", sol:"SELECT name\nFROM pragma_table_info('Orders')\nWHERE type = 'INTEGER';"}
     ]},
 
   sqlcommands:{title:'Types of SQL command', summary:'DDL, DML, DQL, DCL and TCL, and why TRUNCATE isn\'t the same as DELETE.', cmds:['CREATE','ALTER','DROP','TRUNCATE','INSERT','UPDATE','DELETE','SELECT','GRANT','COMMIT'], db:'mydb', rollback:true,
@@ -148,7 +153,7 @@ ${C("SAVEPOINT before_delete;\nDELETE FROM Orders;\nSELECT COUNT(*) AS 'Orders a
 ${DIFF({title:'Transactions in each dialect', sqlite:'BEGIN;\n…\nCOMMIT;   -- or ROLLBACK;', mysql:'START TRANSACTION;\n…\nCOMMIT;   -- or ROLLBACK;', tsql:'BEGIN TRANSACTION;\n…\nCOMMIT;   -- or ROLLBACK;', note:'In MySQL, DDL such as <code>TRUNCATE</code>, <code>DROP</code> and <code>CREATE</code> commits automatically, so it can\'t be rolled back. SQL Server and SQLite can roll DDL back inside a transaction.'})}`,
     check:[
       {q:'Which group does TRUNCATE belong to?', a:['DML, like DELETE','DDL, like DROP','TCL, like ROLLBACK'], c:1, why:'TRUNCATE works on the table as a whole rather than on chosen rows, so it\'s DDL, even though it removes data.'},
-      {q:'You need to remove only Phil Windridge\'s orders. Which command?', a:['DELETE … WHERE customer_id = 3','TRUNCATE TABLE Orders','DROP TABLE Orders'], c:0, why:'Only DELETE can pick rows with WHERE. TRUNCATE empties the whole table and DROP removes it.'},
+      {q:'You need to remove only Rich Gurney\'s orders. Which command?', a:['DELETE … WHERE customer_id = 3','TRUNCATE TABLE Orders','DROP TABLE Orders'], c:0, why:'Only DELETE can pick rows with WHERE. TRUNCATE empties the whole table and DROP removes it.'},
       {q:'In MySQL, which of these can be undone with ROLLBACK inside a transaction?', a:['TRUNCATE TABLE Orders','DROP TABLE Orders','DELETE FROM Orders'], c:2, why:'DELETE is DML, so it can be rolled back. In MySQL, DDL like TRUNCATE and DROP commits straight away.'},
       {q:'After TRUNCATE, what happens to an auto-numbered order_id?', a:['It starts again from 1','It carries on from the highest number used','The column is removed'], c:0, why:'TRUNCATE resets the counter. DELETE leaves it where it was, so the next new row carries on numbering.'}
     ]},
@@ -169,7 +174,7 @@ ${MYDB_TABLES}
 ${TIP('<strong>Every run here starts from a fresh copy of the tables</strong>, so you can experiment as much as you like. That\'s why each example ends with a <code>SELECT</code>: to show the change.')}
 <h3>INSERT: adding rows</h3>
 <p>List the columns you're filling, then the values in the same order. Leave out <code>customer_id</code>: it's auto-numbered, so the database fills it in.</p>
-${C("INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Sam Smith', 1.75, 1);\n\nSELECT * FROM Customers;")}
+${C("INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Phil Windridge', 1.80, 1);\n\nSELECT * FROM Customers;")}
 <p>Add several rows at once by separating them with commas:</p>
 ${C("INSERT INTO Orders (order_number, customer_id) VALUES\n    (1007, 1),\n    (1008, 2);\n\nSELECT * FROM Orders;")}
 <p>Or copy rows from a query with <code>INSERT INTO … SELECT</code>. This gives every happy customer a new order:</p>
@@ -180,17 +185,17 @@ ${C("UPDATE Customers\nSET is_happy = 1\nWHERE customer_name = 'Cathy French';\n
 ${TIP('<strong>Always check your WHERE.</strong> An <code>UPDATE</code> or <code>DELETE</code> without one changes <em>every row</em> in the table. A good habit: run a <code>SELECT</code> with the same <code>WHERE</code> first, and check it returns only the rows you mean.')}
 <h3>DELETE: removing rows</h3>
 ${C("DELETE FROM Orders\nWHERE order_number = 1006;\n\nSELECT * FROM Orders;")}
-<p>The foreign key protects related data. Phil Windridge still has orders, so deleting him would leave orders that belong to nobody. Run this and the database refuses:</p>
-${CERR("DELETE FROM Customers\nWHERE customer_name = 'Phil Windridge';")}
+<p>The foreign key protects related data. Rich Gurney still has orders, so deleting him would leave orders that belong to nobody. Run this and the database refuses:</p>
+${CERR("DELETE FROM Customers\nWHERE customer_name = 'Rich Gurney';")}
 <p>Delete his orders first, then him:</p>
 ${C("DELETE FROM Orders    WHERE customer_id = 3;\nDELETE FROM Customers WHERE customer_id = 3;\n\nSELECT * FROM Customers;")}
 ${DIFF({title:'Getting the ID of the row you just inserted', sqlite:'SELECT last_insert_rowid();', mysql:'SELECT LAST_INSERT_ID();', tsql:'SELECT SCOPE_IDENTITY();', note:'<code>INSERT</code>, <code>UPDATE</code> and <code>DELETE</code> themselves work the same in all three. For emptying a whole table, see <a href="#/lesson/sqlcommands">Types of SQL command</a>.'})}`,
     ex:[
-      {p:'Add a new customer called Sam Smith, 1.75 tall and happy, then show every customer.', hint:"INSERT INTO Customers (customer_name, height, is_happy) VALUES ('Sam Smith', 1.75, 1); then SELECT * FROM Customers;", sol:"INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Sam Smith', 1.75, 1);\nSELECT * FROM Customers;"},
+      {p:'Add a new customer called Phil Windridge, 1.80 tall and happy, then show every customer.', hint:"INSERT INTO Customers (customer_name, height, is_happy) VALUES ('Phil Windridge', 1.80, 1); then SELECT * FROM Customers;", sol:"INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Phil Windridge', 1.80, 1);\nSELECT * FROM Customers;"},
       {p:'Add two new orders for Cathy French (customer 2), numbers 1007 and 1008, in one statement. Then show all of Cathy\'s orders.', hint:'One INSERT with two sets of brackets after VALUES, then SELECT … WHERE customer_id = 2.', sol:"INSERT INTO Orders (order_number, customer_id) VALUES\n    (1007, 2),\n    (1008, 2);\nSELECT * FROM Orders WHERE customer_id = 2;"},
       {p:'Nish Mandal has been measured again: he\'s 1.86. Update his height, then show his row.', hint:"UPDATE Customers SET height = 1.86 WHERE customer_name = 'Nish Mandal';", sol:"UPDATE Customers\nSET height = 1.86\nWHERE customer_name = 'Nish Mandal';\nSELECT * FROM Customers WHERE customer_name = 'Nish Mandal';"},
       {p:'Order 1002 was cancelled. Delete it, then show every order.', hint:'DELETE FROM Orders WHERE order_number = 1002;', sol:"DELETE FROM Orders\nWHERE order_number = 1002;\nSELECT * FROM Orders;"},
-      {p:'Remove Phil Windridge completely: his orders first, then the customer. Then show every customer.', hint:'Two DELETEs: Orders WHERE customer_id = 3, then Customers WHERE customer_id = 3. The other way round, the foreign key stops you.', sol:"DELETE FROM Orders    WHERE customer_id = 3;\nDELETE FROM Customers WHERE customer_id = 3;\nSELECT * FROM Customers;"}
+      {p:'Remove Rich Gurney completely: his orders first, then the customer. Then show every customer.', hint:'Two DELETEs: Orders WHERE customer_id = 3, then Customers WHERE customer_id = 3. The other way round, the foreign key stops you.', sol:"DELETE FROM Orders    WHERE customer_id = 3;\nDELETE FROM Customers WHERE customer_id = 3;\nSELECT * FROM Customers;"}
     ]},
 
   select:{title:'Simple queries', summary:'Choose which columns to show and filter the rows you want.', cmds:['SELECT','FROM','WHERE','COUNT(*)','AS'],

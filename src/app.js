@@ -235,7 +235,9 @@ const FOUND = {
 function lessonProg(id){ if (FOUND[id]) return FOUND[id].prog(); const L=LESSONS[id];
   if (!L.ex) return [(P.checkDone||{})[id]?1:0, 1];
   return [L.ex.filter((_,i)=>P.exDone[id+'.'+i]).length, L.ex.length]; }
-function lessonDone(id){ const [a,b]=lessonProg(id); return a>=b; }
+const markedDone = id => !!(P.markedDone||{})[id];
+function autoDone(id){ const [a,b]=lessonProg(id); return a>=b; }
+function lessonDone(id){ return autoDone(id) || markedDone(id); }
 function nextLesson(){ return PATH.find(x=>!lessonDone(x.id)); }
 
 /* ---------- Routing ---------- */
@@ -281,18 +283,30 @@ document.addEventListener('click', e=>{ const b=e.target.closest('[data-go]'); i
 function renderChrome(){
   const cr=$('#crumbs'), foot=$('#lessonFoot');
   const id=current.lesson;
-  if (!id){ cr.hidden=true; foot.innerHTML=''; return; }
+  if (!id){
+    foot.innerHTML='';
+    const PAGE={intro:'Introduction',install:'Install on your computer',dialects:'SQL dialects',quizzes:'Quizzes',free:'Free practice'}[current.view];
+    if (!PAGE){ cr.hidden=true; return; }
+    cr.hidden=false; cr.innerHTML='';
+    cr.append(h('a',{href:'#/path','data-testid':'breadcrumb-home'},'Home'), h('span',{class:'sep','aria-hidden':'true'},'/'), h('span',{'data-testid':'breadcrumb-page'},PAGE));
+    return;
+  }
   const k=PATH.findIndex(x=>x.id===id), item=PATH[k], L=LESSONS[id], un=UNITS.indexOf(item.unit)+1;
   cr.hidden=false; cr.innerHTML='';
-  cr.append(h('a',{href:'#/path','data-testid':'breadcrumb-path'},'Learning path'), h('span',{class:'sep','aria-hidden':'true'},'/'), h('span',{'data-testid':'breadcrumb-unit'},`Unit ${un}: ${item.unit.title}`), h('span',{class:'pos','data-testid':'lesson-position'}, `Lesson ${k+1} of ${PATH.length}`));
+  cr.append(h('a',{href:'#/path','data-testid':'breadcrumb-home'},'Home'), h('span',{class:'sep','aria-hidden':'true'},'/'), h('span',{'data-testid':'breadcrumb-unit'},`Unit ${un}: ${item.unit.title}`), h('span',{class:'pos','data-testid':'lesson-position'}, `Lesson ${k+1} of ${PATH.length}`));
   foot.innerHTML='';
-  const done=lessonDone(id), [a,b]=lessonProg(id);
-  const state = done ? h('div',{class:'state ok','data-testid':'lesson-status','data-done':'true'},'Lesson complete.') :
-    h('div',{class:'state','data-testid':'lesson-status','data-done':'false'}, FOUND[id] ? `To complete this lesson: ${FOUND[id].need}` : `Solve all ${b} exercises to complete this lesson (${a} done).`);
+  const done=lessonDone(id), [a,b]=lessonProg(id), auto=autoDone(id), manual=markedDone(id);
+  const setMark = v => { P.markedDone=P.markedDone||{}; if (v) P.markedDone[id]=true; else delete P.markedDone[id]; save(); refreshChrome(); toast(v?'Marked as complete':'No longer marked as complete'); };
+  const mark = auto ? null : manual
+    ? h('button',{class:'btn small ghost',type:'button','data-testid':'unmark-complete',onclick:()=>setMark(false)},'Undo: mark as not complete')
+    : h('button',{class:'btn small mark',type:'button','data-testid':'mark-complete',onclick:()=>setMark(true)},'✓ Mark lesson as complete');
+  const state = done ? h('div',{class:'state ok','data-testid':'lesson-status','data-done':'true','data-manual':String(manual&&!auto)}, manual&&!auto ? 'Marked as complete.' : 'Lesson complete.', mark?' ':'', mark||'') :
+    h('div',{class:'state','data-testid':'lesson-status','data-done':'false'}, FOUND[id] ? `To complete this lesson: ${FOUND[id].need}` : `Solve all ${b} exercises to complete this lesson (${a} done).`, h('span',{class:'or'},' Or '), mark);
   const nexts=h('div',{class:'nexts'});
   if (k>0) nexts.append(h('button',{class:'btn ghost',type:'button','data-go':PATH[k-1].id,'data-testid':'previous-lesson'},'Previous lesson'));
   if (k<PATH.length-1) nexts.append(h('button',{class:'btn'+(done?' primary':''),type:'button','data-go':PATH[k+1].id,'data-testid':'next-lesson'}, `Next: ${LESSONS[PATH[k+1].id].title}`));
-  else nexts.append(h('button',{class:'btn primary',type:'button','data-go':'path','data-testid':'next-lesson'},'Back to the path'));
+  else nexts.append(h('button',{class:'btn primary',type:'button','data-go':'path','data-testid':'next-lesson'},'Back to home'));
+  nexts.prepend(h('button',{class:'btn ghost',type:'button','data-go':'path','data-testid':'back-home'},'Home'));
   foot.append(h('div',{class:'lfoot','data-testid':'lesson-footer'}, state, nexts));
 }
 function refreshChrome(){ renderChrome(); if (current.view==='lesson') renderLessonTabs(); }
@@ -426,17 +440,20 @@ function drawInstall(){
     intro.addEventListener('click',e=>{ const b=e.target.closest('[data-install-tab]'); if (!b) return; installTab=b.dataset.installTab; drawInstall(); $('#installTabs').scrollIntoView({behavior:'smooth',block:'start'}); $(`#install-tab-${installTab}`).focus({preventScroll:true}); });
   }
   const host=$('#installTabs'); host.innerHTML='';
-  const list=h('div',{class:'dtabs install-tabs',role:'tablist','aria-label':'Setup guides'});
+  const list=h('div',{class:'install-menu',role:'tablist','aria-label':'Setup guides','aria-orientation':'vertical'});
+  const GROUP={'docker-sqlserver':'🪟 T-SQL (SQL Server)','windows-sqlserver':'🪟 T-SQL (SQL Server)','windows-mysql':'🐬 MySQL','mac-mysql':'🐬 MySQL','docker-mysql':'🐬 MySQL','sqlite':'🪶 SQLite'};
+  let lastGroup=null;
   INSTALL_OPTIONS.forEach(o=>{
-    const b=h('button',{type:'button',role:'tab',id:`install-tab-${o.id}`,'aria-selected':String(o.id===installTab),'aria-controls':'install-panel',tabindex:o.id===installTab?'0':'-1','data-testid':`install-tab-${o.id}`},o.tab);
+    if (GROUP[o.id]!==lastGroup){ lastGroup=GROUP[o.id]; list.append(h('div',{class:'install-group',role:'presentation'},lastGroup)); }
+    const b=h('button',{type:'button',role:'tab',id:`install-tab-${o.id}`,'aria-selected':String(o.id===installTab),'aria-controls':'install-panel',tabindex:o.id===installTab?'0':'-1','data-testid':`install-tab-${o.id}`}, h('span',{class:'im-name'},o.tab.replace(/^\S+\s/,'')), h('span',{class:'im-os',html:o.os}));
     b.addEventListener('click',()=>{ installTab=o.id; drawInstall(); $(`#install-tab-${o.id}`).focus(); });
-    b.addEventListener('keydown',e=>{ const k=INSTALL_OPTIONS.findIndex(x=>x.id===installTab); if (e.key==='ArrowRight'||e.key==='ArrowLeft'){ e.preventDefault(); installTab=INSTALL_OPTIONS[(k+(e.key==='ArrowRight'?1:INSTALL_OPTIONS.length-1))%INSTALL_OPTIONS.length].id; drawInstall(); $(`#install-tab-${installTab}`).focus(); } });
+    b.addEventListener('keydown',e=>{ const k=INSTALL_OPTIONS.findIndex(x=>x.id===installTab); if (['ArrowRight','ArrowLeft','ArrowDown','ArrowUp'].includes(e.key)){ e.preventDefault(); const fwd=e.key==='ArrowRight'||e.key==='ArrowDown'; installTab=INSTALL_OPTIONS[(k+(fwd?1:INSTALL_OPTIONS.length-1))%INSTALL_OPTIONS.length].id; drawInstall(); $(`#install-tab-${installTab}`).focus(); } });
     list.append(b);
   });
   const o=INSTALL_OPTIONS.find(x=>x.id===installTab);
-  const panel=h('section',{class:'install-panel page-col',role:'tabpanel',id:'install-panel','aria-labelledby':`install-tab-${o.id}`,'data-testid':'install-panel','data-guide':o.id});
+  const panel=h('section',{class:'install-panel',role:'tabpanel',id:'install-panel','aria-labelledby':`install-tab-${o.id}`,'data-testid':'install-panel','data-guide':o.id});
   panel.innerHTML=`<div class="install-head"><h2>${o.title}</h2><div class="os-tags">${o.os}</div></div><p class="install-summary">${o.summary}</p>${o.body}`;
-  host.append(list, panel);
+  host.append(h('div',{class:'install-layout'}, list, panel));
   addCopyButtons(panel);
 }
 function drawCapstone(){
@@ -544,7 +561,7 @@ const BUILD_STEPS=[
   { short:'Insert data', title:'Insert some data',
     why:'Leave customer_id out of the Customers insert: the database generates it. Each order then uses a customer_id that already exists.',
     starter:'-- Add three customers, then six orders that belong to them\n\n',
-    example:`INSERT INTO Customers (customer_name, height, is_happy) VALUES\n('Nish Mandal',    1.85, TRUE),\n('Cathy French',   1.70, FALSE),\n('Phil Windridge', 1.80, TRUE);\n\nINSERT INTO Orders (order_number, customer_id) VALUES\n(1001, 1),\n(1002, 2),\n(1003, 3),\n(1004, 1),\n(1005, 2),\n(1006, 3);\n\nSELECT * FROM Customers;`,
+    example:`INSERT INTO Customers (customer_name, height, is_happy) VALUES\n('Nish Mandal',    1.85, TRUE),\n('Cathy French',   1.70, FALSE),\n('Rich Gurney',    1.80, TRUE);\n\nINSERT INTO Orders (order_number, customer_id) VALUES\n(1001, 1),\n(1002, 2),\n(1003, 3),\n(1004, 1),\n(1005, 2),\n(1006, 3);\n\nSELECT * FROM Customers;`,
     checks:T=>{ const c=findT(T,'customers'), o=findT(T,'orders'); const nc=c?count(c.name):0, no=o?count(o.name):0; return [
       [`Customers has at least 3 rows (now ${nc})`, nc>=3],
       [`Orders has at least 6 rows (now ${no})`, no>=6]
