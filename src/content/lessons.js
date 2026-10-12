@@ -35,8 +35,12 @@ const VENN = (regions, label, a='student', b='course') => {
 const VENN_CARD = (regions, title, sql) => `<figure class="venn-card">${VENN(regions, title)}<figcaption><b>${title}</b><code>${esc(sql)}</code></figcaption></figure>`;
 
 /* The made-up tables used in the join examples, built with WITH so they run without changing Northwind */
-const FAKE = "WITH student(name, course) AS (\n    VALUES ('Lee', 1), ('Barry', 1), ('David', 2), ('Tim', 3), ('Nicole', NULL)\n),\ncourse(id, name) AS (\n    VALUES (1, 'Business'), (2, 'Test'), (3, 'Dev'), (4, 'Data')\n)\n";
+const FAKE = "WITH student(name, course) AS (VALUES\n    ('Lee', 1), ('Barry', 1), ('David', 2),\n    ('Tim', 3), ('Nicole', NULL)\n),\ncourse(id, name) AS (VALUES\n    (1, 'Business'), (2, 'Test'), (3, 'Dev'), (4, 'Data')\n)\n";
 const FAKE_START = FAKE + "-- Write your SELECT below, using student and course\n";
+
+/* The made-up café tables used in Introduction to subqueries */
+const SHOP = "WITH product(name, category, price) AS (VALUES\n    ('Tea', 'Drinks', 3),    ('Coffee', 'Drinks', 4),\n    ('Juice', 'Drinks', 6),  ('Biscuits', 'Food', 2),\n    ('Cake', 'Food', 5),     ('Soup', 'Food', 7)\n),\nsale(product, qty) AS (VALUES\n    ('Tea', 10), ('Cake', 4),\n    ('Tea', 2),  ('Juice', 1)\n)\n";
+const SHOP_START = SHOP + "-- Write your SELECT below, using product and sale\n";
 
 /* Creating tables: how the dialects differ (shown on the Creating tables page) */
 const BUILD_DIFF = () => [
@@ -52,7 +56,7 @@ const UNITS = [
   {id:'u2', title:'Querying one table', blurb:'Choose the columns and rows you need, then sort, trim, search and calculate.', lessons:['select','operators','sorting','distinct','wildcards','concat','arithmetic','cp1']},
   {id:'u3', title:'Summarising data', blurb:'Turn hundreds of rows into totals, averages and counts, and deal with missing values.', lessons:['aggregates','groupby','having','nulls','cp2']},
   {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['joinsintro','innerjoin','leftjoin','multijoin','cp3']},
-  {id:'u5', title:'Subqueries', blurb:'Feed the result of one query into another.', lessons:['subwhere','subfrom','exists','cp4']},
+  {id:'u5', title:'Subqueries', blurb:'Feed the result of one query into another.', lessons:['subintro','subwhere','subfrom','exists','cp4']},
   {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, and saving SQL in the database as views and stored procedures.', lessons:['case','datesstrings','views','procedures']},
   {id:'u7', title:'Advanced topics', blurb:'Window functions, statistics, WITH, temporary tables, pivoting and making queries fast.', lessons:['windows','ranking','leadlag','frames','stats','cte','temptables','pivot','performance','cp5']}
 ];
@@ -495,9 +499,69 @@ ${SAME('Table aliases can be written with or without <code>AS</code> (<code>Prod
     ]},
 
   /* ===== Unit 5 ===== */
+  subintro:{title:'Introduction to subqueries', summary:'A query inside a query: what it returns, where it can go, and how the database works it out.', cmds:['(SELECT …)','IN','EXISTS','FROM (SELECT …) AS t'],
+    learn:`
+<p>A <strong>subquery</strong> is a <code>SELECT</code> written inside another statement, in brackets. It lets you use the answer to one question inside another, in one go, without writing the first answer down.</p>
+<p>To see how they work, here's a tiny café. Every example below builds these two tables with <code>WITH</code>, so you can run it here:</p>
+<div class="two-tables">
+<table class="mini"><tr><th colspan="3">product</th></tr><tr><th>name</th><th>category</th><th>price</th></tr><tr><td>Tea</td><td>Drinks</td><td>3</td></tr><tr><td>Coffee</td><td>Drinks</td><td>4</td></tr><tr><td>Juice</td><td>Drinks</td><td>6</td></tr><tr><td>Biscuits</td><td>Food</td><td>2</td></tr><tr><td>Cake</td><td>Food</td><td>5</td></tr><tr><td>Soup</td><td>Food</td><td>7</td></tr></table>
+<table class="mini"><tr><th colspan="2">sale</th></tr><tr><th>product</th><th>qty</th></tr><tr><td>Tea</td><td>10</td></tr><tr><td>Cake</td><td>4</td></tr><tr><td>Tea</td><td>2</td></tr><tr><td>Juice</td><td>1</td></tr></table>
+</div>
+<h3>Inside out</h3>
+<p>Which products cost more than the average? You'd need the average first, then compare each price with it. A subquery does both:</p>
+<div class="sq-flow" role="img" aria-label="Step 1: the inner query works out the average price, 4.5. Step 2: the outer query keeps the products priced above 4.5: Juice, Cake and Soup.">
+  <div class="sq-box sq-inner"><span class="sq-n">1</span><div><b>The inner query runs first</b><code>SELECT AVG(price) FROM product</code></div></div>
+  <div class="sq-arrow" aria-hidden="true">→</div>
+  <div class="sq-value"><span>answer</span><b>4.5</b></div>
+  <div class="sq-arrow" aria-hidden="true">→</div>
+  <div class="sq-box sq-outer"><span class="sq-n">2</span><div><b>The outer query uses the answer</b><code>SELECT name FROM product WHERE price &gt; 4.5</code><em>Juice, Cake, Soup</em></div></div>
+</div>
+${C(SHOP + "SELECT name, price\nFROM product\nWHERE price > (SELECT AVG(price) FROM product);")}
+${TIP('<strong>A good habit:</strong> when a subquery confuses you, run the inner query on its own first and look at what it returns. Here, that\'s <code>SELECT AVG(price) FROM product</code>, which gives 4.5.')}
+<h3>What a subquery can return</h3>
+<p>What you can do with a subquery depends on the shape of its answer:</p>
+<table class="mini"><tr><th>It returns</th><th>Called</th><th>Use it</th><th>Example</th></tr>
+<tr><td>One value (one row, one column)</td><td>A scalar subquery</td><td>With <code>=</code>, <code>&gt;</code>, <code>&lt;</code>, or as a column in <code>SELECT</code></td><td><code>(SELECT AVG(price) FROM product)</code></td></tr>
+<tr><td>A list (one column, many rows)</td><td>A list subquery</td><td>With <code>IN</code> or <code>NOT IN</code></td><td><code>(SELECT product FROM sale)</code></td></tr>
+<tr><td>A table (many columns and rows)</td><td>A derived table</td><td>In <code>FROM</code>, with a name</td><td><code>(SELECT category, AVG(price) …) AS c</code></td></tr></table>
+<h3>Where a subquery can go</h3>
+<div class="sq-places">
+  <div class="sq-place"><b>In WHERE</b><span>To filter rows using an answer worked out from data</span><code>WHERE price &gt; (SELECT AVG(price) …)</code></div>
+  <div class="sq-place"><b>In SELECT</b><span>To add a calculated column to every row</span><code>SELECT name, (SELECT MAX(price) …)</code></div>
+  <div class="sq-place"><b>In FROM</b><span>To use a query's result as if it were a table</span><code>FROM (SELECT …) AS t</code></div>
+</div>
+<h3>A list, with IN</h3>
+<p>Which products have sold at least once? The inner query lists every product in <code>sale</code>; <code>IN</code> keeps the products on that list:</p>
+${C(SHOP + "SELECT name\nFROM product\nWHERE name IN (SELECT product FROM sale);")}
+<p>Turn it round with <code>NOT IN</code> to find products that have never sold:</p>
+${C(SHOP + "SELECT name\nFROM product\nWHERE name NOT IN (SELECT product FROM sale);")}
+<h3>One value, as a column</h3>
+<p>A scalar subquery in <code>SELECT</code> adds the same answer to every row, so you can compare each row with it:</p>
+${C(SHOP + "SELECT name, price,\n       (SELECT MAX(price) FROM product) AS top_price,\n       (SELECT MAX(price) FROM product) - price AS cheaper_by\nFROM product;")}
+<h3>A table, in FROM</h3>
+<p>A subquery in <code>FROM</code> works like a temporary table. Here it works out each category's average, then the outer query filters those averages:</p>
+${C(SHOP + "SELECT category, avg_price\nFROM (\n    SELECT category, AVG(price) AS avg_price\n    FROM product\n    GROUP BY category\n) AS averages\nWHERE avg_price > 4.5;")}
+<h3>Correlated subqueries</h3>
+<p>So far each inner query runs once. A <strong>correlated</strong> subquery refers to the outer row, so it's worked out again for every row. Which products cost more than the average <em>of their own category</em>?</p>
+${C(SHOP + "SELECT p.name, p.category, p.price\nFROM product p\nWHERE p.price > (\n    SELECT AVG(price)\n    FROM product\n    WHERE category = p.category\n);")}
+<p>For Tea, the inner query averages the Drinks (4.33); for Cake, the Food (4.67). The <code>p.category</code> inside the brackets is what links the two.</p>
+<p><code>EXISTS</code> is the most common correlated subquery. It's true if the inner query finds at least one row:</p>
+${C(SHOP + "SELECT p.name\nFROM product p\nWHERE EXISTS (\n    SELECT 1 FROM sale s WHERE s.product = p.name\n);")}
+<h3>Subquery or join?</h3>
+<p>Many questions can be answered either way. Use whichever reads more like the question: "products that appear in sales" reads naturally as <code>IN</code> or <code>EXISTS</code>; "each product with its sales" reads as a <code>JOIN</code>. The next three lessons look at each kind of subquery in detail, on Northwind.</p>
+${SAME('Subqueries work the same in all three. The one difference: MySQL and T-SQL insist on a name for a subquery in <code>FROM</code> (<code>AS averages</code>), so always give one.')}`,
+    ex:[
+      {p:'Which products are cheaper than the average price? Show their name and price.', hint:'WHERE price < (SELECT AVG(price) FROM product)', starter:SHOP_START, sol:SHOP + "SELECT name, price\nFROM product\nWHERE price < (SELECT AVG(price) FROM product);"},
+      {p:'Using IN, list the names of products that have sold at least once.', hint:'WHERE name IN (SELECT product FROM sale)', starter:SHOP_START, sol:SHOP + "SELECT name\nFROM product\nWHERE name IN (SELECT product FROM sale);"},
+      {p:'Which products have never sold? Show their names.', hint:'NOT IN, or NOT EXISTS, with sale.', starter:SHOP_START, sol:SHOP + "SELECT name\nFROM product\nWHERE name NOT IN (SELECT product FROM sale);"},
+      {p:'Show each product\'s name and price, with the lowest price in the café next to it as a column.', hint:'(SELECT MIN(price) FROM product) in the SELECT list.', starter:SHOP_START, sol:SHOP + "SELECT name, price, (SELECT MIN(price) FROM product) AS lowest_price\nFROM product;"},
+      {p:'Using a subquery in FROM, work out each category\'s average price, then show only the categories whose average is above 4.5.', hint:'FROM (SELECT category, AVG(price) AS avg_price FROM product GROUP BY category) AS averages WHERE avg_price > 4.5', starter:SHOP_START, sol:SHOP + "SELECT category, avg_price\nFROM (\n    SELECT category, AVG(price) AS avg_price\n    FROM product\n    GROUP BY category\n) AS averages\nWHERE avg_price > 4.5;"},
+      {p:'Which products cost more than the average price of their own category? Show the name, category and price.', hint:'A correlated subquery: WHERE p.price > (SELECT AVG(price) FROM product WHERE category = p.category)', starter:SHOP_START, sol:SHOP + "SELECT p.name, p.category, p.price\nFROM product p\nWHERE p.price > (\n    SELECT AVG(price) FROM product WHERE category = p.category\n);"}
+    ]},
+
   subwhere:{title:'Subqueries in WHERE', summary:'Filter using a value or a list worked out by another query.', cmds:['(SELECT …)','IN','NOT IN'],
     learn:`
-<p>A subquery is a <code>SELECT</code> inside brackets, nested in another statement. The inner query runs first, and its result is used by the outer one.</p>
+<p>As in the <a href="#/lesson/subintro">Introduction to subqueries</a>, the inner query runs first and its result is used by the outer one. Now on Northwind:</p>
 ${C('SELECT ProductName, UnitPrice\nFROM Products\nWHERE UnitPrice > (SELECT AVG(UnitPrice) FROM Products);')}
 <p>The subquery returns one number, the average price, which <code>&gt;</code> compares against. When a subquery returns a list, use <code>IN</code>:</p>
 ${C('SELECT CompanyName, Country\nFROM Customers\nWHERE CustomerID IN (SELECT DISTINCT CustomerID FROM Orders);')}

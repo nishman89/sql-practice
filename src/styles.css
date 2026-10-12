@@ -599,3 +599,25 @@ details.trouble[open] summary{margin-bottom:6px}
 details.trouble ul.plain{margin:4px 0 4px}
 table.choose td:first-child{width:38%}
 @media (max-width:640px){ .install-panel{padding:16px} .install-steps>li{padding-left:40px} }
+
+/* Introduction to subqueries: inside-out diagram and places */
+.sq-flow{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;justify-items:stretch;margin:8px 0 16px;max-width:30rem}
+.sq-flow .sq-arrow{transform:rotate(90deg);justify-self:center;line-height:1}
+.sq-flow .sq-value{justify-self:center;grid-auto-flow:column;gap:8px;align-items:baseline}
+.sq-box{display:flex;gap:10px;align-items:flex-start;background:var(--paper);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;border-top:4px solid var(--ink)}
+.sq-inner{border-top-color:var(--pink)}
+.sq-box div{display:grid;gap:4px;min-width:0}
+.sq-box b{font-size:.9rem}
+.sq-box code{font-size:.8rem;background:var(--mist-2);overflow-wrap:anywhere}
+.sq-box em{font-style:normal;font-weight:700;color:var(--ok);font-size:.9rem}
+.sq-n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-weight:700;font-size:.8rem;display:grid;place-items:center}
+.sq-inner .sq-n{background:var(--pink)}
+.sq-arrow{font-size:1.4rem;color:var(--muted);font-weight:700}
+.sq-value{display:grid;justify-items:center;background:var(--pink);color:#fff;border-radius:12px;padding:8px 14px}
+.sq-value span{font-size:.72rem;opacity:.9}
+.sq-value b{font-size:1.3rem;font-family:var(--f-mono)}
+.sq-places{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr));gap:12px;margin:8px 0 16px}
+.sq-place{display:grid;gap:4px;background:var(--paper);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;border-left:5px solid var(--pink)}
+.sq-place b{font-family:var(--f-head);font-size:1.05rem}
+.sq-place span{font-size:.9rem;color:var(--ink-2)}
+.sq-place code{font-size:.76rem;background:var(--mist-2);overflow-wrap:anywhere}
