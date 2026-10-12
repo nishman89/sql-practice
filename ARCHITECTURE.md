@@ -251,7 +251,6 @@ back by `save()` after each change:
 | `sandbox` | The learner's own database, exported as base64 |
 | `mapTables` | Tables opened on Meet Northwind |
 | `quizzes` | Per quiz id: `{ attempts, best, last }`, each attempt `{ score, total, percent, passed, seconds, date, units }` |
-| `theme` | `light` or `dark`, if the learner chose one |
 
 - Every read and write is wrapped in `try/catch`, because storage can be blocked (some private-browsing modes). The site
   still works; it just doesn't remember.
@@ -262,8 +261,13 @@ back by `save()` after each change:
 
 ## 9. Styling
 
-- **`src/styles.css`** holds the theme: CSS variables (colours, fonts, radius) at the top, a dark set under
-  `prefers-color-scheme: dark` and `[data-theme="dark"]`, then the styles for each page.
+- **`src/styles.css`** holds the theme: CSS variables (colours, fonts, radius, shadow) at the top, then the styles for
+  each page. The palette, grey page background, white cards, pill buttons and rule are the ISTQB study site's.
+- **Header, home hero and footer are copied from the ISTQB study site** (`Header.astro`, the `index.astro` hero and
+  `Footer.astro`), so the two sites look like one family: white header with the Sparta logo and a pink underline,
+  pill-shaped links with the current page in charcoal, a **Menu** panel on phones, a charcoal hero on the home page,
+  a charcoal footer with the white logo, and the round back-to-top button. Like the ISTQB site there's no dark mode.
+- **Logos and favicon** live in `src/assets/` and are inlined as data URIs by `scripts/build.mjs`, so the site stays one file.
 - **Brand:** charcoal `#2d2a2b`, pink `#d42a57`, the pink full stop after titles (`.dot`), and the rule with an end dot,
   matching the ISTQB study site. Headings use Zilla Slab, the body uses Source Sans 3, and code uses JetBrains Mono, all
   from Google Fonts with system fallbacks.
@@ -273,7 +277,7 @@ back by `save()` after each change:
 
 ### Accessible colour
 
-All text meets WCAG AA contrast (4.5:1, or 3:1 for large text) in both themes. Keep to the variables when adding styles.
+All text meets WCAG AA contrast (4.5:1, or 3:1 for large text) Keep to the variables when adding styles.
 Status is never shown by colour alone: solved exercises and passed checks also get a tick and screen-reader text.
 
 ### Responsive design
@@ -282,7 +286,7 @@ The site is designed for desktop and tested at phone width (390 px):
 
 | Area | Desktop | Phone (≤ 1020 px / 640 px) |
 |---|---|---|
-| Header | Brand, three links and the theme switch | Links in a row that scrolls sideways |
+| Header | Logo, label and three pill links | Logo and a **Menu** button opening a full-width panel (≤ 48 rem) |
 | Learning path | Unit description beside its route | Stacked |
 | Lessons and Create tables | Explanation beside a sticky editor and results | Editor and results under the explanation |
 | Query results | Scroll inside their own box | Same |
@@ -415,10 +419,11 @@ There is no server. Everything a visitor sees comes from the one file; the only 
 | `data/northwind.db` | The Northwind database | - |
 | `src/index.html` | Page shell: header, static pages (What's an ERD, Create tables, Meet Northwind, lesson and Free practice frames) and the build placeholders | - |
 | `src/styles.css` | Theme variables and all styles | - |
+| `src/assets/` | Sparta Global logos (`sparta-logo.png`, `sparta-logo-white.png`) and `favicon.svg`, shared with the ISTQB site | - |
 | `src/engine.js` | Dialect layer, `runScript()`, `friendlyError()`, extra SQL functions, `expected()` and `compare()` | - (no DOM) |
 | `src/content/lessons.js` | `UNITS`, `LESSONS`, `PATH`, and the `C()` / `TIP()` helpers | `esc()` from `engine.js` |
 | `src/content/quizzes.js` | `QUIZ_SETTINGS` and `QUIZZES` | - |
-| `src/app.js` | Progress, theme, databases, results tables, editor, ERD renderer, routing, path, lessons, Foundations pages, Free practice, boot | engine, content |
+| `src/app.js` | Progress, header behaviour (back-to-top, menu), databases, results tables, editor, ERD renderer, routing, path, lessons, Foundations pages, Free practice, boot | engine, content |
 | `src/quiz.js` | Quiz list, start screen, questions, timer, marking, results and review | engine, content, `app.js` helpers |
 | `.github/workflows/deploy.yml` | Check, build and publish on every push to `main` | - |
 
@@ -432,7 +437,7 @@ There is no server. Everything a visitor sees comes from the one file; the only 
 | Deploy gate | GitHub Actions | nothing is published unless the checks and the build pass |
 
 Things that are **not** automated, so check them by eye after a big change: the layout on a phone (≈390 px wide), the
-dark theme, the Meet Northwind diagram if you move tables, and colour contrast for any new colours (keep to the CSS
+header and footer against the ISTQB site, the Meet Northwind diagram if you move tables, and colour contrast for any new colours (keep to the CSS
 variables). The README's Playwright and Selenium examples make a good smoke test.
 
 ## 17. Design decisions and trade-offs

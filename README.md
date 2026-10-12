@@ -94,7 +94,8 @@ T-SQL `LIKE '[ABC]%'` character list and T-SQL `FORMAT`. Practise these in MySQL
 
 ### Finding your way around
 
-- **Header** – **Learning path**, **Query quiz** and **Free practice** on every page, plus a light/dark theme switch.
+- **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Query quiz** and **Free practice** on every page. On phones they move into a **Menu** button.
+- **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
 - **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 27").
 - **Next lesson** – the footer of every lesson links to the previous and next lessons.
@@ -340,7 +341,7 @@ used twice. It also warns when a model answer returns no rows. Run `npm run chec
 | The Northwind table notes and diagram layout | `NW_NOTES` and `NW_POS` in `src/app.js` |
 | MySQL/T-SQL syntax the site accepts | `transform()`, `rewriteFns()` and `addFns()` in `src/engine.js` |
 | Advice shown with error messages | `friendlyError()` in `src/engine.js` |
-| Header and footer | `src/index.html` |
+| Header, home hero and footer | `src/index.html` (styles under "Header", "Home hero" and "Footer" in `src/styles.css`) |
 
 ---
 
@@ -366,6 +367,7 @@ nothing to host except that one file.
     ├── engine.js                  The SQL layer: dialect translation, running scripts, friendly errors, answer checking
     ├── app.js                     Pages and UI: path, lessons, Foundations pages, ERDs, Free practice, progress
     ├── quiz.js                    The query quiz
+    ├── assets/                    Sparta Global logos and favicon (inlined into the page by the build)
     └── content/
         ├── lessons.js             Units, lessons, examples and exercises
         └── quizzes.js             Quiz A, Quiz B and the quiz settings
@@ -390,7 +392,9 @@ Every important element has a stable hook:
 
 | Page / area | Hooks |
 |---|---|
-| **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` · `nav-quiz` · `nav-free` · `theme-toggle` |
+| **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` · `nav-quiz` · `nav-free` · `back-to-top` · `site-footer` |
+| **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-quiz` · `mobile-nav-free` |
+| **Home hero** | `hero` · `hero-start` · `hero-quiz` · `hero-free` |
 | **Learning path** | `continue-card` · `overall-progress` (with `data-lessons-done` and `data-exercises-done`) · `continue` · `reset-progress` · `unit-1` … `unit-6` · `lesson-<id>` (with `data-status`: `done`, `next`, `started` or `todo`) · `lesson-link-<id>` · `lesson-status-<id>` |
 | **Any lesson** | `breadcrumb` · `breadcrumb-path` · `breadcrumb-unit` · `lesson-position` · `lesson-footer` · `lesson-status` (with `data-done`) · `previous-lesson` · `next-lesson` |
 | **Lesson tabs** | `lesson-title` · `lesson-tabs` · `tab-learn` · `tab-exercise-1` … (with `data-done`) · `lesson-body` |
@@ -410,6 +414,7 @@ Every important element has a stable hook:
 
 ### Things worth knowing when you write tests
 
+- **Below 48rem wide the header links move into `mobile-menu`.** Click its `<summary>` first, then `mobile-nav-…`.
 - **Pages are addresses after `#`.** Go straight to `#/quiz/a` or `#/lesson/select` rather than clicking through.
 - **The quiz shows one question at a time.** Only the current question's `question-N` elements exist; use
   `next-question` / `previous-question` or `question-nav-N` to move. Your typing is kept when you move.
