@@ -96,6 +96,10 @@ const SITE_INTRO = `
 </ul>
 <p>If you type MySQL or T-SQL out of habit, such as <code>TOP 10</code> or <code>YEAR(OrderDate)</code>, you'll get a message showing the SQLite way.</p>
 
+<h2 class="dot">Practising on your own computer</h2>
+<p>You don't need to install anything for this site. When you want to practise with the database you'll use at work, <a href="#/install" data-testid="intro-install-link">Install on your computer</a> has step-by-step guides for Windows and Mac:</p>
+<ul class="plain"><li><strong>🪟 SQL Server with Docker and VS Code:</strong> the same on Windows and Mac, with Northwind ready to use. Start here if you're not sure.</li><li><strong>🪟 SQL Server on Windows</strong> with SQL Server Management Studio.</li><li><strong>🐬 MySQL on Windows or Mac</strong> with MySQL Workbench, or MySQL in Docker.</li></ul>
+
 <h2 class="dot">Your progress</h2>
 <p>Your solved exercises, your drafts, the tables you build and your quiz scores are saved in <strong>this browser on this device</strong>. Nothing is sent anywhere. Another browser, or a private window, starts fresh. <strong>Reset my progress</strong> at the bottom of the learning path clears everything.</p>
 `;

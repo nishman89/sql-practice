@@ -234,7 +234,7 @@ function lessonDone(id){ const [a,b]=lessonProg(id); return a>=b; }
 function nextLesson(){ return PATH.find(x=>!lessonDone(x.id)); }
 
 /* ---------- Routing ---------- */
-const VIEWS=['path','intro','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
+const VIEWS=['path','intro','install','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
 let current={view:'path',lesson:null};
 function route(){
   const parts=location.hash.replace(/^#\/?/,'').split('/');
@@ -243,11 +243,12 @@ function route(){
   else if (parts[0]==='free') view='free';
   else if (parts[0]==='dialects') view='dialects';
   else if (parts[0]==='intro') view='intro';
+  else if (parts[0]==='install') view='install';
   else if (parts[0]==='quiz') view = parts[1] ? 'quiz' : 'quizzes';
   if (view!=='quiz') stopTimer();
   current={view,lesson:lid};
   VIEWS.forEach(v=>$('#v-'+v).classList.toggle('on', v===view));
-  const section = view==='free'?'free' : view==='dialects'?'dialects' : view==='intro'?'intro' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
+  const section = view==='free'?'free' : view==='dialects'?'dialects' : view==='intro'||view==='install'?'intro' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
   $$('[data-nav]').forEach(b=>{ if (b.dataset.nav===section) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   $('#pathHero').hidden = view!=='path'; $('#main').classList.toggle('on-path', view==='path');
   if (lid){ P.last=lid; save(); }
@@ -255,6 +256,7 @@ function route(){
   if (view==='map') drawMap();
   if (view==='databases') drawDatabases();
   if (view==='intro') drawIntro();
+  if (view==='install') drawInstall();
   if (view==='flavours') drawFlavours();
   if (view==='dialects') renderDialectTabs($('#dialectsTabs'), 'dialects');
   if (view==='build'){ buildEd.sync(); drawBuildDiff(); }
@@ -267,7 +269,7 @@ function route(){
   const h1=view==='path'?$('#h-path'):$('#v-'+view+' h1'); if (h1){ h1.setAttribute('tabindex','-1'); h1.focus({preventScroll:true}); }
 }
 addEventListener('hashchange', route);
-function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='intro'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
+function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='intro'||to==='install'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-go]'); if (b){ e.preventDefault(); goto(b.dataset.go); } });
 
 function renderChrome(){
@@ -310,6 +312,7 @@ function renderPath(){
   const ha=$('#heroActions'); ha.innerHTML='';
   ha.append(h('button',{class:'btn primary',type:'button','data-go':nxt?nxt.id:'free','data-testid':'hero-start'}, nxt?(doneL?'Continue learning':'Start the learning path'):'Free practice'),
     h('button',{class:'btn light',type:'button','data-go':'intro','data-testid':'hero-intro'},'How this site works'),
+    h('button',{class:'btn light',type:'button','data-go':'install','data-testid':'hero-install'},'Install on your computer'),
     h('button',{class:'btn light',type:'button','data-go':'quiz','data-testid':'hero-quiz'},'Take a quiz'),
     h('button',{class:'btn light',type:'button','data-go':'free','data-testid':'hero-free'},'Free practice'));
   let num=0;
@@ -398,6 +401,33 @@ function renderCheck(form, Q, tp, saved, onAnswer){
   });
 }
 const drawBuildDiff = () => { const el=$('#buildDiff'); if (el && !el.childElementCount) el.innerHTML=BUILD_DIFF(); };
+/* Install on your computer: one tab per setup guide, with a Copy button on every command */
+let installTab = INSTALL_OPTIONS[0].id;
+function addCopyButtons(root){
+  $$('pre.cmd',root).forEach(pre=>{
+    if (pre.parentElement.classList.contains('cmd-wrap')) return;
+    const wrap=h('div',{class:'cmd-wrap'}); pre.replaceWith(wrap); wrap.append(pre);
+    const b=h('button',{class:'btn small copy',type:'button','data-testid':'copy-command'},'Copy');
+    b.addEventListener('click',async()=>{ try { await navigator.clipboard.writeText(pre.textContent); b.textContent='Copied'; } catch(e){ const r=document.createRange(); r.selectNodeContents(pre); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); b.textContent='Selected: press Ctrl+C'; } setTimeout(()=>b.textContent='Copy',1800); });
+    wrap.append(b);
+  });
+}
+function drawInstall(){
+  const intro=$('#installIntro'); if (!intro.childElementCount) intro.innerHTML=INSTALL_INTRO;
+  const host=$('#installTabs'); host.innerHTML='';
+  const list=h('div',{class:'dtabs install-tabs',role:'tablist','aria-label':'Setup guides'});
+  INSTALL_OPTIONS.forEach(o=>{
+    const b=h('button',{type:'button',role:'tab',id:`install-tab-${o.id}`,'aria-selected':String(o.id===installTab),'aria-controls':'install-panel',tabindex:o.id===installTab?'0':'-1','data-testid':`install-tab-${o.id}`},o.tab);
+    b.addEventListener('click',()=>{ installTab=o.id; drawInstall(); $(`#install-tab-${o.id}`).focus(); });
+    b.addEventListener('keydown',e=>{ const k=INSTALL_OPTIONS.findIndex(x=>x.id===installTab); if (e.key==='ArrowRight'||e.key==='ArrowLeft'){ e.preventDefault(); installTab=INSTALL_OPTIONS[(k+(e.key==='ArrowRight'?1:INSTALL_OPTIONS.length-1))%INSTALL_OPTIONS.length].id; drawInstall(); $(`#install-tab-${installTab}`).focus(); } });
+    list.append(b);
+  });
+  const o=INSTALL_OPTIONS.find(x=>x.id===installTab);
+  const panel=h('section',{class:'install-panel page-col',role:'tabpanel',id:'install-panel','aria-labelledby':`install-tab-${o.id}`,'data-testid':'install-panel','data-guide':o.id});
+  panel.innerHTML=`<div class="install-head"><h2>${o.title}</h2><div class="os-tags">${o.os}</div></div><p class="install-summary">${o.summary}</p>${o.body}`;
+  host.append(list, panel);
+  addCopyButtons(panel);
+}
 function drawIntro(){
   const b=$('#introBody'); b.innerHTML=SITE_INTRO;
   const slot=$('[data-intro-erd]',b); if (slot) slot.append(erdButton('intro-open-erd'));

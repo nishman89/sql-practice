@@ -69,6 +69,14 @@
     <p style="margin-top:28px"><button class="btn primary" type="button" data-go="path" data-testid="intro-start">Go to the learning path</button></p>
   </section>
 
+  <!-- Install on your computer -->
+  <section class="view" id="v-install" aria-labelledby="h-install">
+    <h1 id="h-install" class="dot" data-testid="install-title">Install on your computer</h1>
+    <div class="prose page-col" id="installIntro" data-testid="install-intro"></div>
+    <h2 class="dot">Step-by-step guides</h2>
+    <div id="installTabs" data-testid="install-guides"></div>
+  </section>
+
   <!-- What's a database (first lesson) -->
   <section class="view" id="v-databases" aria-labelledby="h-databases">
     <h1 id="h-databases" class="dot" data-testid="databases-title">What's a database</h1>
@@ -105,7 +113,7 @@
         <h1 id="h-erd" class="dot">What's an ERD</h1>
         <p class="lede">An entity relationship diagram is a map of a database. Each box is a table, and each line shows how two tables connect.</p>
         <p>Before writing any SQL against a database you haven't seen, look at its ERD. It tells you which tables exist, what columns they hold, and which columns you can use to join them together.</p>
-        <p>The diagram on the right is the database you'll build in step 2: a <code>Customers</code> table and an <code>Orders</code> table, linked by <code>customer_id</code>.</p>
+        <p>The diagram on the right is the database you'll build in the <a href="#/lesson/build">Creating tables</a> lesson: a <code>Customers</code> table and an <code>Orders</code> table, linked by <code>customer_id</code>.</p>
       </div>
       <figure class="figure" style="margin:0">
         <div id="erdLessonFig"></div>

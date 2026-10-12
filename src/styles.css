@@ -570,3 +570,32 @@ table.dialect-table td.this-col{background:var(--pink-tint)}
 @media (max-width:640px){ .venn-inline{grid-template-columns:110px minmax(0,1fr);gap:10px} .venn-inline .venn{max-width:110px} }
 .build-diff{margin-top:28px}
 .build-diff h2{font-size:1.4rem}
+
+/* Readable single-column pages (What's a database, SQL flavours, Introduction, Install) */
+#databasesBody,#flavoursBody,#introBody,.page-col{max-width:50rem}
+#databasesBody>p,#databasesBody>h3,#flavoursBody>p,#flavoursBody>h3,#introBody>p,#introBody>ol{max-width:none}
+#databasesBody table.mini,#introBody table.mini,.page-col table.mini{width:100%}
+
+/* Install on your computer */
+.install-tabs{margin-top:6px}
+.install-panel{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 26px;margin-top:4px}
+.install-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.install-head h2{margin:0;font-size:1.45rem}
+.os-tags{display:flex;gap:6px}
+.os-tag{background:var(--ink);color:#fff;border-radius:999px;padding:2px 11px;font-size:.8rem;font-weight:700}
+.install-summary{color:var(--ink-2);margin:8px 0 18px}
+.install-steps{list-style:none;counter-reset:st;padding:0;margin:0;display:grid;gap:22px}
+.install-steps>li{counter-increment:st;position:relative;padding-left:46px}
+.install-steps>li::before{content:counter(st);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--pink);color:#fff;font-weight:700;display:grid;place-items:center}
+.install-steps h3{margin:3px 0 6px;font-size:1.15rem}
+.install-steps p{margin:0 0 10px}
+.cmd-wrap{position:relative;margin:4px 0 12px}
+pre.cmd{margin:0;background:var(--code-bg);color:var(--code-fg);font-family:var(--f-mono);font-size:.86rem;line-height:1.55;padding:12px 14px;padding-right:96px;border-radius:var(--r);white-space:pre-wrap;overflow-wrap:anywhere}
+.cmd-wrap .copy{position:absolute;top:8px;right:8px;background:#fff;border-color:#fff;color:var(--ink)}
+.cmd-wrap .copy:hover{background:var(--pink-tint)}
+details.trouble{background:var(--mist);border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:6px 0 10px}
+details.trouble summary{cursor:pointer;font-weight:700;color:var(--ink-2)}
+details.trouble[open] summary{margin-bottom:6px}
+details.trouble ul.plain{margin:4px 0 4px}
+table.choose td:first-child{width:38%}
+@media (max-width:640px){ .install-panel{padding:16px} .install-steps>li{padding-left:40px} }
