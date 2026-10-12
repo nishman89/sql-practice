@@ -20,8 +20,8 @@ tablets and phones.
 | Page | What it does |
 |---|---|
 | **Learning path** (home) | Every unit and lesson as a route. Finished lessons are ticked, the next lesson is highlighted and checkpoints are shown as diamonds. The **Continue** card shows the next unfinished lesson and a trail of progress across the whole path. |
-| **Capstone project** | The last lesson on the path, from the Sparta Global SQL project brief: create Course and Spartan tables, add data, draw an ERD of an improved design, then answer nine Northwind questions, in the learner's **own** SQL Server or MySQL (it links to the install guides first). Each question shows the result to check against and the lesson to revise, with 🐬 / 🪟 reminders, a tick-off checklist that completes the lesson, and a Print or save as PDF button. Model answers stay with trainers. |
-| **Install on your computer** | Step-by-step guides for practising outside the browser, linked from the home page and the Introduction: 🪟 SQL Server with Docker and VS Code (Windows and Mac, using the `kcornwall/sqlnorthwind` image), 🪟 SQL Server on Windows with SSMS, 🐬 MySQL on Windows, 🐬 MySQL on Mac, and 🐬 MySQL with Docker. Every command has a Copy button, and the MySQL Northwind script is downloadable from the page. |
+| **Capstone project** | The last lesson on the path, from the Sparta Global SQL project brief: create Course and Spartan tables, add data, draw an ERD of an improved design, then answer nine Northwind questions, in the learner's **own** SQL Server, MySQL or SQLite (it links to the install guides first; in SQLite, question 2.9 uses a view instead of a stored procedure). Each question shows the result to check against and the lesson to revise, with 🐬 / 🪟 reminders, a tick-off checklist that completes the lesson, and a Print or save as PDF button. Model answers stay with trainers. |
+| **Install on your computer** | Step-by-step guides for practising outside the browser, linked from the home page and the Introduction: 🪟 SQL Server with Docker and VS Code (Windows and Mac, using the `kcornwall/sqlnorthwind` image), 🪟 SQL Server on Windows with SSMS, 🐬 MySQL on Windows, 🐬 MySQL on Mac, 🐬 MySQL with Docker, and 🪶 SQLite with DB Browser for SQLite (using the same Northwind file as this site). Every command has a Copy button, and both the MySQL Northwind script and the SQLite `northwind.db` are downloadable from the page. |
 | **Introduction** (header tab) | How the site works: how it's organised, what's inside a lesson, how answers are marked, the **Show Northwind ERD** button, the dialect icons and where progress is saved. |
 | **What's a database** | The first lesson: what a database and a DBMS are, why not a spreadsheet, tables, rows, columns, primary and foreign keys, data types, NoSQL, and what SQL does (DDL, DML and CRUD), with a labelled example table and three **Check yourself** questions. |
 | **SQL flavours** | The second lesson: what SQL dialects are, the flavours learners will meet (MySQL, T-SQL, PostgreSQL, Oracle, SQLite), what's the same and what changes, that the course uses SQLite, a tabbed MySQL / T-SQL / SQLite comparison and three **Check yourself** questions. |
@@ -436,7 +436,8 @@ nothing to host except that one file.
 ```
 ├── .github/workflows/deploy.yml   Checks, builds and publishes to GitHub Pages
 ├── data/northwind.db              The Northwind sample database (SQLite, ~250 KB)
-├── public/downloads/              Files learners download, copied into the site as they are (the MySQL Northwind script)
+├── public/downloads/              Files learners download, copied into the site as they are (the MySQL Northwind script,
+│                                  and northwind.db, a copy of data/northwind.db for the SQLite guide)
 ├── scripts/
 │   ├── build.mjs                  Builds dist/index.html
 │   ├── check.mjs                  Runs every model answer and example; stops the build if one fails
@@ -480,7 +481,7 @@ Every important element has a stable hook:
 | **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-intro` · `mobile-nav-dialects` · `mobile-nav-install` · `mobile-nav-quiz` · `mobile-nav-free` |
 | **Home hero** | `hero` · `hero-start` · `hero-intro` · `hero-install` · `hero-quiz` · `hero-free` |
 | **Capstone project** | `capstone-title` · `capstone-print` · `capstone-body` · `capstone-before` · `capstone-install-link` · `capstone-q-1-1` … `capstone-q-2-9` · `capstone-checklist` · `capstone-task-setup`, `capstone-task-1-1` … `capstone-task-2-9`, `capstone-task-submit` |
-| **Install on your computer** | `install-title` · `install-intro` · `install-guides` · `install-tab-docker-sqlserver` / `-windows-sqlserver` / `-windows-mysql` / `-mac-mysql` / `-docker-mysql` · `install-panel` (with `data-guide`) · `copy-command` · `download-mysql-northwind` |
+| **Install on your computer** | `install-title` · `install-intro` · `install-guides` · `install-tab-docker-sqlserver` / `-windows-sqlserver` / `-windows-mysql` / `-mac-mysql` / `-docker-mysql` / `-sqlite` · `install-panel` (with `data-guide`) · `copy-command` · `download-mysql-northwind` · `download-sqlite-northwind` |
 | **Introduction** | `intro-title` · `intro-body` · `intro-install-link` · `intro-card-path` / `-dialects` / `-quizzes` / `-free` · `intro-open-erd` · `intro-start` |
 | **Learning path** | `continue-card` · `overall-progress` (with `data-lessons-done` and `data-exercises-done`) · `continue` · `reset-progress` · `unit-1` … `unit-7` · `unit-quiz-1` … `unit-quiz-7` (each unit's quiz button) · `unit-quiz-N-score` · `lesson-<id>` (with `data-status`: `done`, `next`, `started` or `todo`) · `lesson-link-<id>` · `lesson-status-<id>` · `lesson-cmds-<id>` (the command chips) |
 | **Any lesson** | `breadcrumb` · `breadcrumb-path` · `breadcrumb-unit` · `lesson-position` · `lesson-footer` · `lesson-status` (with `data-done`) · `previous-lesson` · `next-lesson` |

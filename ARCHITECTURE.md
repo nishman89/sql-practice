@@ -502,6 +502,7 @@ There is no server. Everything a visitor sees comes from the one file; the only 
 | `src/content/intro.js` | `DATABASES_LEARN`, `DATABASES_CHECK`, `SITE_INTRO` | - |
 | `src/content/capstone.js` | `CAPSTONE_HTML`, `CAPSTONE_TASKS`, `CAP_Q()` | `DIFF()`, `TIP()` from `lessons.js` |
 | `src/content/install.js` | `INSTALL_INTRO`, `INSTALL_OPTIONS`, `CMD()` | `TIP()` from `lessons.js` |
+| `public/downloads/northwind.db` | A copy of `data/northwind.db` for the SQLite install guide. Re-copy it if you rebuild Northwind | - |
 | `public/downloads/MySQLNorthwindDatabase.sql` | The MySQL Northwind script (from the course setup pack; the reserved word `RANK` is quoted so it runs on MySQL 8+) | - |
 | `src/content/dialects.js` | `DIALECTS`, `DIALECT_INFO`, `FLAVOURS_LEARN`, `FLAVOURS_CHECK` | `esc()` from `engine.js` |
 | `src/content/quizzes.js` | `QUIZ_SETTINGS` and `QUIZZES` (the Query quiz and the Multiple-choice quiz) | - |
