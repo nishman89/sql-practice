@@ -42,7 +42,7 @@ function stripComments(s){
   while (i<n){
     const c=s[i];
     if (c==='-'&&s[i+1]==='-'){ while(i<n&&s[i]!=='\n') i++; continue; }
-    if (c==='#'){ while(i<n&&s[i]!=='\n') i++; continue; }
+    if (c==='#' && !/[A-Za-z_#]/.test(s[i+1]||'')){ while(i<n&&s[i]!=='\n') i++; continue; }
     if (c==='/'&&s[i+1]==='*'){ const j=s.indexOf('*/',i+2); i = j<0?n:j+2; out+=' '; continue; }
     if (c==="'"||c==='"'||c==='`'){ let j=i+1; while(j<n){ if(s[j]===c){ if(s[j+1]===c){j+=2;continue;} break;} j++; } out+=s.slice(i,j+1); i=j+1; continue; }
     if (c==='['){ const j=s.indexOf(']',i); const e=j<0?n:j+1; out+=s.slice(i,e); i=e; continue; }
@@ -96,6 +96,16 @@ function rewriteCreateTable(s, notes){
   return `${head}(\n  ${parts.join(',\n  ')}\n)${tailClean?' '+tailClean:''}`;
 }
 
+/* Apply fn only to the parts of s outside quotes, so values like 'Apt #2' are left alone */
+function outsideStrings(s, fn){
+  let out='', buf='', i=0;
+  while (i<s.length){
+    const c=s[i];
+    if (c==="'"||c==='"'){ out+=fn(buf); buf=''; let j=i+1; while(j<s.length){ if(s[j]===c){ if(s[j+1]===c){j+=2;continue;} break;} j++; } out+=s.slice(i,j+1); i=j+1; continue; }
+    buf+=c; i++;
+  }
+  return out+fn(buf);
+}
 function rewriteFns(s){
   return s
     .replace(/\bDATE_(ADD|SUB)\(\s*([^,]+?)\s*,\s*INTERVAL\s+(-?\d+)\s+(\w+)\s*\)/gi, (m,op,e,n,u)=>`DATE_ADD_I(${e}, ${op.toUpperCase()==='SUB'?-n:n}, '${u}')`)
@@ -104,7 +114,29 @@ function rewriteFns(s){
     .replace(/\bDATEADD\(\s*(\w+)\s*,/gi, "TSQL_DATEADD('$1',");
 }
 function transform(stmt, mode, notes){
-  const s=rewriteFns(stmt.trim());
+  let s=rewriteFns(stmt.trim());
+  if (/\bPIVOT\s*\(|\bUNPIVOT\s*\(/i.test(s))
+    throw new LabError('PIVOT and UNPIVOT are T-SQL only.', 'MySQL and this lab don\'t have them. Pivot with conditional aggregation (MAX(CASE WHEN … THEN … END) with GROUP BY) and unpivot with UNION ALL, as the Pivoting lesson shows.');
+  if (/\bWITHIN\s+GROUP\b/i.test(s))
+    throw new LabError('PERCENTILE_CONT and PERCENTILE_DISC are T-SQL only.', 'MySQL and this lab don\'t have them. CUME_DIST(), PERCENT_RANK() and NTILE() work everywhere.');
+  if (/\bRANGE\s+BETWEEN\s+INTERVAL\b/i.test(s))
+    throw new LabError('RANGE … INTERVAL is MySQL only.', 'In this lab, order the window by julianday(OrderDate) and use numbers of days: RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING.');
+  // T-SQL temporary tables: SELECT … INTO #name FROM …  →  CREATE TEMP TABLE name AS SELECT … FROM …
+  let m0=s.match(/^SELECT\s+([\s\S]+?)\s+INTO\s+(#{0,2}[A-Za-z_]\w*)\s+(FROM\b[\s\S]*)$/i);
+  if (m0 && !/^SELECT\s+[\s\S]*\bINTO\s+(OUTFILE|DUMPFILE)\b/i.test(s)){
+    const temp=m0[2].startsWith('#');
+    s=`CREATE ${temp?'TEMP ':''}TABLE ${m0[2]} AS SELECT ${m0[1]} ${m0[3]}`;
+    notes.push(`Translated SELECT … INTO to CREATE ${temp?'TEMP ':''}TABLE … AS SELECT.`);
+  }
+  if (/#{1,2}[A-Za-z_]/.test(outsideStrings(s, x=>x))){
+    const before=s; s=outsideStrings(s, x=>x.replace(/#{1,2}([A-Za-z_]\w*)/g,'$1'));
+    if (s!==before) notes.push('Treated #name as a temporary table (it lasts until you reload the page).');
+  }
+  let mx=s.match(/^EXPLAIN\s+(?:ANALYZE\s+|ANALYSE\s+|FORMAT\s*=\s*\w+\s+)?((?:SELECT|WITH|UPDATE|DELETE|INSERT)\b[\s\S]*)$/i);
+  if (mx){ notes.push('This lab shows its plan with EXPLAIN QUERY PLAN. SCAN means a full table scan; SEARCH … USING INDEX means the index was used.'); return [{sql:`EXPLAIN QUERY PLAN ${mx[1]}`}]; }
+  mx=s.match(/^SHOW\s+(?:INDEX|INDEXES|KEYS)\s+(?:FROM|IN)\s+([`"\[][^`"\]]+[`"\]]|\S+)$/i);
+  if (mx){ const t=unq(mx[1]).replace(/'/g,"''");
+    return [{sql:`SELECT '${t}' AS "Table", name AS "Key_name", CASE WHEN "unique" THEN 0 ELSE 1 END AS "Non_unique", CASE origin WHEN 'pk' THEN 'Primary key' WHEN 'u' THEN 'Unique constraint' ELSE 'CREATE INDEX' END AS "Created_by" FROM pragma_index_list('${t}')`}]; }
   if (/^CREATE\s+(OR\s+REPLACE\s+)?PROCEDURE\b|^DELIMITER\b|^(CALL|EXEC|EXECUTE)\b/i.test(s))
     throw new LabError('Stored procedures aren\'t available here.', 'This lab runs SQLite, which has no stored procedures. Practise CREATE PROCEDURE in MySQL Workbench or SQL Server Management Studio.');
   if (/^CREATE\s+(DATABASE|SCHEMA)\b/i.test(s)){ notes.push('Skipped CREATE DATABASE: the lab gives you one database already.'); return []; }
@@ -120,7 +152,7 @@ function transform(stmt, mode, notes){
     const t=unq(m[1].trim()).replace(/'/g,"''");
     return [{sql:`SELECT name AS "Field", type AS "Type", CASE WHEN "notnull" THEN 'NO' ELSE 'YES' END AS "Null", CASE WHEN pk>0 THEN 'PRI' ELSE '' END AS "Key", dflt_value AS "Default" FROM pragma_table_info('${t}')`, describe:t}];
   }
-  if (/^CREATE\s+TABLE\b/i.test(s)) return [{sql:rewriteCreateTable(s, notes)}];
+  if (/^CREATE\s+TABLE\b/i.test(s) && !/^CREATE\s+TABLE\s+\S+\s+AS\s+SELECT\b/i.test(s)) return [{sql:rewriteCreateTable(s, notes)}];
   m=s.match(/^ALTER\s+TABLE\s+([`"\[][^`"\]]+[`"\]]|\S+)\s+ADD\s+([\s\S]+)$/i);
   if (m){
     let rest=m[2].trim();
@@ -145,9 +177,9 @@ function transform(stmt, mode, notes){
 function describeStmt(sql, changes){
   const nm = x => unq((x||'').trim());
   let m;
-  if ((m=sql.match(/^CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([`"\[][^`"\]]+[`"\]]|\S+)/i))) return `Created table ${nm(m[1])}`;
+  if ((m=sql.match(/^CREATE\s+(?:TEMP\s+|TEMPORARY\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([`"\[][^`"\]]+[`"\]]|\S+)/i))) return `Created ${/^CREATE\s+TEMP/i.test(sql)?'temporary ':''}table ${nm(m[1])}`;
   if ((m=sql.match(/^CREATE\s+VIEW\s+(?:IF\s+NOT\s+EXISTS\s+)?(\S+)/i))) return `Created view ${nm(m[1])}`;
-  if ((m=sql.match(/^CREATE\s+(?:UNIQUE\s+)?INDEX\s+(\S+)/i))) return `Created index ${nm(m[1])}`;
+  if ((m=sql.match(/^CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?(\S+)/i))) return `Created index ${nm(m[1])} (if it didn't already exist)`;
   if ((m=sql.match(/^DROP\s+(TABLE|VIEW|INDEX)\s+(?:IF\s+EXISTS\s+)?([`"\[][^`"\]]+[`"\]]|\S+)/i))) return `Dropped ${m[1].toLowerCase()} ${nm(m[2])} (if it existed)`;
   if ((m=sql.match(/^INSERT\s+INTO\s+([`"\[][^`"\]]+[`"\]]|\S+)/i))) return `Inserted ${changes} row${changes===1?'':'s'} into ${nm(m[1]).replace(/\(.*/,'')}`;
   if ((m=sql.match(/^UPDATE\s+(\S+)/i))) return `Updated ${changes} row${changes===1?'':'s'} in ${nm(m[1])}`;
