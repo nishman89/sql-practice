@@ -225,7 +225,7 @@ function renderERD(host, tables, {testPrefix='erd', positions, selected, onSelec
 
 /* ---------- Path progress ---------- */
 const FOUND = {
-  capstone:{need:'Tick every task in the checklist when it\'s done.', prog:()=>[CAPSTONE_TASKS.filter(t=>(P.capstone||{})[t[0]]).length, CAPSTONE_TASKS.length], label:'Project'},
+  capstone:{need:'Tick every task in the checklist when it\'s done (exercise 3 is optional).', prog:()=>{ const req=CAPSTONE_TASKS.filter(t=>!t[2]); return [req.filter(t=>(P.capstone||{})[t[0]]).length, req.length]; }, label:'Project'},
   databases:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.dbDone?1:0,1], label:'Intro and quiz'},
   flavours:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.flavDone?1:0,1], label:'Intro and quiz'},
   erd:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.quizDone?1:0,1], label:'Diagram and quiz'},
@@ -460,10 +460,10 @@ function drawCapstone(){
   const b=$('#capstoneBody'); if (!b.childElementCount) b.innerHTML=CAPSTONE_HTML;
   P.capstone=P.capstone||{};
   const ul=$('#capChecklist'); ul.innerHTML='';
-  CAPSTONE_TASKS.forEach(([id,label])=>{
+  CAPSTONE_TASKS.forEach(([id,label,optional])=>{
     const cb=h('input',{type:'checkbox',id:`cap-${id}`,name:`capstone-${id}`,'data-testid':`capstone-task-${id.replace('.','-')}`,checked:!!P.capstone[id]});
     cb.addEventListener('change',()=>{ P.capstone[id]=cb.checked; save(); refreshChrome(); });
-    ul.append(h('li',{}, h('label',{for:`cap-${id}`}, cb, h('span',{},label))));
+    ul.append(h('li',{class:optional?'optional':''}, h('label',{for:`cap-${id}`}, cb, h('span',{},label), optional?h('em',{class:'opt'},'optional'):'')));
   });
 }
 $('#capPrint').addEventListener('click',()=>window.print());
