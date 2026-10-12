@@ -534,7 +534,7 @@ table.dialect-table td.this-col{background:var(--pink-tint)}
 /* Commands used in a lesson */
 .cmds{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
 .cmds code,.lesson-cmds code{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:.76rem;color:var(--ink)}
-.lesson-cmds{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-6px 0 4px}
+.lesson-cmds{margin:-8px 0 6px;font-size:.88rem;color:var(--muted);font-family:var(--f-mono)}
 .lesson-cmds:empty{display:none}
 .cmds-label{font-size:.85rem;font-weight:700;color:var(--muted);margin-right:4px}
 

@@ -206,7 +206,7 @@ ${DIFF({title:'Getting the ID of the row you just inserted', sqlite:'SELECT last
       {p:'Remove Rich Gurney completely: his orders first, then the customer. Then show every customer.', hint:'Two DELETEs: Orders WHERE customer_id = 3, then Customers WHERE customer_id = 3. The other way round, the foreign key stops you.', sol:"DELETE FROM Orders    WHERE customer_id = 3;\nDELETE FROM Customers WHERE customer_id = 3;\nSELECT * FROM Customers;"}
     ]},
 
-  normal:{title:'Normalisation: 1NF to 3NF', summary:'Split data into well-designed tables so each fact is stored once: first, second and third normal form.', cmds:['1NF','2NF','3NF','PRIMARY KEY','FOREIGN KEY'],
+  normal:{title:'Normalisation: 1NF to 3NF', summary:'Split data into well-designed tables so each fact is stored once: first, second and third normal form.', cmds:[],
     learn:`
 <p><strong>Normalisation</strong> is a way of designing tables so that every fact is stored in exactly one place. You work through a series of rules called <strong>normal forms</strong>. Each one fixes a kind of problem, and most databases aim for the <strong>third normal form (3NF)</strong>.</p>
 <h3>Why it matters</h3>

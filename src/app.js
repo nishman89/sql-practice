@@ -312,7 +312,6 @@ function renderChrome(){
 function refreshChrome(){ renderChrome(); if (current.view==='lesson') renderLessonTabs(); }
 
 /* ---------- Path page ---------- */
-const cmdChips = (L, tid) => (L.cmds && L.cmds.length) ? h('span',{class:'cmds','data-testid':tid}, h('span',{class:'sr'},'Commands: '), ...L.cmds.map(c=>h('code',{},c))) : null;
 function renderPath(){
   const v=$('#v-path'); v.innerHTML='';
   const doneL=PATH.filter(x=>lessonDone(x.id)).length;
@@ -345,7 +344,7 @@ function renderPath(){
       const status = isDone?'Done' : isNext?'Up next' : a>0 ? (FOUND[id]?'Started':`${a} of ${b} solved`) : (FOUND[id]?FOUND[id].label: L.ex?`${b} exercises`:`Read and ${L.check.length} questions`);
       const node=h('span',{class:'node','aria-hidden':'true'}, isDone?h('span',{class:'tick'}):h('span',{}, L.checkpoint?'':String(num)));
       ol.append(h('li',{class:(isDone?'done ':'')+(isNext?'next ':'')+(L.checkpoint?'cp':''),'data-testid':`lesson-${id}`,'data-status':isDone?'done':isNext?'next':a>0?'started':'todo'},
-        h('a',{href:'#/lesson/'+id,'data-testid':`lesson-link-${id}`}, node, h('span',{class:'t'}, L.title, h('small',{},L.summary), cmdChips(L, `lesson-cmds-${id}`)), h('span',{class:'s','data-testid':`lesson-status-${id}`},status))));
+        h('a',{href:'#/lesson/'+id,'data-testid':`lesson-link-${id}`}, node, h('span',{class:'t'}, L.title, h('small',{},L.summary)), h('span',{class:'s','data-testid':`lesson-status-${id}`},status))));
     });
     v.append(h('section',{class:'unit','aria-label':`Unit ${ui+1}: ${u.title}`,'data-testid':`unit-${ui+1}`},
       h('div',{class:'unit-h'}, h('div',{class:'n'},`Unit ${ui+1}`), h('h2',{},u.title), h('p',{},u.blurb), h('div',{class:'meta'}, `${done} of ${u.lessons.length} lessons complete`),
@@ -719,7 +718,7 @@ function openLesson(id){
   if (curLesson!==id){ curLesson=id; const saved=(P.tab||{})[id]; curTab = saved!=null ? saved : (L.checkpoint?0:'learn'); }
   $('#lTitle').textContent=L.title; $('#lSummary').textContent=L.summary;
   $('#lStrip').hidden = L.db==='mydb'; $('#lMyDb').hidden = L.db!=='mydb';
-  const lc=$('#lCmds'); lc.innerHTML=''; if (L.cmds && L.cmds.length) lc.append(h('span',{class:'cmds-label'},'Commands'), ...L.cmds.map(c=>h('code',{},c)));
+  const lc=$('#lCmds'); lc.textContent = (L.cmds && L.cmds.length) ? 'Uses: ' + L.cmds.join(', ') : '';
   renderLessonTabs(); renderLessonBody();
 }
 function renderLessonTabs(){
