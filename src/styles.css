@@ -507,3 +507,6 @@ table.dialect-table code{white-space:normal;overflow-wrap:anywhere}
 .quiz-group-h{margin:30px 0 4px;font-size:1.5rem}
 .unit-cards{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));margin-top:14px}
 .unit-cards .quiz-card h2{font-size:1.2rem}
+.flavour.this{border-top-color:var(--pink);box-shadow:0 0 0 2px var(--pink-soft),var(--shadow)}
+table.dialect-table th.this-col{background:var(--pink-dark)}
+table.dialect-table td.this-col{background:var(--pink-tint)}
