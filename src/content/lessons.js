@@ -12,11 +12,44 @@ const DIFF = o => `<div class="ddiff">${o.title?`<div class="ddiff-h">${o.title}
   return `<div class="ddiff-row ${k}"><span class="ddiff-tag"><span aria-hidden="true">${DIALECT_ICON[k]}</span> ${DIALECT_LABEL[k]}</span>${body}</div>`; }).join('')}${o.note?`<p class="ddiff-note">${o.note}</p>`:''}</div>`;
 const READ_ONLY = (dialect, tool) => `${DIALECT_ICON[dialect]} ${DIALECT_LABEL[dialect]}: read it here, run it in ${tool}`;
 
+/* "Same in all three" note, for lessons where the dialects don't differ */
+const SAME = extra => `<div class="dsame"><span class="dsame-icons" aria-hidden="true">🪶 🐬 🪟</span><div><strong>Same in SQLite, MySQL and T-SQL.</strong> ${extra || 'Everything in this lesson works the same in all three.'}</div></div>`;
+
+/* Venn diagrams for joins. regions: 'a' (only in the left table), 'ab' (in both), 'b' (only in the right table) */
+let VENN_N = 0;
+const VENN = (regions, label, a='student', b='course') => {
+  const n=++VENN_N, has=r=>regions.includes(r);
+  const desc=[has('a')&&`rows only in ${a}`, has('ab')&&'rows in both', has('b')&&`rows only in ${b}`].filter(Boolean).join(', ');
+  return `<svg class="venn" viewBox="0 0 220 136" role="img" aria-label="${label}: keeps ${desc}"><defs>`+
+    `<clipPath id="vA${n}"><circle cx="84" cy="80" r="50"/></clipPath>`+
+    `<mask id="vNB${n}"><rect width="220" height="136" fill="#fff"/><circle cx="136" cy="80" r="50" fill="#000"/></mask>`+
+    `<mask id="vNA${n}"><rect width="220" height="136" fill="#fff"/><circle cx="84" cy="80" r="50" fill="#000"/></mask></defs>`+
+    (has('a')?`<circle cx="84" cy="80" r="50" class="vf" mask="url(#vNB${n})"/>`:'')+
+    (has('b')?`<circle cx="136" cy="80" r="50" class="vf" mask="url(#vNA${n})"/>`:'')+
+    (has('ab')?`<circle cx="136" cy="80" r="50" class="vf" clip-path="url(#vA${n})"/>`:'')+
+    `<circle cx="84" cy="80" r="50" class="vo"/><circle cx="136" cy="80" r="50" class="vo"/>`+
+    `<text x="62" y="18" class="vt" text-anchor="middle">${a}</text><text x="158" y="18" class="vt" text-anchor="middle">${b}</text></svg>`;
+};
+const VENN_CARD = (regions, title, sql) => `<figure class="venn-card">${VENN(regions, title)}<figcaption><b>${title}</b><code>${esc(sql)}</code></figcaption></figure>`;
+
+/* The made-up tables used in the join examples, built with WITH so they run without changing Northwind */
+const FAKE = "WITH student(name, course) AS (\n    VALUES ('Lee', 1), ('Barry', 1), ('David', 2), ('Tim', 3), ('Nicole', NULL)\n),\ncourse(id, name) AS (\n    VALUES (1, 'Business'), (2, 'Test'), (3, 'Dev'), (4, 'Data')\n)\n";
+const FAKE_START = FAKE + "-- Write your SELECT below, using student and course\n";
+
+/* Creating tables: how the dialects differ (shown on the Creating tables page) */
+const BUILD_DIFF = () => [
+  DIFF({title:'Auto-numbered primary keys', sqlite:'customer_id INTEGER PRIMARY KEY AUTOINCREMENT', mysql:'customer_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY', tsql:'customer_id INT NOT NULL IDENTITY(1,1) PRIMARY KEY'}),
+  DIFF({title:'Column types', sqlite:'customer_name TEXT NOT NULL,\nheight        REAL,\nis_happy      INTEGER', mysql:'customer_name VARCHAR(255) NOT NULL,\nheight        DECIMAL(7,3),\nis_happy      BOOLEAN', tsql:'customer_name VARCHAR(255) NOT NULL,\nheight        DECIMAL(7,3),\nis_happy      BIT', note:'SQLite has a few simple types: <code>INTEGER</code>, <code>REAL</code>, <code>TEXT</code> and <code>BLOB</code>. It accepts names like <code>VARCHAR(255)</code> too, but stores them as <code>TEXT</code>.'}),
+  DIFF({title:'Creating a database', sqlite:'~Not needed: a SQLite database is a single file, and you\'re already connected to it.', mysql:'CREATE DATABASE my_db;\nUSE my_db;', tsql:'CREATE DATABASE my_db;\nUSE my_db;'}),
+  DIFF({title:'Adding two columns', sqlite:'ALTER TABLE Customers ADD COLUMN email TEXT;\nALTER TABLE Customers ADD COLUMN age INTEGER;', mysql:'ALTER TABLE Customers\n    ADD COLUMN email VARCHAR(255),\n    ADD COLUMN age INT;', tsql:'ALTER TABLE Customers\n    ADD email VARCHAR(255), age INT;'}),
+  DIFF({title:'Foreign keys', sqlite:'PRAGMA foreign_keys = ON;', mysql:'~Checked automatically (InnoDB tables, the default)', tsql:'~Checked automatically', note:'SQLite only checks foreign keys once they\'re switched on. This lab switches them on for you.'})
+].join('');
+
 const UNITS = [
   {id:'u1', title:'Foundations', blurb:'Learn what a database is, meet the flavours of SQL, read a database diagram, build tables yourself, then meet the Northwind data you\'ll query.', lessons:['databases','flavours','erd','build','map']},
   {id:'u2', title:'Querying one table', blurb:'Choose the columns and rows you need, then sort, trim, search and calculate.', lessons:['select','operators','sorting','distinct','wildcards','concat','arithmetic','cp1']},
   {id:'u3', title:'Summarising data', blurb:'Turn hundreds of rows into totals, averages and counts, and deal with missing values.', lessons:['aggregates','groupby','having','nulls','cp2']},
-  {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['innerjoin','leftjoin','multijoin','cp3']},
+  {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['joinsintro','innerjoin','leftjoin','multijoin','cp3']},
   {id:'u5', title:'Subqueries', blurb:'Feed the result of one query into another.', lessons:['subwhere','subfrom','exists','cp4']},
   {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, and saving SQL in the database as views and stored procedures.', lessons:['case','datesstrings','views','procedures']},
   {id:'u7', title:'Advanced topics', blurb:'Window functions, statistics, WITH, temporary tables, pivoting and making queries fast.', lessons:['windows','ranking','leadlag','frames','stats','cte','temptables','pivot','performance','cp5']}
@@ -45,7 +78,8 @@ ${C("SELECT COUNT(*) AS 'Number of Customers'\nFROM Customers\nWHERE City = 'Par
 <table class="mini"><tr><th>Column type</th><th>Quotes?</th></tr><tr><td><code>TEXT</code>, including dates (SQLite stores dates as text, <code>'YYYY-MM-DD'</code>)</td><td>Yes: <code>'London'</code>, <code>'1997-01-01'</code></td></tr><tr><td><code>INTEGER</code>, <code>REAL</code></td><td>No: <code>5</code>, <code>29.99</code>, <code>1</code></td></tr></table>
 <h3>Apostrophes inside text</h3>
 <p>A single quote marks where text starts and ends, so a value that contains one needs it doubled: <code>''</code>.</p>
-${C("SELECT ProductID, ProductName\nFROM Products\nWHERE ProductName = 'Sir Rodney''s Scones';")}`,
+${C("SELECT ProductID, ProductName\nFROM Products\nWHERE ProductName = 'Sir Rodney''s Scones';")}
+${DIFF({title:'Quotes in each dialect', sqlite:"WHERE City = 'London'", mysql:"WHERE City = 'London'", tsql:"WHERE City = 'London'", note:'Single quotes for text work in all three. MySQL also accepts double quotes around text, but in SQLite and T-SQL double quotes mean a <em>name</em>, so stick to single quotes. T-SQL sometimes puts <code>N</code> in front (<code>N\'London\'</code>) for text in other alphabets.'})}`,
     ex:[
       {p:'How many employees have a home city of London?', hint:'COUNT(*) with a WHERE clause on City. Text values go in single quotes.', sol:"SELECT COUNT(*)\nFROM Employees\nWHERE City = 'London';"},
       {p:'Which employee holds the title of Doctor? Return at least their first and last name.', hint:'Look at the TitleOfCourtesy column. Doctor is stored as Dr. with a full stop.', sol:"SELECT FirstName, LastName\nFROM Employees\nWHERE TitleOfCourtesy = 'Dr.';"},
@@ -71,7 +105,8 @@ ${TIP('If you write the same column name more than twice in a chain of <code>OR<
 ${C('SELECT ProductName, UnitPrice\nFROM Products\nWHERE UnitPrice BETWEEN 10 AND 20;')}
 <h3>Mixing AND with OR</h3>
 <p><code>AND</code> is worked out before <code>OR</code>, like multiplication before addition. Use brackets to make your meaning clear:</p>
-${C("SELECT CompanyName, Country, City\nFROM Customers\nWHERE (Country = 'UK' OR Country = 'France')\n  AND City <> 'London';")}`,
+${C("SELECT CompanyName, Country, City\nFROM Customers\nWHERE (Country = 'UK' OR Country = 'France')\n  AND City <> 'London';")}
+${SAME('Both <code>&lt;&gt;</code> and <code>!=</code> mean "not equal" in all three.')}`,
     ex:[
       {p:'How many orders are there in total for EmployeeIDs 5 and 7 combined?', hint:'IN (5, 7) is shorter than two OR conditions.', sol:'SELECT COUNT(OrderID)\nFROM Orders\nWHERE EmployeeID IN (5, 7);'},
       {p:'List the name and unit price of every product priced between 10 and 20, including both ends.', hint:'BETWEEN includes both boundary values.', sol:'SELECT ProductName, UnitPrice\nFROM Products\nWHERE UnitPrice BETWEEN 10 AND 20;'},
@@ -93,7 +128,8 @@ ${C('SELECT Country, CompanyName\nFROM Customers\nORDER BY Country ASC, CompanyN
 <ol class="order"><li><code>FROM</code></li><li><code>WHERE</code></li><li><code>GROUP BY</code></li><li><code>HAVING</code></li><li><code>SELECT</code></li><li><code>ORDER BY</code></li></ol>
 <p>Because <code>ORDER BY</code> runs last, it can use an alias you created in <code>SELECT</code>:</p>
 ${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products\nORDER BY `Stock Value` DESC;")}
-${TIP('You can also write <code>ORDER BY 2</code> to sort by the second column, but avoid it. If someone reorders the columns later, it silently sorts the wrong one.')}`,
+${TIP('You can also write <code>ORDER BY 2</code> to sort by the second column, but avoid it. If someone reorders the columns later, it silently sorts the wrong one.')}
+${DIFF({title:'Putting NULLs last in each dialect', sqlite:'ORDER BY Region NULLS LAST', mysql:'ORDER BY Region IS NULL, Region', tsql:'ORDER BY CASE WHEN Region IS NULL THEN 1 ELSE 0 END, Region', note:'All three put NULLs first when sorting A to Z, and <code>ORDER BY</code>, <code>ASC</code> and <code>DESC</code> work the same. Only SQLite has <code>NULLS FIRST</code> and <code>NULLS LAST</code>.'})}`,
     ex:[
       {p:'List every product\'s name and unit price, most expensive first.', hint:'ORDER BY UnitPrice DESC', ordered:[1], sol:'SELECT ProductName, UnitPrice\nFROM Products\nORDER BY UnitPrice DESC;'},
       {p:'Show the City and CompanyName of every customer in Germany, sorted by city, then by company name.', hint:'Two columns in ORDER BY: the first sorts, the second breaks ties.', ordered:[0,1], sol:"SELECT City, CompanyName\nFROM Customers\nWHERE Country = 'Germany'\nORDER BY City, CompanyName;"},
@@ -121,7 +157,7 @@ ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> 
       {p:'Show each different combination of City and Country for customers in Brazil.', hint:'DISTINCT applies to both columns together.', sol:"SELECT DISTINCT City, Country\nFROM Customers\nWHERE Country = 'Brazil';"}
     ]},
 
-  wildcards:{title:'Wildcards', summary:'Match patterns in text instead of exact values.', cmds:['LIKE','%','_','GLOB'],
+  wildcards:{title:'Wildcards', summary:'Match patterns in text instead of exact values.', cmds:['LIKE','%','_','GLOB','REGEXP (MySQL)'],
     learn:`
 <p><code>LIKE</code> compares text against a pattern. Two wildcards do the work:</p>
 <table class="mini"><tr><th>Wildcard</th><th>Matches</th><th>Example</th></tr>
@@ -130,12 +166,24 @@ ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> 
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName LIKE 'Ch%';")}
 ${C("SELECT CompanyName, Region\nFROM Customers\nWHERE Region LIKE '_A';")}
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName LIKE '%ale%';")}
+${DIFF({title:'LIKE in each dialect', sqlite:"WHERE ProductName LIKE 'Ch%'", mysql:"WHERE ProductName LIKE 'Ch%'", tsql:"WHERE ProductName LIKE 'Ch%'", note:'<code>LIKE</code>, <code>%</code> and <code>_</code> are standard SQL, so they work the same everywhere. Whether upper and lower case match depends on the database: SQLite\'s <code>LIKE</code> ignores case for A to Z, and MySQL and SQL Server usually ignore it too because of their default settings.'})}
 <h3>Character sets with GLOB</h3>
 <p>SQLite also has <code>GLOB</code>. It uses <code>*</code> for any characters and <code>?</code> for one character, and it understands <strong>sets</strong>: <code>[BS]</code> means B or S, and <code>[^BS]</code> means anything else.</p>
 ${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName GLOB '[BS]*';")}
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*';")}
 ${TIP('<code>LIKE</code> ignores upper and lower case (for A to Z), but <code>GLOB</code> doesn\'t: <code>GLOB \'c*\'</code> won\'t match Chai.')}
-${DIFF({title:'Matching a set of characters in each dialect', sqlite:"WHERE CategoryName GLOB '[BS]*'", mysql:"WHERE CategoryName REGEXP '^[BS]'", tsql:"WHERE CategoryName LIKE '[BS]%'", note:'<code>%</code> and <code>_</code> work the same in all three. Only the way you match a set of characters differs.'})}`,
+${DIFF({title:'Matching a set of characters in each dialect', sqlite:"WHERE CategoryName GLOB '[BS]*'", mysql:"WHERE CategoryName REGEXP '^[BS]'", tsql:"WHERE CategoryName LIKE '[BS]%'", note:'T-SQL lets you put a set in square brackets inside <code>LIKE</code>. MySQL and SQLite don\'t: MySQL uses <code>REGEXP</code>, and SQLite uses <code>GLOB</code>.'})}
+<h3>Regular expressions with REGEXP</h3>
+<p>MySQL has <code>REGEXP</code> (also written <code>RLIKE</code>), which matches a <strong>regular expression</strong>, a more powerful kind of pattern. Unlike <code>LIKE</code>, it matches anywhere in the text unless you say otherwise:</p>
+<table class="mini"><tr><th>Pattern</th><th>Means</th><th>Example</th></tr>
+<tr><td><code>^</code></td><td>Starts with</td><td><code>'^Ch'</code>: Chai, Chang</td></tr>
+<tr><td><code>$</code></td><td>Ends with</td><td><code>'ale$'</code>: names ending in "ale"</td></tr>
+<tr><td><code>[ ]</code></td><td>Any one character in the set</td><td><code>'^[AEIOU]'</code>: starts with a vowel</td></tr>
+<tr><td><code>|</code></td><td>Or</td><td><code>'Ch|Ma'</code>: contains Ch or Ma</td></tr></table>
+${C("SELECT ProductName\nFROM Products\nWHERE ProductName REGEXP '^[AEIOU]';", false, READ_ONLY('mysql','MySQL Workbench'))}
+<p>SQLite reserves the word <code>REGEXP</code>, but doesn't come with a regular expression engine, so it won't run here. For the same results, use <code>GLOB</code> or <code>LIKE</code>:</p>
+${C("SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*'\n   OR ProductName LIKE '%ale'\n   OR ProductName LIKE '%Ch%';")}
+${DIFF({title:'Regular expressions in each dialect', sqlite:'~No REGEXP built in: use GLOB or LIKE', mysql:"WHERE ProductName REGEXP '^[AEIOU]'", tsql:"~No REGEXP: use LIKE '[AEIOU]%'"})}`,
     ex:[
       {p:'Which categories have a category name beginning with B or S? Return the category name.', hint:"LIKE 'B%' OR LIKE 'S%', or GLOB '[BS]*'.", sol:"SELECT CategoryName\nFROM Categories\nWHERE CategoryName LIKE 'B%'\n   OR CategoryName LIKE 'S%';"},
       {p:'List the names of products that contain "choc" anywhere in their name.', hint:'Put % on both sides.', sol:"SELECT ProductName\nFROM Products\nWHERE ProductName LIKE '%choc%';"},
@@ -197,7 +245,8 @@ ${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Product
 ${C("SELECT COUNT(*)          AS 'Total Products',\n       SUM(UnitsOnOrder) AS 'Total On Order',\n       AVG(UnitsOnOrder) AS 'Avg On Order',\n       MIN(UnitsOnOrder) AS 'Min On Order',\n       MAX(UnitsOnOrder) AS 'Max On Order'\nFROM Products;")}
 <p>Combine aggregates with <code>WHERE</code> to summarise only some rows:</p>
 ${C("SELECT AVG(UnitPrice) AS 'Average Seafood Price'\nFROM Products\nWHERE CategoryID = 8;")}
-${TIP('<code>COUNT(*)</code> counts rows. <code>COUNT(Region)</code> counts only rows where Region has a value. Try both on Customers and compare.')}`,
+${TIP('<code>COUNT(*)</code> counts rows. <code>COUNT(Region)</code> counts only rows where Region has a value. Try both on Customers and compare.')}
+${DIFF({title:'Averaging whole numbers in each dialect', sqlite:'AVG(ReorderLevel)        -- 12.4675…', mysql:'AVG(ReorderLevel)        -- 12.4675', tsql:'AVG(ReorderLevel)        -- 12  (a whole number!)\nAVG(ReorderLevel * 1.0)  -- 12.467532', note:'The functions are the same in all three, with one trap: T-SQL gives a whole number when you average a whole-number column. Multiply by <code>1.0</code> first to keep the decimals.'})}`,
     ex:[
       {p:'Find the cheapest and the most expensive unit price in one query.', hint:'MIN(UnitPrice) and MAX(UnitPrice) in the same SELECT.', sol:'SELECT MIN(UnitPrice), MAX(UnitPrice)\nFROM Products;'},
       {p:'What is the total freight across all orders?', hint:'SUM(Freight)', sol:'SELECT SUM(Freight)\nFROM Orders;'},
@@ -212,7 +261,8 @@ ${C("SELECT SupplierID,\n       SUM(UnitsOnOrder) AS 'Total On Order',\n       A
 ${TIP('<strong>The rule:</strong> every column in <code>SELECT</code> should be either inside an aggregate or listed in <code>GROUP BY</code>. SQLite doesn\'t stop you breaking it: it quietly picks a value from any row in the group, which gives misleading results.')}
 ${C("SELECT Country, COUNT(*) AS 'Customers'\nFROM Customers\nGROUP BY Country\nORDER BY COUNT(*) DESC;")}
 <p>Rows are filtered by <code>WHERE</code> before they're grouped, so this counts only discontinued products in each category:</p>
-${C("SELECT CategoryID, COUNT(*) AS 'Discontinued'\nFROM Products\nWHERE Discontinued = 1\nGROUP BY CategoryID;")}`,
+${C("SELECT CategoryID, COUNT(*) AS 'Discontinued'\nFROM Products\nWHERE Discontinued = 1\nGROUP BY CategoryID;")}
+${DIFF({title:'Selecting a column that isn\'t grouped or aggregated', sqlite:'~Runs, but shows a value from any row in the group', mysql:'~Error by default (ONLY_FULL_GROUP_BY, MySQL 5.7 and later)', tsql:'~Error: the column is invalid in the select list', note:'<code>GROUP BY</code> itself works the same in all three. Following the rule above keeps your queries working in every dialect.'})}`,
     ex:[
       {p:'How many products are there in each category? Show CategoryID and the count.', hint:'GROUP BY CategoryID with COUNT(*).', sol:'SELECT CategoryID, COUNT(*)\nFROM Products\nGROUP BY CategoryID;'},
       {p:'Calculate the average reorder level of products for each CategoryID. Order by the average, highest first.', hint:'GROUP BY CategoryID, and ORDER BY AVG(ReorderLevel) DESC.', ordered:[1], sol:"SELECT CategoryID, AVG(ReorderLevel) AS 'Average Reorder Level'\nFROM Products\nGROUP BY CategoryID\nORDER BY AVG(ReorderLevel) DESC;"},
@@ -228,7 +278,8 @@ ${C("SELECT SupplierID,\n       SUM(UnitsOnOrder) AS 'Total On Order',\n       A
 <ol class="order"><li><code>FROM</code></li><li><code>WHERE</code> filters rows</li><li><code>GROUP BY</code></li><li><code>HAVING</code> filters groups</li><li><code>SELECT</code></li><li><code>ORDER BY</code></li></ol>
 ${TIP('Repeating the full expression in <code>HAVING</code> (<code>HAVING AVG(UnitsOnOrder) &gt; 5</code>) is the clearest way to write it.')}
 <p>You can use both in one query: <code>WHERE</code> to pick rows, <code>HAVING</code> to pick groups.</p>
-${C("SELECT Country, COUNT(*) AS 'Customers'\nFROM Customers\nWHERE ContactTitle LIKE '%Sales%'\nGROUP BY Country\nHAVING COUNT(*) >= 3;")}`,
+${C("SELECT Country, COUNT(*) AS 'Customers'\nFROM Customers\nWHERE ContactTitle LIKE '%Sales%'\nGROUP BY Country\nHAVING COUNT(*) >= 3;")}
+${DIFF({title:'Using a SELECT alias in HAVING', sqlite:'HAVING AvgPrice > 20', mysql:'HAVING AvgPrice > 20', tsql:'HAVING AVG(UnitPrice) > 20', note:'T-SQL doesn\'t allow the alias in <code>HAVING</code>. Repeating the expression works in all three.'})}`,
     ex:[
       {p:'For each SupplierID, show the total UnitsInStock across their products. Only include suppliers with more than 100 units in total.', hint:'HAVING SUM(UnitsInStock) > 100', sol:"SELECT SupplierID, SUM(UnitsInStock) AS 'Total In Stock'\nFROM Products\nGROUP BY SupplierID\nHAVING SUM(UnitsInStock) > 100;"},
       {p:'Which employees (EmployeeID) handled more than 100 orders? Show the EmployeeID and their number of orders.', hint:'GROUP BY EmployeeID on Orders, HAVING COUNT(*) > 100.', sol:'SELECT EmployeeID, COUNT(*)\nFROM Orders\nGROUP BY EmployeeID\nHAVING COUNT(*) > 100;'},
@@ -261,15 +312,72 @@ ${DIFF({title:'Replacing NULLs in each dialect', sqlite:"IFNULL(Fax, 'No fax')",
     ]},
 
   /* ===== Unit 4 ===== */
+  joinsintro:{title:'Introduction to joins', summary:'What each kind of join keeps, shown with Venn diagrams and two small made-up tables.', cmds:['INNER JOIN','LEFT JOIN','RIGHT JOIN','FULL OUTER JOIN','CROSS JOIN','ON'],
+    learn:`
+<p>A <strong>join</strong> combines rows from two tables by matching a column they share, usually a foreign key and the primary key it points at. The kind of join decides what happens to rows that <em>don't</em> have a match.</p>
+<p>To see the difference, here are two tiny tables. Each student's <code>course</code> holds a course <code>id</code>. Nicole hasn't chosen a course yet, and nobody has chosen Data:</p>
+<div class="two-tables">
+<table class="mini"><tr><th colspan="2">student</th></tr><tr><th>name</th><th>course</th></tr><tr><td>Lee</td><td>1</td></tr><tr><td>Barry</td><td>1</td></tr><tr><td>David</td><td>2</td></tr><tr><td>Tim</td><td>3</td></tr><tr><td>Nicole</td><td><em>NULL</em></td></tr></table>
+<table class="mini"><tr><th colspan="2">course</th></tr><tr><th>id</th><th>name</th></tr><tr><td>1</td><td>Business</td></tr><tr><td>2</td><td>Test</td></tr><tr><td>3</td><td>Dev</td></tr><tr><td>4</td><td>Data</td></tr></table>
+</div>
+<p>Every example below builds these two tables with <code>WITH</code> at the top, so you can run it here. Only the <code>SELECT</code> at the bottom changes.</p>
+<h3>The join map</h3>
+<p>Think of each table as a circle. Where they overlap are the rows that match. The shaded part is what each join keeps:</p>
+<div class="venn-grid">
+${VENN_CARD(['ab'],'INNER JOIN','student INNER JOIN course')}
+${VENN_CARD(['a','ab'],'LEFT JOIN','student LEFT JOIN course')}
+${VENN_CARD(['ab','b'],'RIGHT JOIN','student RIGHT JOIN course')}
+${VENN_CARD(['a','ab','b'],'FULL OUTER JOIN','student FULL OUTER JOIN course')}
+${VENN_CARD(['a'],'Students with no course','student LEFT JOIN course … WHERE course.id IS NULL')}
+${VENN_CARD(['b'],'Courses with no students','course LEFT JOIN student … WHERE student.name IS NULL')}
+${VENN_CARD(['a','b'],'No match on either side','student FULL OUTER JOIN course … WHERE student.name IS NULL OR course.id IS NULL')}
+</div>
+<h3>INNER JOIN: only the matches</h3>
+<div class="venn-inline">${VENN(['ab'],'INNER JOIN')}<p>Keeps the rows that match on both sides. Nicole has no course and nobody takes Data, so both disappear: <strong>4 rows</strong>.</p></div>
+${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nINNER JOIN course ON student.course = course.id;")}
+<h3>LEFT JOIN: everything from the left</h3>
+<div class="venn-inline">${VENN(['a','ab'],'LEFT JOIN')}<p>Keeps every row from the <strong>left</strong> table (the one in <code>FROM</code>), with NULLs where there's no match. Nicole now appears, with NULL for her course: <strong>5 rows</strong>.</p></div>
+${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nLEFT JOIN course ON student.course = course.id;")}
+<h3>RIGHT JOIN: everything from the right</h3>
+<div class="venn-inline">${VENN(['ab','b'],'RIGHT JOIN')}<p>The mirror image: keeps every row from the <strong>right</strong> table. Data now appears with NULL for the student, and Nicole has gone again: <strong>5 rows</strong>.</p></div>
+${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nRIGHT JOIN course ON student.course = course.id;")}
+<p>Now swap the tables and use a <code>LEFT JOIN</code>. It's exactly the same result:</p>
+${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM course\nLEFT JOIN student ON student.course = course.id;")}
+<h3>FULL OUTER JOIN: everything from both</h3>
+<div class="venn-inline">${VENN(['a','ab','b'],'FULL OUTER JOIN')}<p>Keeps every row from both tables, matched where possible. Nicole and Data both appear, each with a NULL on the other side: <strong>6 rows</strong>.</p></div>
+${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nFULL OUTER JOIN course ON student.course = course.id;")}
+<h3>Finding rows with no match</h3>
+<div class="venn-inline">${VENN(['a'],'Left rows with no match')}<p>A <code>LEFT JOIN</code> followed by <code>WHERE right_table.key IS NULL</code> keeps only the left rows that found nothing. It's a common check for missing data: which students haven't chosen a course?</p></div>
+${C(FAKE + "SELECT student.name\nFROM student\nLEFT JOIN course ON student.course = course.id\nWHERE course.id IS NULL;")}
+<h3>CROSS JOIN: every combination</h3>
+<p>A <code>CROSS JOIN</code> has no <code>ON</code>. It pairs every row of one table with every row of the other: 5 students × 4 courses = <strong>20 rows</strong>. It's occasionally useful, but you mostly see it by accident, when a join is missing its <code>ON</code> condition.</p>
+${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nCROSS JOIN course;")}
+<h3>Why avoid RIGHT JOIN</h3>
+<ul class="plain">
+<li><strong>You never need it.</strong> Any right join can be written as a left join by swapping the two tables, as you saw above.</li>
+<li><strong>It's easier to read.</strong> With left joins, the table whose rows you keep always comes first, in <code>FROM</code>. A query reads top to bottom: start with this table, then attach the others.</li>
+<li><strong>Mixing them gets confusing.</strong> In a query with several joins, a mix of <code>LEFT</code> and <code>RIGHT</code> makes it very hard to tell which rows are kept.</li>
+<li><strong>It's the convention.</strong> Most style guides and teams use left joins only, so it's what people expect to read.</li>
+<li><strong>It's more portable.</strong> SQLite only added <code>RIGHT</code> and <code>FULL OUTER JOIN</code> in 2022 (version 3.39), so older versions reject them, and MySQL has no <code>FULL OUTER JOIN</code> at all.</li>
+</ul>
+${DIFF({title:'Join support in each dialect', sqlite:'INNER, LEFT, CROSS: always\nRIGHT, FULL OUTER: version 3.39 and later', mysql:'INNER, LEFT, RIGHT, CROSS\nFULL OUTER: not supported', tsql:'INNER, LEFT, RIGHT, FULL OUTER, CROSS', note:'MySQL gets the effect of a full outer join by combining a <code>LEFT JOIN</code> and a <code>RIGHT JOIN</code> with <code>UNION</code>. The <code>JOIN … ON</code> syntax is otherwise the same in all three.'})}
+${TIP('The next lessons use <code>INNER JOIN</code> and <code>LEFT JOIN</code> on the real Northwind tables. <code>JOIN</code> on its own means <code>INNER JOIN</code>.')}`,
+    ex:[
+      {p:'Show each student\'s name and their course name, for students who have a course.', hint:'INNER JOIN course ON student.course = course.id', starter:FAKE_START, sol:FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nINNER JOIN course ON student.course = course.id;"},
+      {p:'Show every student\'s name with their course name, including students without a course.', hint:'A LEFT JOIN from student keeps every student.', starter:FAKE_START, sol:FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nLEFT JOIN course ON student.course = course.id;"},
+      {p:'Which course has no students? Start FROM course and use a LEFT JOIN.', hint:'FROM course LEFT JOIN student …, then WHERE student.name IS NULL.', starter:FAKE_START, sol:FAKE + "SELECT course.name\nFROM course\nLEFT JOIN student ON student.course = course.id\nWHERE student.name IS NULL;"},
+      {p:'This query uses a RIGHT JOIN: `SELECT student.name, course.name FROM student RIGHT JOIN course ON student.course = course.id`. Rewrite it as a LEFT JOIN that returns the same rows.', hint:'Swap the tables: FROM course LEFT JOIN student. (The checker compares results, so it can\'t see which join you used. Aim for LEFT JOIN.)', starter:FAKE_START, sol:FAKE + "SELECT student.name AS student, course.name AS course\nFROM course\nLEFT JOIN student ON student.course = course.id;"},
+      {p:'Show every student and every course, matched up where possible, so both Nicole and Data appear.', hint:'FULL OUTER JOIN', starter:FAKE_START, sol:FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nFULL OUTER JOIN course ON student.course = course.id;"}
+    ]},
+
   innerjoin:{title:'Inner joins', summary:'Combine rows from two tables where their keys match.', cmds:['INNER JOIN','ON'],
     learn:`
 <p>The ERD shows <code>Products.SupplierID</code> pointing at <code>Suppliers.SupplierID</code>. A join follows that line. The <code>ON</code> clause says which columns must match:</p>
 ${C('SELECT Products.ProductName, Suppliers.CompanyName\nFROM Products\nINNER JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID;')}
-<p>An <code>INNER JOIN</code> returns only rows that have a match on both sides. Picture a student table and a course table:</p>
-${C("-- Not in Northwind: read it and predict the output\nSELECT student.name, course.name\nFROM student\nINNER JOIN course ON student.course = course.id;", false)}
-<p>A student whose <code>course</code> is NULL has no match, so they disappear from the result entirely. That's the key thing to remember about inner joins.</p>
+<div class="venn-inline">${VENN(['ab'],'INNER JOIN','Products','Suppliers')}<p>As in the <a href="#/lesson/joinsintro">Introduction to joins</a>, an <code>INNER JOIN</code> keeps only the rows with a match on both sides. A product with no supplier, or a supplier with no products, would be left out.</p></div>
 ${TIP('When both tables have a column with the same name, such as <code>CompanyName</code> in Customers and Suppliers, prefix it with the table name. Otherwise you get an "ambiguous column" error.')}
-${C("SELECT Orders.OrderID, Orders.OrderDate, Customers.CompanyName\nFROM Orders\nINNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID\nWHERE Customers.Country = 'Spain';")}`,
+${C("SELECT Orders.OrderID, Orders.OrderDate, Customers.CompanyName\nFROM Orders\nINNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID\nWHERE Customers.Country = 'Spain';")}
+${SAME('<code>JOIN</code> on its own means <code>INNER JOIN</code> in all three.')}`,
     ex:[
       {p:'Show every product\'s name next to the name of its category.', hint:'Join Products to Categories on CategoryID.', sol:'SELECT Products.ProductName, Categories.CategoryName\nFROM Products\nINNER JOIN Categories ON Products.CategoryID = Categories.CategoryID;'},
       {p:'List the OrderID and customer CompanyName of every order placed by a customer in Mexico.', hint:"Join Orders to Customers, then WHERE Customers.Country = 'Mexico'.", sol:"SELECT Orders.OrderID, Customers.CompanyName\nFROM Orders\nINNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID\nWHERE Customers.Country = 'Mexico';"},
@@ -279,14 +387,14 @@ ${C("SELECT Orders.OrderID, Orders.OrderDate, Customers.CompanyName\nFROM Orders
   leftjoin:{title:'Left joins', summary:'Keep every row from the first table, whether it has a match or not.', cmds:['LEFT JOIN','IS NULL'],
     learn:`
 <p>A <code>LEFT JOIN</code> returns every row from the left table (the one in <code>FROM</code>). Where there's no match on the right, those columns come back as NULL.</p>
-${C("-- The student example again\nSELECT student.name, course.name\nFROM student\nLEFT JOIN course ON student.course = course.id;", false)}
-<p>This time the student with no course still appears, with NULL for the course name.</p>
+<div class="venn-inline">${VENN(['a','ab'],'LEFT JOIN','Customers','Orders')}<p>Remember Nicole from the <a href="#/lesson/joinsintro">Introduction to joins</a>: with a left join she stayed in the result even though she had no course.</p></div>
 <p>In Northwind, some customers have never ordered. An inner join hides them; a left join keeps them:</p>
 ${C('SELECT Customers.CompanyName, Orders.OrderID\nFROM Customers\nLEFT JOIN Orders ON Customers.CustomerID = Orders.CustomerID\nORDER BY Orders.OrderID;')}
 <h3>Finding what's missing</h3>
 <p>Add <code>WHERE right_table.key IS NULL</code> to keep only the unmatched rows. This is a common data quality check.</p>
 ${C('SELECT Customers.CompanyName\nFROM Customers\nLEFT JOIN Orders ON Customers.CustomerID = Orders.CustomerID\nWHERE Orders.OrderID IS NULL;')}
-${TIP('Avoid <code>RIGHT JOIN</code>. Any right join can be written as a left join by swapping the tables, and keeping the main table on the left makes queries easier to read.')}`,
+${TIP('Avoid <code>RIGHT JOIN</code>: swap the tables and use a <code>LEFT JOIN</code> instead. The <a href="#/lesson/joinsintro">Introduction to joins</a> explains why.')}
+${SAME('<code>LEFT JOIN</code> can also be written <code>LEFT OUTER JOIN</code> in all three.')}`,
     ex:[
       {p:'Using a LEFT JOIN, find the CompanyName of every customer who has never placed an order.', hint:'LEFT JOIN Orders, then WHERE Orders.OrderID IS NULL.', sol:'SELECT Customers.CompanyName\nFROM Customers\nLEFT JOIN Orders ON Customers.CustomerID = Orders.CustomerID\nWHERE Orders.OrderID IS NULL;'},
       {p:'List every customer\'s CompanyName with their number of orders, including customers with zero.', hint:'COUNT(Orders.OrderID) counts only matched rows, so unmatched customers get 0. COUNT(*) would give them 1.', sol:"SELECT Customers.CompanyName, COUNT(Orders.OrderID) AS 'Orders'\nFROM Customers\nLEFT JOIN Orders ON Customers.CustomerID = Orders.CustomerID\nGROUP BY Customers.CustomerID, Customers.CompanyName;"},
@@ -301,7 +409,8 @@ ${C('SELECT p.ProductName, s.CompanyName\nFROM Products p\nLEFT JOIN Suppliers s
 ${C("SELECT p.ProductName  AS 'Product',\n       s.CompanyName  AS 'Supplier',\n       c.CategoryName AS 'Category'\nFROM Products p\nINNER JOIN Suppliers  s ON p.SupplierID = s.SupplierID\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID;")}
 ${TIP('If you leave out an <code>ON</code> clause or use the wrong columns, every row of one table gets matched with every row of the other. That\'s a cartesian product, and it can be enormous. Check each condition as you add a join.')}
 <p>Joins combine well with grouping:</p>
-${C("SELECT c.CategoryName, COUNT(*) AS 'Products'\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nGROUP BY c.CategoryName;")}`,
+${C("SELECT c.CategoryName, COUNT(*) AS 'Products'\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nGROUP BY c.CategoryName;")}
+${SAME('Table aliases can be written with or without <code>AS</code> (<code>Products AS p</code> or <code>Products p</code>).')}`,
     ex:[
       {p:'List every order with its OrderID, OrderDate and Freight, the customer\'s CompanyName, and the employee\'s first and last name as one column.', hint:'Join Orders to Employees on EmployeeID and to Customers on CustomerID.', sol:"SELECT o.OrderID,\n       o.OrderDate,\n       o.Freight,\n       CONCAT(e.FirstName, ' ', e.LastName) AS 'Sales Person',\n       c.CompanyName AS 'Customer'\nFROM Orders o\nINNER JOIN Employees e ON o.EmployeeID = e.EmployeeID\nINNER JOIN Customers c ON o.CustomerID = c.CustomerID;"},
       {p:'List every product in the Seafood category with its supplier\'s CompanyName.', hint:'Three tables: Products, Categories and Suppliers. Filter on CategoryName.', sol:"SELECT p.ProductName, s.CompanyName\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nINNER JOIN Suppliers  s ON p.SupplierID = s.SupplierID\nWHERE c.CategoryName = 'Seafood';"},
@@ -323,7 +432,8 @@ ${C('SELECT ProductName, UnitPrice\nFROM Products\nWHERE UnitPrice > (SELECT AVG
 <p>The subquery returns one number, the average price, which <code>&gt;</code> compares against. When a subquery returns a list, use <code>IN</code>:</p>
 ${C('SELECT CompanyName, Country\nFROM Customers\nWHERE CustomerID IN (SELECT DISTINCT CustomerID FROM Orders);')}
 <table class="mini"><tr><th>The subquery returns</th><th>Use</th></tr><tr><td>Exactly one value</td><td><code>=</code>, <code>&gt;</code>, <code>&lt;</code>…</td></tr><tr><td>A list of values</td><td><code>IN</code> or <code>NOT IN</code></td></tr></table>
-${TIP('<strong>Watch out with NOT IN.</strong> If the subquery returns even one NULL, <code>NOT IN</code> matches nothing at all. Add <code>WHERE column IS NOT NULL</code> inside the subquery, or use <code>NOT EXISTS</code> (two lessons on).')}`,
+${TIP('<strong>Watch out with NOT IN.</strong> If the subquery returns even one NULL, <code>NOT IN</code> matches nothing at all. Add <code>WHERE column IS NOT NULL</code> inside the subquery, or use <code>NOT EXISTS</code> (two lessons on).')}
+${SAME()}`,
     ex:[
       {p:'Using a subquery in WHERE, find all products priced above the average unit price. Show the name and price, most expensive first.', hint:'WHERE UnitPrice > (SELECT AVG(UnitPrice) FROM Products)', ordered:[1], sol:'SELECT ProductName, UnitPrice\nFROM Products\nWHERE UnitPrice > (SELECT AVG(UnitPrice) FROM Products)\nORDER BY UnitPrice DESC;'},
       {p:'Which orders have a freight cost above the average freight? Show the OrderID and Freight.', hint:'Same pattern as the example, on Orders.', sol:'SELECT OrderID, Freight\nFROM Orders\nWHERE Freight > (SELECT AVG(Freight) FROM Orders);'},
@@ -340,7 +450,8 @@ ${C("SELECT s.CompanyName AS 'Supplier',\n       avg_prices.AvgPrice AS 'Average
 ${C("SELECT ProductName,\n       UnitPrice,\n       (SELECT AVG(UnitPrice) FROM Products) AS 'Average Price'\nFROM Products;")}
 <p>When the subquery refers to the outer row, it's called a correlated subquery. This one counts the lines in each order:</p>
 ${C("SELECT o.OrderID,\n       (SELECT COUNT(*)\n        FROM \"Order Details\" od\n        WHERE od.OrderID = o.OrderID) AS 'Number of Items'\nFROM Orders o;")}
-${TIP('If you keep writing the same derived table, save it as a view. That\'s the last lesson on the path.')}`,
+${TIP('If you keep writing the same derived table, save it as a view. That\'s the last lesson on the path.')}
+${DIFF({title:'Naming a derived table in each dialect', sqlite:'FROM (SELECT …) AS t     -- the name is optional', mysql:'FROM (SELECT …) AS t     -- the name is required', tsql:'FROM (SELECT …) AS t     -- the name is required', note:'Always give a derived table a name: it\'s required in MySQL and T-SQL. Scalar subqueries in <code>SELECT</code> work the same in all three.'})}`,
     ex:[
       {p:'Using a subquery in FROM, total the Freight per customer and join it to Customers to show CompanyName next to the total. Order by total freight, highest first.', hint:'Give the derived table an alias, for example ) AS freight_totals ON …', ordered:[1], sol:"SELECT c.CompanyName AS 'Customer',\n       freight_totals.TotalFreight AS 'Total Freight'\nFROM Customers c\nINNER JOIN (\n    SELECT CustomerID, SUM(Freight) AS TotalFreight\n    FROM Orders\n    GROUP BY CustomerID\n) AS freight_totals ON c.CustomerID = freight_totals.CustomerID\nORDER BY freight_totals.TotalFreight DESC;"},
       {p:'Show each product\'s name, its unit price, and how far its price is from the average price.', hint:'UnitPrice - (SELECT AVG(UnitPrice) FROM Products)', sol:"SELECT ProductName,\n       UnitPrice,\n       UnitPrice - (SELECT AVG(UnitPrice) FROM Products) AS 'Difference from Average'\nFROM Products;"},
@@ -356,7 +467,8 @@ ${C('SELECT CompanyName\nFROM Customers c\nWHERE EXISTS (\n    SELECT 1\n    FRO
 <p>These return the same customers. The join needs <code>DISTINCT</code>, because a customer with ten orders would appear ten times.</p>
 ${C('SELECT CompanyName\nFROM Customers\nWHERE CustomerID IN (SELECT CustomerID FROM Orders);')}
 ${C('SELECT DISTINCT c.CompanyName\nFROM Customers c\nINNER JOIN Orders o ON c.CustomerID = o.CustomerID;')}
-<table class="mini"><tr><th>If you want to…</th><th>Prefer</th></tr><tr><td>Check related rows exist</td><td><code>EXISTS</code></td></tr><tr><td>Show columns from several tables</td><td><code>JOIN</code></td></tr><tr><td>Aggregate before joining</td><td>A derived table</td></tr></table>`,
+<table class="mini"><tr><th>If you want to…</th><th>Prefer</th></tr><tr><td>Check related rows exist</td><td><code>EXISTS</code></td></tr><tr><td>Show columns from several tables</td><td><code>JOIN</code></td></tr><tr><td>Aggregate before joining</td><td>A derived table</td></tr></table>
+${SAME()}`,
     ex:[
       {p:'Using NOT EXISTS, find the CompanyName of every customer who has never placed an order.', hint:'Inside NOT EXISTS, select from Orders where o.CustomerID = c.CustomerID.', sol:'SELECT CompanyName\nFROM Customers c\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM Orders o\n    WHERE o.CustomerID = c.CustomerID\n);'},
       {p:'Using EXISTS, list the CompanyName of every supplier that supplies at least one discontinued product.', hint:'EXISTS (SELECT 1 FROM Products p WHERE p.SupplierID = s.SupplierID AND p.Discontinued = 1)', sol:'SELECT CompanyName\nFROM Suppliers s\nWHERE EXISTS (\n    SELECT 1\n    FROM Products p\n    WHERE p.SupplierID = s.SupplierID\n      AND p.Discontinued = 1\n);'},
@@ -377,7 +489,8 @@ ${C('SELECT DISTINCT c.CompanyName\nFROM Customers c\nINNER JOIN Orders o ON c.C
 ${C("SELECT ProductName, UnitsInStock,\n       CASE\n           WHEN UnitsInStock = 0  THEN 'Out of stock'\n           WHEN UnitsInStock < 20 THEN 'Low'\n           ELSE 'OK'\n       END AS 'Stock Status'\nFROM Products;")}
 ${TIP('Order matters. If <code>&lt; 20</code> came first, products with 0 in stock would be labelled Low, because CASE stops at the first match.')}
 <p>You can group by a <code>CASE</code> to count each label:</p>
-${C("SELECT CASE WHEN Discontinued = 1 THEN 'Discontinued' ELSE 'Active' END AS 'Status',\n       COUNT(*) AS 'Products'\nFROM Products\nGROUP BY CASE WHEN Discontinued = 1 THEN 'Discontinued' ELSE 'Active' END;")}`,
+${C("SELECT CASE WHEN Discontinued = 1 THEN 'Discontinued' ELSE 'Active' END AS 'Status',\n       COUNT(*) AS 'Products'\nFROM Products\nGROUP BY CASE WHEN Discontinued = 1 THEN 'Discontinued' ELSE 'Active' END;")}
+${DIFF({title:'A shortcut for two-way choices', sqlite:"iif(UnitPrice < 10, 'Budget', 'Other')", mysql:"IF(UnitPrice < 10, 'Budget', 'Other')", tsql:"IIF(UnitPrice < 10, 'Budget', 'Other')", note:'<code>CASE</code> itself works the same in all three. These are shortcuts for a simple either/or choice.'})}`,
     ex:[
       {p:'Show each OrderID with a Status column: On Time if it shipped less than 10 days after the order date, otherwise Overdue.', hint:"julianday(ShippedDate) - julianday(OrderDate) gives the days between. Wrap it in CASE WHEN … THEN 'On Time' ELSE 'Overdue' END.", sol:"SELECT OrderID,\n       CASE\n           WHEN julianday(ShippedDate) - julianday(OrderDate) < 10 THEN 'On Time'\n           ELSE 'Overdue'\n       END AS 'Status'\nFROM Orders;"},
       {p:'Give each product a Price Band: Budget under 10, Standard under 30, otherwise Premium. Show ProductName, UnitPrice and the band.', hint:'Two WHENs, checked from cheapest up, then ELSE.', sol:"SELECT ProductName, UnitPrice,\n       CASE\n           WHEN UnitPrice < 10 THEN 'Budget'\n           WHEN UnitPrice < 30 THEN 'Standard'\n           ELSE 'Premium'\n       END AS 'Price Band'\nFROM Products;"},
@@ -477,7 +590,8 @@ ${TIP('The pattern is <code>FUNCTION(…) OVER (PARTITION BY column) AS …</cod
 ${C("SELECT ProductName, UnitPrice,\n       COUNT(*) OVER ()       AS 'Total Count',\n       AVG(UnitPrice) OVER () AS 'Average Price'\nFROM Products;")}
 <p>The result is a number like any other, so you can do maths with it:</p>
 ${C("SELECT ProductName, CategoryID, UnitPrice,\n       UnitPrice - AVG(UnitPrice) OVER (PARTITION BY CategoryID) AS 'Difference from Category Average'\nFROM Products;")}
-${TIP('Window functions run last, after <code>WHERE</code>, <code>GROUP BY</code> and <code>HAVING</code>, just before <code>ORDER BY</code>. They need SQLite 3.25 or later, which this lab has.')}`,
+${TIP('Window functions run last, after <code>WHERE</code>, <code>GROUP BY</code> and <code>HAVING</code>, just before <code>ORDER BY</code>.')}
+${DIFF({title:'Window functions in each dialect', sqlite:'~SQLite 3.25 (2018) and later. This lab has them.', mysql:'~MySQL 8.0 and later', tsql:'~SQL Server 2012 and later', note:'The <code>OVER (PARTITION BY …)</code> syntax is the same in all three.'})}`,
     ex:[
       {p:'Using an INNER JOIN (no window function), show OrderID, CustomerID, EmployeeID, the employee\'s total order count as Employee Order Count, and OrderDate.', hint:'Join Orders to a subquery that counts orders per EmployeeID.', sol:"SELECT o.OrderID, o.CustomerID, o.EmployeeID,\n       c.EOCount AS 'Employee Order Count', o.OrderDate\nFROM Orders o\nINNER JOIN (\n    SELECT EmployeeID, COUNT(*) AS EOCount\n    FROM Orders\n    GROUP BY EmployeeID\n) c ON o.EmployeeID = c.EmployeeID;"},
       {p:'Show each product\'s ProductID, ProductName, CategoryName, and how many other products are in the same category.', hint:'COUNT(*) OVER (PARTITION BY p.CategoryID) counts the product itself too, so subtract 1.', sol:"SELECT p.ProductID AS 'Product ID',\n       p.ProductName AS 'Product Name',\n       c.CategoryName AS 'Category Name',\n       COUNT(*) OVER (PARTITION BY p.CategoryID) - 1 AS 'Other Products in Category'\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nORDER BY p.ProductID;"},
@@ -498,7 +612,8 @@ ${C("SELECT ProductName, UnitPrice,\n       ROW_NUMBER() OVER (ORDER BY UnitPric
 ${C("SELECT ProductName, UnitPrice,\n       ROW_NUMBER() OVER (ORDER BY UnitPrice DESC) AS 'Row Number',\n       RANK()       OVER (ORDER BY UnitPrice DESC) AS 'Rank',\n       DENSE_RANK() OVER (ORDER BY UnitPrice DESC) AS 'Dense Rank'\nFROM Products;")}
 ${TIP('Because <code>ROW_NUMBER()</code> numbers ties in no guaranteed order, the same query can give different numbers each time. Use <code>RANK()</code> or <code>DENSE_RANK()</code> when ties must be treated equally.')}
 <p>Combine <code>PARTITION BY</code> and <code>ORDER BY</code> to rank within each group. Numbering restarts at every new category:</p>
-${C("SELECT ProductName, UnitPrice, CategoryID,\n       ROW_NUMBER() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC) AS 'Row Number'\nFROM Products;")}`,
+${C("SELECT ProductName, UnitPrice, CategoryID,\n       ROW_NUMBER() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC) AS 'Row Number'\nFROM Products;")}
+${SAME()}`,
     ex:[
       {p:'Show each order\'s OrderID, CustomerID and OrderDate, with its rank by order date for that customer (their first order is 1). Order the result by OrderID.', hint:'RANK() OVER (PARTITION BY CustomerID ORDER BY OrderDate)', ordered:[0], sol:"SELECT OrderID, CustomerID, OrderDate,\n       RANK() OVER (PARTITION BY CustomerID ORDER BY OrderDate) AS 'Order Date Rank per Customer'\nFROM Orders\nORDER BY OrderID;"},
       {p:'Rank products within each category from most to least expensive, so tied prices share a rank and no numbers are skipped. Show CategoryID, ProductName, UnitPrice and the rank.', hint:'DENSE_RANK() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC)', sol:"SELECT CategoryID, ProductName, UnitPrice,\n       DENSE_RANK() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC) AS 'Price Rank'\nFROM Products;"},
@@ -516,7 +631,8 @@ ${C("SELECT OrderID, CustomerID, OrderDate,\n       julianday(OrderDate) - julia
 <h3>Spot the problem</h3>
 <p>Run this. You'd expect each row to show the employee's last order, but every row just shows its own OrderID:</p>
 ${C("SELECT OrderID, EmployeeID,\n       LAST_VALUE(OrderID) OVER (PARTITION BY EmployeeID ORDER BY OrderID) AS 'Last Order for Employee'\nFROM Orders;")}
-${TIP('Window functions have a hidden <strong>window frame</strong>. With an <code>ORDER BY</code>, the default frame runs from the start of the partition to the <em>current row</em>, so <code>LAST_VALUE</code> only ever sees up to itself. The next lesson fixes it.')}`,
+${TIP('Window functions have a hidden <strong>window frame</strong>. With an <code>ORDER BY</code>, the default frame runs from the start of the partition to the <em>current row</em>, so <code>LAST_VALUE</code> only ever sees up to itself. The next lesson fixes it.')}
+${SAME()}`,
     ex:[
       {p:'Show each order\'s OrderID, OrderDate and Freight, with the freight of the previous order (by OrderID). The first order has no previous one, so show NULL.', hint:'LAG(Freight, 1, NULL) OVER (ORDER BY OrderID)', sol:"SELECT OrderID, OrderDate, Freight,\n       LAG(Freight, 1, NULL) OVER (ORDER BY OrderID) AS 'Freight for Previous Order'\nFROM Orders;"},
       {p:'Show OrderID, CustomerID, EmployeeID, OrderDate and the number of days since that customer\'s first order. Order by OrderID.', hint:'julianday(OrderDate) - julianday(FIRST_VALUE(OrderDate) OVER (PARTITION BY CustomerID ORDER BY OrderDate))', ordered:[0], sol:"SELECT OrderID, CustomerID, EmployeeID, OrderDate,\n       julianday(OrderDate) - julianday(FIRST_VALUE(OrderDate) OVER (PARTITION BY CustomerID ORDER BY OrderDate))\n           AS 'Days Since First Order'\nFROM Orders\nORDER BY OrderID;"},
@@ -576,7 +692,8 @@ ${C("SELECT ProductName\nFROM Products p\nINNER JOIN (\n    SELECT CategoryID FR
 ${C("WITH MeanAbove30 AS (\n    SELECT CategoryID FROM Products\n    GROUP BY CategoryID HAVING AVG(UnitPrice) > 30\n)\nSELECT ProductName\nFROM Products p\nINNER JOIN MeanAbove30 m ON p.CategoryID = m.CategoryID;")}
 <p>Chain several with commas. Each one can use the ones before it:</p>
 ${C("WITH spend AS (\n    SELECT o.CustomerID, SUM(od.UnitPrice * od.Quantity * (1 - od.Discount)) AS Total\n    FROM Orders o INNER JOIN \"Order Details\" od ON o.OrderID = od.OrderID\n    GROUP BY o.CustomerID\n),\naverage AS (\n    SELECT AVG(Total) AS AvgTotal FROM spend\n)\nSELECT s.CustomerID, s.Total\nFROM spend s, average a\nWHERE s.Total > a.AvgTotal\nORDER BY s.Total DESC;")}
-${TIP('A CTE is a great place for a window function you want to filter on: rank in the CTE, then use <code>WHERE</code> in the main query.')}`,
+${TIP('A CTE is a great place for a window function you want to filter on: rank in the CTE, then use <code>WHERE</code> in the main query.')}
+${DIFF({title:'WITH in each dialect', sqlite:'WITH name AS (…)\nWITH RECURSIVE name AS (…)', mysql:'WITH name AS (…)          -- MySQL 8.0 and later\nWITH RECURSIVE name AS (…)', tsql:'WITH name AS (…)\n-- recursive CTEs need no RECURSIVE keyword', note:'Ordinary CTEs are the same in all three. Recursive ones, which refer to themselves (for example to walk a manager hierarchy), are beyond this course, but now you\'ll recognise them.'})}`,
     ex:[
       {p:'Using WITH, list the ProductName of every product in a category whose average unit price is above 30.', hint:'WITH MeanAbove30 AS (SELECT CategoryID FROM Products GROUP BY CategoryID HAVING AVG(UnitPrice) > 30) …', sol:"WITH MeanAbove30 AS (\n    SELECT CategoryID FROM Products\n    GROUP BY CategoryID HAVING AVG(UnitPrice) > 30\n)\nSELECT ProductName\nFROM Products p\nINNER JOIN MeanAbove30 m ON p.CategoryID = m.CategoryID;"},
       {p:'Using WITH, show the first and last name and order count of every employee who has handled more than 100 orders.', hint:'Count orders per EmployeeID in the CTE, then join it to Employees.', sol:"WITH counts AS (\n    SELECT EmployeeID, COUNT(*) AS OrderCount\n    FROM Orders\n    GROUP BY EmployeeID\n)\nSELECT e.FirstName, e.LastName, c.OrderCount\nFROM Employees e\nINNER JOIN counts c ON c.EmployeeID = e.EmployeeID\nWHERE c.OrderCount > 100;"},
