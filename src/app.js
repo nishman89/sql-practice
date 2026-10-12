@@ -724,7 +724,8 @@ const emptyRep=()=>({items:[],results:[],notes:[],error:null,ran:[]});
 const fmtPrompt=t=>t.split(/(`[^`]+`)/).map(p=>p.startsWith('`')?h('code',{},p):p);
 function openLesson(id){
   const L=LESSONS[id];
-  if (curLesson!==id){ curLesson=id; const saved=(P.tab||{})[id]; curTab = saved!=null ? saved : (L.checkpoint?0:'learn'); }
+  // Arriving at a lesson always starts on Learn (checkpoints, which have no Learn tab, start on question 1)
+  if (curLesson!==id){ curLesson=id; curTab = L.checkpoint ? 0 : 'learn'; }
   $('#lTitle').textContent=L.title; $('#lSummary').textContent=L.summary;
   // The Northwind table buttons and ERD only appear once Northwind has been introduced (Meet Northwind, Unit 2)
   const beforeNorthwind = PATH.findIndex(x=>x.id===id) < PATH.findIndex(x=>x.id==='map');
