@@ -334,7 +334,7 @@ function resetAll(){
 }
 
 /* ---------- SQL flavours lesson and the SQL dialects page ---------- */
-const DTABS=[['side','Side by side'],['mysql','MySQL'],['tsql','T-SQL'],['lab','This lab']];
+const DTABS=[['side','Side by side'],['mysql','MySQL'],['tsql','T-SQL'],['lab','This dialect: SQLite']];
 function renderDialectTabs(host, tp){
   let cur=host.dataset.tab||'side';
   const draw=()=>{
@@ -351,9 +351,9 @@ function renderDialectTabs(host, tp){
     if (cur==='side'){
       DIALECTS.forEach((r,i)=>{
         if (r.group!==group){ group=r.group; tb.append(h('tr',{class:'grp'}, h('th',{colspan:'4',scope:'colgroup'}, group))); }
-        tb.append(h('tr',{'data-testid':`${tp}-row-${i+1}`}, h('td',{},r.task), h('td',{html:r.mysql}), h('td',{html:r.tsql}), h('td',{html:r.lab})));
+        tb.append(h('tr',{'data-testid':`${tp}-row-${i+1}`}, h('td',{},r.task), h('td',{html:r.mysql}), h('td',{html:r.tsql}), h('td',{class:'this-col',html:r.lab})));
       });
-      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},h('tr',{},h('th',{},'Task'),h('th',{},'MySQL'),h('th',{},'T-SQL'),h('th',{},'This lab'))), tb)));
+      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},h('tr',{},h('th',{},'Task'),h('th',{},'MySQL'),h('th',{},'T-SQL'),h('th',{class:'this-col'},'SQLite (this dialect)'))), tb)));
     } else {
       const info=DIALECT_INFO[cur];
       panel.append(h('p',{class:'dinfo'}, h('b',{},info.name+'. '), info.who+' ', h('span',{class:'muted'},`Tool: ${info.tool}.`)));
@@ -410,8 +410,8 @@ function drawFlavours(){
 
 /* ---------- 1. ERD lesson ---------- */
 const LESSON_MODEL = [
-  {name:'Customers', cols:[{name:'customer_id',type:'INT',pk:true,notnull:true},{name:'customer_name',type:'VARCHAR(255)',notnull:true},{name:'height',type:'DECIMAL(7,3)'},{name:'is_happy',type:'BOOLEAN'}], fks:[]},
-  {name:'Orders', cols:[{name:'order_id',type:'INT',pk:true,notnull:true},{name:'order_number',type:'INT',notnull:true},{name:'customer_id',type:'INT',fk:{}}], fks:[{table:'Customers',parent:'Customers',from:'customer_id',to:'customer_id'}]}
+  {name:'Customers', cols:[{name:'customer_id',type:'INTEGER',pk:true,notnull:true},{name:'customer_name',type:'TEXT',notnull:true},{name:'height',type:'REAL'},{name:'is_happy',type:'INTEGER'}], fks:[]},
+  {name:'Orders', cols:[{name:'order_id',type:'INTEGER',pk:true,notnull:true},{name:'order_number',type:'INTEGER',notnull:true},{name:'customer_id',type:'INTEGER',fk:{}}], fks:[{table:'Customers',parent:'Customers',from:'customer_id',to:'customer_id'}]}
 ];
 function drawLesson(){
   renderERD($('#erdLessonFig'), LESSON_MODEL, {testPrefix:'example', maxScale:1.35, label:'ERD of Customers and Orders, joined on customer_id'});
@@ -459,9 +459,9 @@ const tName=(tables,n)=>{ const t=findT(tables,n); return t?t.name:n; };
 let buildLast={rep:null};
 const BUILD_STEPS=[
   { short:'Customers', title:'Create the Customers table',
-    why:'Every table needs a name, its columns, and a data type for each column. customer_id is the primary key, and the database fills it in for you with AUTO_INCREMENT.',
-    starter:'-- Create a Customers table with:\n--   customer_id    a whole number, primary key, auto-incrementing\n--   customer_name  text up to 255 characters, required\n--   height         a decimal number\n--   is_happy       true or false\n\n',
-    example:`DROP DATABASE IF EXISTS my_db;\nCREATE DATABASE my_db;\nUSE my_db;\n\nCREATE TABLE Customers (\n    customer_id    INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,\n    customer_name  VARCHAR(255) NOT NULL,\n    height         DECIMAL(7,3),\n    is_happy       BOOLEAN\n);`,
+    why:'Every table needs a name, its columns, and a type for each column. SQLite\'s main types are INTEGER, REAL (decimals) and TEXT. customer_id is the primary key, and AUTOINCREMENT makes the database fill it in for you.',
+    starter:'-- Create a Customers table with:\n--   customer_id    a whole number, primary key, auto-incrementing\n--   customer_name  text, required\n--   height         a decimal number\n--   is_happy       true or false (1 or 0)\n\n',
+    example:`DROP TABLE IF EXISTS Orders;\nDROP TABLE IF EXISTS Customers;\n\nCREATE TABLE Customers (\n    customer_id    INTEGER PRIMARY KEY AUTOINCREMENT,\n    customer_name  TEXT NOT NULL,\n    height         REAL,\n    is_happy       INTEGER\n);`,
     checks:T=>{ const c=findT(T,'customers'); return [
       ['A table called Customers exists', !!c],
       ['customer_id is the primary key', !!(findC(c,'customer_id')||{}).pk],
@@ -471,7 +471,7 @@ const BUILD_STEPS=[
   { short:'Orders and FK', title:'Create Orders with a foreign key',
     why:'The FOREIGN KEY line is what draws the relationship. It tells the database that Orders.customer_id must match a customer_id that exists in Customers.',
     starter:'-- Create an Orders table with:\n--   order_id      primary key, auto-incrementing\n--   order_number  a whole number, required\n--   customer_id   a whole number that links to Customers\n\n',
-    example:`CREATE TABLE Orders (\n    order_id     INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\n    order_number INT NOT NULL,\n    customer_id  INT,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
+    example:`CREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
     checks:T=>{ const o=findT(T,'orders'); const fk=o&&o.fks.find(f=>f.from.toLowerCase()==='customer_id'&&f.table.toLowerCase()==='customers'); return [
       ['A table called Orders exists', !!o],
       ['order_id is the primary key', !!(findC(o,'order_id')||{}).pk],
@@ -504,9 +504,9 @@ const BUILD_STEPS=[
       ['The database rejected an order for a customer that doesn\'t exist', !!P.fkSeen]
     ] },
   { short:'ALTER TABLE', title:'Add columns with ALTER TABLE',
-    why:'ALTER TABLE changes an existing table. Re-running your CREATE TABLE script is usually better practice, but ALTER is handy for quick changes. Watch the new columns appear on the diagram.',
+    why:'ALTER TABLE changes an existing table. SQLite adds one column per statement. Re-running your CREATE TABLE script is usually better practice, but ALTER is handy for quick changes. Watch the new columns appear on the diagram.',
     starter:'-- Add an email column (text) and an age column (whole number) to Customers\n\n',
-    example:`ALTER TABLE Customers\nADD\n    email    VARCHAR(255),\n    age      INT;`,
+    example:`ALTER TABLE Customers ADD COLUMN email TEXT;\nALTER TABLE Customers ADD COLUMN age INTEGER;`,
     checks:T=>{ const c=findT(T,'customers'); return [
       ['Customers has an email column', !!findC(c,'email')],
       ['Customers has an age column', !!findC(c,'age')]
@@ -603,7 +603,7 @@ function drawMap(scroll){
   left.append(ul);
   const refs=nwModel.filter(o=>o.name!==t.name && o.fks.some(f=>f.parent===t.name));
   if (refs.length) left.append(h('p',{style:'font-size:.95rem;color:var(--ink-2)'}, 'Referenced by ', ...refs.flatMap((r,i)=>[i?(i===refs.length-1?' and ':', '):'', h('button',{type:'button',class:'linkish',onclick:()=>{ mapSel=r.name; drawMap(); }}, r.name)]), '.'));
-  const tq = /\s/.test(t.name) ? '`'+t.name+'`' : t.name;
+  const tq = /\s/.test(t.name) ? '"'+t.name+'"' : t.name;
   left.append(h('button',{class:'btn primary small',type:'button','data-testid':'query-table',onclick:()=>{ openFree(`SELECT *\nFROM ${tq}\nLIMIT 10;`); }}, `Query ${t.name}`));
   const right=h('div',{}, h('div',{class:'sample-h'},'First five rows'));
   const sample=h('div'); right.append(sample);
@@ -731,7 +731,7 @@ function drawDialog(){
     li.append(h('span',{class:'ty'},c.type));
     ul.append(li);
   }
-  const tq=/\s/.test(t.name)?'`'+t.name+'`':t.name;
+  const tq=/\s/.test(t.name)?'"'+t.name+'"':t.name;
   box.append(h('h3',{class:'dot','data-testid':'erd-dialog-table'},t.name), h('div',{class:'meta'},`${rows} rows, ${t.cols.length} columns. Write it as ${tq} in a query.`), h('p',{},NW_NOTES[t.name]||''), ul);
 }
 $('#erd-dialog-close').addEventListener('click',closeErd);
@@ -743,7 +743,7 @@ function runFree(){ const rep=runScript(nw, fEd.value, 'nw'); if (rep.ran.some(s
 function makeStrip(host, getEd, key, tp){
   host.append(h('button',{class:'btn small erd-btn',type:'button','data-testid':`${tp}-open-erd`,onclick:openErd},'Northwind ERD'), ' Tables: ');
   for (const t of ['Customers','Orders','Order Details','Products','Categories','Suppliers','Employees','Shippers']){
-    host.append(h('button',{class:'chip',type:'button','data-testid':`${tp}-insert-table-${t.toLowerCase().replace(/\s+/g,'-')}`,title:`Insert ${t} at the cursor`,onclick:()=>{ const ed=getEd(), ta=ed.ta; const txt=/\s/.test(t)?'`'+t+'`':t; ta.focus(); ta.setRangeText(txt, ta.selectionStart, ta.selectionEnd, 'end'); ed.sync(); P.drafts[key()]=ta.value; save(); }}, t));
+    host.append(h('button',{class:'chip',type:'button','data-testid':`${tp}-insert-table-${t.toLowerCase().replace(/\s+/g,'-')}`,title:`Insert ${t} at the cursor`,onclick:()=>{ const ed=getEd(), ta=ed.ta; const txt=/\s/.test(t)?'"'+t+'"':t; ta.focus(); ta.setRangeText(txt, ta.selectionStart, ta.selectionEnd, 'end'); ed.sync(); P.drafts[key()]=ta.value; save(); }}, t));
   }
   host.append(h('span',{style:'margin-left:auto'}, h('kbd',{},'Ctrl'),' + ',h('kbd',{},'Enter'),' runs'));
 }

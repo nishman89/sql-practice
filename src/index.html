@@ -49,7 +49,7 @@
 
 <section class="hero" id="pathHero" data-testid="hero" hidden>
   <div class="container hero__inner">
-    <span class="hero__badge">MySQL and T-SQL</span>
+    <span class="hero__badge">SQLite</span>
     <h1 class="hero__title" id="h-path">SQL Practice Lab<span class="hero__dot">.</span></h1>
     <p class="hero__sub">Learn to query a real database, one lesson at a time, right in your browser.</p>
     <div class="hero__actions" id="heroActions"></div>
@@ -75,7 +75,7 @@
     <h1 id="h-flavours" class="dot" data-testid="flavours-title">SQL flavours</h1>
     <div class="prose" id="flavoursBody" data-testid="flavours-body"></div>
     <div class="rule"></div>
-    <h2 class="dot">MySQL, T-SQL and this lab</h2>
+    <h2 class="dot">MySQL, T-SQL and SQLite</h2>
     <div id="flavoursTabs"></div>
     <div class="rule"></div>
     <h2 class="dot">Check yourself</h2>
@@ -85,7 +85,7 @@
   <!-- SQL dialects reference (header tab) -->
   <section class="view" id="v-dialects" aria-labelledby="h-dialects">
     <h1 id="h-dialects" class="dot" data-testid="dialects-title">SQL dialects</h1>
-    <p class="lede">MySQL, T-SQL and the SQLite this lab runs, side by side. The lab accepts the MySQL and T-SQL forms from the course and tells you when it translates one. For the background, read the <a href="#/lesson/flavours" data-testid="dialects-flavours-link">SQL flavours</a> lesson.</p>
+    <p class="lede">MySQL, T-SQL and SQLite side by side. This course uses SQLite, so its column is the one to learn; the others show what changes when you move to another database. For the background, read the <a href="#/lesson/flavours" data-testid="dialects-flavours-link">SQL flavours</a> lesson.</p>
     <div id="dialectsTabs"></div>
   </section>
 
@@ -108,7 +108,7 @@
     <h2 class="dot">The four parts</h2>
     <div class="parts">
       <div class="part"><b>Entity</b><p>A table, drawn as a box with its name in the header. <code>Customers</code> and <code>Orders</code> are entities.</p></div>
-      <div class="part"><b>Attribute</b><p>A column, listed inside the box with its data type on the right, such as <code>customer_name VARCHAR(255)</code>.</p></div>
+      <div class="part"><b>Attribute</b><p>A column, listed inside the box with its data type on the right, such as <code>customer_name TEXT</code>.</p></div>
       <div class="part"><b>Primary key <span class="badge pk">PK</span></b><p>The column that uniquely identifies each row. No two customers can share a <code>customer_id</code>, and it can't be empty.</p></div>
       <div class="part"><b>Foreign key <span class="badge fk">FK</span></b><p>A column that holds another table's primary key. <code>Orders.customer_id</code> points at the customer who placed the order.</p></div>
     </div>
@@ -149,16 +149,7 @@
         <div class="out" id="buildOut" data-testid="build-results"></div>
         <details class="dialect">
           <summary>Which SQL is this?</summary>
-          <p>The lab runs SQLite inside your browser. The lesson's MySQL scripts work as written because the lab translates the few MySQL-only parts for you, and tells you when it does:</p>
-          <table>
-            <tr><th>You write (MySQL)</th><th>The lab runs</th></tr>
-            <tr><td><code>INT NOT NULL AUTO_INCREMENT PRIMARY KEY</code></td><td><code>INTEGER PRIMARY KEY AUTOINCREMENT</code></td></tr>
-            <tr><td><code>CREATE DATABASE</code>, <code>USE</code></td><td>Skipped: you already have a database</td></tr>
-            <tr><td><code>DROP DATABASE</code></td><td>Drops all your tables so you can start again</td></tr>
-            <tr><td><code>ALTER TABLE t ADD a INT, b INT</code></td><td>One <code>ADD COLUMN</code> per column</td></tr>
-            <tr><td><code>SHOW TABLES</code>, <code>DESCRIBE t</code></td><td>Equivalent queries on the schema</td></tr>
-          </table>
-          <p>Stored procedures and adding a foreign key with <code>ALTER TABLE</code> aren't available in SQLite. Practise those in MySQL Workbench.</p>
+          <p>SQLite. Its main column types are <code>INTEGER</code>, <code>REAL</code> and <code>TEXT</code>, and an <code>INTEGER PRIMARY KEY AUTOINCREMENT</code> column numbers itself. A SQLite database is a single file, so there's no <code>CREATE DATABASE</code> or <code>USE</code>: you just create tables. To see how MySQL and T-SQL write the same things, open <a href="#/dialects">SQL dialects</a>.</p>
         </details>
       </div>
       <div class="side-sticky">
