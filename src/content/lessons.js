@@ -411,19 +411,52 @@ ${DIFF({title:'Joining text in each dialect', sqlite:"FirstName || ' ' || LastNa
       {p:'For every customer, build a line like Maria Anders at Alfreds Futterkiste. Alias it Contact.', hint:"ContactName, then ' at ', then CompanyName.", sol:"SELECT CONCAT(ContactName, ' at ', CompanyName) AS 'Contact'\nFROM Customers;"}
     ]},
 
-  arithmetic:{title:'Arithmetic operators', summary:'Do maths on your columns as the rows come back.', cmds:['+','-','*','/','%'],
+  arithmetic:{title:'Arithmetic operators', summary:'Do maths on your columns as the rows come back: calculate, round and work out percentages.', cmds:['+','-','*','/','%','ROUND()','ABS()','CEIL()','FLOOR()'],
     learn:`
-<p>You can calculate in <code>SELECT</code> with <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code> and <code>%</code>. Always alias the result so the column has a readable name.</p>
-${C("SELECT UnitPrice, Quantity, Discount,\n       UnitPrice * Quantity AS 'Gross Total'\nFROM \"Order Details\";")}
-${TIP('Table and column names with spaces need double quotes: <code>"Order Details"</code>. Single quotes are for text values.')}
-${DIFF({title:'Table names with spaces in each dialect', sqlite:'"Order Details"', mysql:'`Order Details`', tsql:'[Order Details]', note:'SQLite also accepts the MySQL and T-SQL forms, but double quotes are its own.'})}
-<p><code>%</code> (modulo) gives the remainder after dividing. Dividing by 2 leaves 0 for even numbers and 1 for odd ones:</p>
-${C("SELECT OrderID,\n       OrderID % 2 AS 'Remainder'\nFROM Orders;")}
-<p>You can use calculations in <code>WHERE</code> and <code>ORDER BY</code> too:</p>
-${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products\nWHERE UnitPrice * UnitsInStock > 2000\nORDER BY UnitPrice * UnitsInStock DESC;")}`,
+<p>SQL can do maths on every row as it comes back: totals, discounts, VAT, differences. It never changes the data in the table, only what the query shows.</p>
+<h3>The operators</h3>
+<table class="mini"><tr><th>Operator</th><th>Does</th><th>Example</th><th>Result</th></tr>
+<tr><td><code>+</code></td><td>Add</td><td><code>UnitsInStock + UnitsOnOrder</code></td><td>Stock once the order arrives</td></tr>
+<tr><td><code>-</code></td><td>Subtract</td><td><code>UnitsOnOrder - UnitsInStock</code></td><td>How many short you are</td></tr>
+<tr><td><code>*</code></td><td>Multiply</td><td><code>UnitPrice * Quantity</code></td><td>The value of an order line</td></tr>
+<tr><td><code>/</code></td><td>Divide</td><td><code>Freight / 2</code></td><td>Half the freight</td></tr>
+<tr><td><code>%</code></td><td>Remainder (modulo)</td><td><code>OrderID % 2</code></td><td><code>0</code> for even numbers, <code>1</code> for odd</td></tr></table>
+<p>You don't even need a table to try them. A <code>SELECT</code> on its own works like a calculator:</p>
+${C("SELECT 10 + 5, 10 - 5, 10 * 5, 10 / 5, 10 % 3;")}
+<p>With columns, it's worked out for every row. Always give the result an alias, so the column has a readable name:</p>
+${C("SELECT ProductName, UnitsInStock, UnitsOnOrder,\n       UnitsInStock + UnitsOnOrder AS 'Stock After Delivery'\nFROM Products;")}
+<h3>Order of operations: use brackets</h3>
+<p>SQL follows the same rules as maths at school: <code>*</code>, <code>/</code> and <code>%</code> happen before <code>+</code> and <code>-</code>. So <code>2 + 3 * 4</code> is 14, not 20. Brackets go first:</p>
+${C("SELECT 2 + 3 * 4   AS 'Without brackets',\n       (2 + 3) * 4 AS 'With brackets';")}
+<p>This matters for real data. An order line's <code>Discount</code> is a fraction, such as <code>0.15</code> for 15% off, so the price after discount is <code>UnitPrice × Quantity × (1 − Discount)</code>. Forget the brackets and SQL multiplies by 1, then takes 0.15 away:</p>
+${C("SELECT OrderID, UnitPrice, Quantity, Discount,\n       ROUND(UnitPrice * Quantity * 1 - Discount, 2)   AS 'Wrong',\n       ROUND(UnitPrice * Quantity * (1 - Discount), 2) AS 'Right'\nFROM \"Order Details\"\nWHERE OrderID = 10250 AND Discount > 0;")}
+${TIP('Table and column names with spaces need double quotes: <code>\"Order Details\"</code>. Single quotes are for text values.')}
+${DIFF({title:'Table names with spaces in each dialect', sqlite:'\"Order Details\"', mysql:'`Order Details`', tsql:'[Order Details]', note:'SQLite also accepts the MySQL and T-SQL forms, but double quotes are its own.'})}
+<h3>Dividing, and percentages</h3>
+<p>Dividing two whole numbers gives a whole number: <code>7 / 2</code> is <code>3</code>, not 3.5 (you met this in <a href="#/lesson/datatypes">Data types</a>). For a percentage, multiply by <code>100.0</code> first, with the <code>.0</code>, so SQLite keeps the decimals:</p>
+${C("SELECT ProductName, UnitsInStock, UnitsOnOrder,\n       UnitsOnOrder * 100 / (UnitsInStock + UnitsOnOrder)   AS 'Whole number %',\n       UnitsOnOrder * 100.0 / (UnitsInStock + UnitsOnOrder) AS 'Exact %'\nFROM Products\nWHERE UnitsOnOrder > 0;")}
+<h3>Rounding and other number functions</h3>
+<table class="mini"><tr><th>Function</th><th>Does</th><th>Example</th></tr>
+<tr><td><code>ROUND(x, 2)</code></td><td>Rounds to 2 decimal places (leave out the 2 for a whole number)</td><td><code>ROUND(18.456, 2)</code> → 18.46</td></tr>
+<tr><td><code>CEIL(x)</code></td><td>Rounds up to the next whole number</td><td><code>CEIL(18.2)</code> → 19</td></tr>
+<tr><td><code>FLOOR(x)</code></td><td>Rounds down</td><td><code>FLOOR(18.8)</code> → 18</td></tr>
+<tr><td><code>ABS(x)</code></td><td>Removes the minus sign</td><td><code>ABS(-4)</code> → 4</td></tr></table>
+<p>Prices with 20% VAT, rounded to pennies:</p>
+${C("SELECT ProductName, UnitPrice,\n       ROUND(UnitPrice * 1.2, 2) AS 'Price inc VAT'\nFROM Products;")}
+<p>How many boxes of 12 are needed for each order line? A part-full box still counts, so round up:</p>
+${C("SELECT OrderID, ProductID, Quantity,\n       CEIL(Quantity / 12.0) AS 'Boxes of 12'\nFROM \"Order Details\"\nWHERE OrderID = 10248;")}
+<h3>Calculating in WHERE and ORDER BY</h3>
+<p>Calculations work anywhere a column does. Here, products whose stock is worth over 2,000, most valuable first:</p>
+${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products\nWHERE UnitPrice * UnitsInStock > 2000\nORDER BY UnitPrice * UnitsInStock DESC;")}
+<h3>NULL in a calculation</h3>
+<p>Anything worked out with a NULL is NULL: if a value is unknown, so is the answer. <a href="#/lesson/nulls">Working with NULL values</a> shows how to replace NULLs before calculating.</p>
+${C("SELECT 5 + NULL, NULL * 2;")}
+${DIFF({title:'Where the dialects differ', sqlite:'7 / 2         -- 3\n7 % 2         -- 1\nCEIL(18.2)    -- 19', mysql:'7 / 2         -- 3.5000 (always decimal)\n7 DIV 2       -- 3\n7 % 2 or MOD(7, 2)\nCEIL(18.2)', tsql:'7 / 2         -- 3\n7 % 2\nCEILING(18.2) -- T-SQL has no CEIL', note:'<code>+</code>, <code>-</code>, <code>*</code>, <code>ROUND</code>, <code>FLOOR</code> and <code>ABS</code> are the same in all three.'})}`,
     ex:[
-      {p:'From `Order Details`, show UnitPrice, Quantity, Discount, a Gross Total (UnitPrice × Quantity) and a Net Total with the discount applied.', hint:'Discount is a fraction such as 0.15, so the net total is UnitPrice * Quantity * (1 - Discount).', sol:"SELECT UnitPrice, Quantity, Discount,\n       UnitPrice * Quantity                  AS 'Gross Total',\n       UnitPrice * Quantity * (1 - Discount) AS 'Net Total'\nFROM \"Order Details\";"},
+      {p:'From `Order Details`, show UnitPrice, Quantity, Discount, a Gross Total (UnitPrice × Quantity) and a Net Total with the discount applied.', hint:'Discount is a fraction such as 0.15, so the net total is UnitPrice * Quantity * (1 - Discount). Don\'t forget the brackets.', sol:"SELECT UnitPrice, Quantity, Discount,\n       UnitPrice * Quantity                  AS 'Gross Total',\n       UnitPrice * Quantity * (1 - Discount) AS 'Net Total'\nFROM \"Order Details\";"},
       {p:'Show each product\'s name and the value of its stock (UnitPrice × UnitsInStock) as Stock Value.', hint:"UnitPrice * UnitsInStock AS 'Stock Value'", sol:"SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products;"},
+      {p:'Show each product\'s name, UnitPrice, and its price with 20% VAT added, rounded to 2 decimal places.', hint:'ROUND(UnitPrice * 1.2, 2)', sol:"SELECT ProductName, UnitPrice, ROUND(UnitPrice * 1.2, 2) AS 'Price inc VAT'\nFROM Products;"},
+      {p:'Which products have more units on order than in stock? Show ProductName, UnitsInStock, UnitsOnOrder and how many short they are, biggest shortfall first.', hint:'UnitsOnOrder - UnitsInStock, in SELECT, WHERE (> 0) and ORDER BY … DESC.', ordered:[3], sol:"SELECT ProductName, UnitsInStock, UnitsOnOrder,\n       UnitsOnOrder - UnitsInStock AS 'Shortfall'\nFROM Products\nWHERE UnitsOnOrder - UnitsInStock > 0\nORDER BY UnitsOnOrder - UnitsInStock DESC;"},
       {p:'Using `Order Details`, show the OrderID and Gross Total of the two order lines with the highest Gross Total, biggest first.', hint:'ORDER BY the gross total DESC, then LIMIT 2.', ordered:[1], sol:"SELECT OrderID, UnitPrice * Quantity AS 'Gross Total'\nFROM \"Order Details\"\nORDER BY UnitPrice * Quantity DESC\nLIMIT 2;"},
       {p:'How many orders have an even OrderID?', hint:'WHERE OrderID % 2 = 0', sol:'SELECT COUNT(*)\nFROM Orders\nWHERE OrderID % 2 = 0;'}
     ]},

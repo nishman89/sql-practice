@@ -102,7 +102,8 @@ const FN_HINTS = {
   CHARINDEX:"instr(s, ' ') gives the position of ' ' in s. Note the order: the text first, then what to find.",
   REGEXP:"SQLite has no regular expressions built in. Use GLOB, which understands character sets: CategoryName GLOB '[BS]*'.",
   GETUTCDATE:"datetime('now') gives the current UTC date and time.",
-  CURTIME:"time('now') gives the current time."
+  CURTIME:"time('now') gives the current time.",
+  CEILING:'SQLite calls it CEIL(): CEIL(18.2) gives 19.'
 };
 
 function transform(stmt, mode, notes){

@@ -47,7 +47,7 @@ tablets and phones.
 | **7. Advanced topics** | Window functions · Ranking functions · Comparing rows · Window frames · Statistical functions · Common table expressions · Temporary tables · Pivoting · Performance tuning · *Checkpoint* |
 | **8. Capstone project** | Capstone project (in the learner's own SQL Server or MySQL) |
 
-48 lessons, 132 exercises and 126 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
+48 lessons, 134 exercises and 132 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
 exercises. **Data types**, **Types of SQL command** (DML, DDL, DCL and TCL as in the course slides, `DELETE` vs `TRUNCATE` vs `DROP`, and which groups the course covers) and
 **Inserting, updating and deleting data** build on the `Customers` and `Orders` tables from Creating tables (the same names
