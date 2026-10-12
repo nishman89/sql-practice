@@ -82,6 +82,7 @@ const PATH    = UNITS.flatMap(…);                                             
 | `title`, `summary` | Shown on the path and at the top of the lesson |
 | `cmds` | The commands the lesson uses, shown as chips under the summary |
 | exercise `starter` | Optional text placed in the editor the first time an exercise is opened |
+| *(position)* | Lessons before Meet Northwind never show the Northwind table buttons or the Show Northwind ERD button, since learners haven't met Northwind yet |
 | `db: 'mydb'` | Run the lesson on `my`, a separate database seeded from `MYDB_SEED` (the Customers and Orders tables from Creating tables) instead of Northwind; the Northwind table buttons are hidden and a note explains |
 | `rollback: true` | Every run in the lesson is wrapped in a `SAVEPOINT` and undone (`runSafe()`), so `INSERT`, `UPDATE` and `DELETE` can be practised without changing Northwind |
 | `check` | Questions instead of exercises, for a lesson that can't run here (Stored procedures) |
