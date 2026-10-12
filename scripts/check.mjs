@@ -14,10 +14,10 @@ const initSqlJs = require('sql.js/dist/sql-asm-memory-growth.js');
 
 const ctx = vm.createContext({ console, atob, btoa });
 vm.runInContext(
-  read('src/engine.js') + '\n' + read('src/content/lessons.js') + '\n' + read('src/content/quizzes.js') +
-  '\nglobalThis.X = { UNITS, LESSONS, PATH, QUIZZES, QUIZ_SETTINGS, runScript, compare, expected, addFns };',
+  read('src/engine.js') + '\n' + read('src/content/lessons.js') + '\n' + read('src/content/quizzes.js') + '\n' + read('src/content/dialects.js') + '\n' + read('src/content/intro.js') +
+  '\nglobalThis.X = { UNITS, LESSONS, PATH, QUIZZES, QUIZ_SETTINGS, DIALECTS, FLAVOURS_CHECK, runScript, compare, expected, addFns };',
   ctx, { filename: 'content' });
-const { UNITS, LESSONS, QUIZZES, QUIZ_SETTINGS, runScript, compare, expected, addFns } = ctx.X;
+const { UNITS, LESSONS, QUIZZES, QUIZ_SETTINGS, DIALECTS, FLAVOURS_CHECK, runScript, compare, expected, addFns } = ctx.X;
 
 const SQL = await initSqlJs();
 const db = new SQL.Database(fs.readFileSync(path.join(root, 'data/northwind.db')));
@@ -52,13 +52,15 @@ for (const u of UNITS) for (const id of u.lessons) {
   if (!Array.isArray(L.ex) || !L.ex.length) { fail(id, 'needs at least one exercise in "ex"'); continue; }
   if (!L.checkpoint && !L.learn) fail(id, 'needs "learn" content (or checkpoint: true)');
   L.ex.forEach((ex, i) => { exercises += checkTask(`${id}, exercise ${i + 1}`, ex, ['p', 'hint', 'sol']); });
+  // Run the lesson's examples in order, as a learner would (one can rely on an earlier one), then undo them all
+  db.run('SAVEPOINT ex');
+  let n = 0;
   for (const m of (L.learn || '').matchAll(/<pre class="ex"(?! data-norun)>([\s\S]*?)<\/pre>/g)) {
-    examples++;
-    db.run('SAVEPOINT ex');
+    examples++; n++;
     const rep = runScript(db, unescape(m[1]), 'nw');
-    db.run('ROLLBACK TO ex'); db.run('RELEASE ex');
-    if (rep.error) fail(`${id}, example ${examples}`, `gives an error: ${rep.error.message}`);
+    if (rep.error) fail(`${id}, example ${n}`, `gives an error: ${rep.error.message}`);
   }
+  db.run('ROLLBACK TO ex'); db.run('RELEASE ex');
 }
 for (const id of Object.keys(LESSONS)) if (!seen.has(id)) warn(id, 'is in LESSONS but not in any unit, so learners can\'t reach it');
 
@@ -68,13 +70,17 @@ for (const q of QUIZZES) {
   const where = `quiz ${q.id}`;
   if (!q.id || quizIds.has(q.id)) fail(where, 'id must be set and unique');
   quizIds.add(q.id);
-  if (!['query', 'mcq'].includes(q.type)) fail(where, 'type must be "query" or "mcq"');
+  if (!['query', 'mcq', 'mixed'].includes(q.type)) fail(where, 'type must be "query", "mcq" or "mixed"');
+  if (q.unitQuiz != null && !(q.unitQuiz >= 1 && q.unitQuiz <= UNITS.length)) fail(where, `unitQuiz must be 1-${UNITS.length}`);
   if (!q.title || !q.blurb) fail(where, 'needs a title and a blurb');
   if (!Array.isArray(q.timeLimits) || !q.timeLimits.length || !q.timeLimits.includes(q.defaultLimit)) fail(where, 'timeLimits must be a list of minutes (0 = no limit) that includes defaultLimit');
   if (!Array.isArray(q.questions) || !q.questions.length) { fail(where, 'needs questions'); continue; }
   q.questions.forEach((t, i) => {
     const at = `${where}, question ${i + 1}`;
-    if (q.type === 'query') {
+    const isMcq = Array.isArray(t.options);
+    if (q.type === 'mcq' && !isMcq) fail(at, 'an "mcq" quiz can only have multiple-choice questions');
+    if (q.type === 'query' && isMcq) fail(at, 'a "query" quiz can only have query tasks');
+    if (!isMcq) {
       if (!LESSONS[t.lesson] || LESSONS[t.lesson].kind) fail(at, `lesson "${t.lesson}" must be the id of a lesson with exercises`);
       questions += checkTask(at, t, ['p', 'sol', 'why']);
     } else {
@@ -88,11 +94,25 @@ for (const q of QUIZZES) {
   });
 }
 
+let tries = 0;
+DIALECTS.forEach((r, i) => {
+  const where = `dialects row ${i + 1} (${r.task})`;
+  for (const f of ['group', 'task', 'mysql', 'tsql', 'lab']) if (!r[f]) fail(where, `"${f}" is missing`);
+  if (r.try) {
+    tries++;
+    db.run('SAVEPOINT tr');
+    const rep = runScript(db, r.try, 'nw');
+    db.run('ROLLBACK TO tr'); db.run('RELEASE tr');
+    if (rep.error) fail(where, `its "Try it" example gives an error: ${rep.error.message}`);
+  }
+});
+FLAVOURS_CHECK.forEach((q, i) => { if (!(q.a && q.a[q.c] && q.why)) fail(`flavours check ${i + 1}`, 'needs options, a valid c and why'); });
+
 for (const w of warnings) console.warn('⚠ ' + w);
 if (errors.length) {
   for (const e of errors) console.error('✗ ' + e);
   console.error(`\n${errors.length} problem${errors.length === 1 ? '' : 's'} found. Nothing was built.`);
   process.exit(1);
 }
-console.log(`✓ ${lessons} lessons, ${exercises} exercises, ${examples} examples and ${QUIZZES.length} quizzes (${questions} questions) checked`);
-for (const q of QUIZZES) if (q.type === 'mcq') { const spread = [0, 1, 2, 3].map((k) => q.questions.filter((t) => t.answer === k).length); console.log(`  ${q.title}: answers a-d used ${spread.join(' / ')} times`); }
+console.log(`✓ ${lessons} lessons, ${exercises} exercises, ${examples} examples, ${tries} dialect examples and ${QUIZZES.length} quizzes (${questions} questions) checked`);
+for (const q of QUIZZES) { const m = q.questions.filter((t) => Array.isArray(t.options)); if (m.length) { const spread = [0, 1, 2, 3].map((k) => m.filter((t) => t.answer === k).length); console.log(`  ${q.title}: answers a-d used ${spread.join(' / ')} times`); } }
