@@ -26,6 +26,7 @@
     <nav class="nav-desktop" id="main-nav" data-testid="main-nav" aria-label="Main">
       <ul>
         <li><a href="#/path" data-nav="path" data-testid="nav-path">Learning path</a></li>
+        <li><a href="#/dialects" data-nav="dialects" data-testid="nav-dialects">SQL dialects</a></li>
         <li><a href="#/quiz" data-nav="quiz" data-testid="nav-quiz">Quizzes</a></li>
         <li><a href="#/free" data-nav="free" data-testid="nav-free">Free practice</a></li>
       </ul>
@@ -37,6 +38,7 @@
       <nav aria-label="Main (mobile)">
         <ul>
           <li><a href="#/path" data-nav="path" data-testid="mobile-nav-path">Learning path</a></li>
+          <li><a href="#/dialects" data-nav="dialects" data-testid="mobile-nav-dialects">SQL dialects</a></li>
           <li><a href="#/quiz" data-nav="quiz" data-testid="mobile-nav-quiz">Quizzes</a></li>
           <li><a href="#/free" data-nav="free" data-testid="mobile-nav-free">Free practice</a></li>
         </ul>
@@ -57,6 +59,35 @@
 <main id="main" class="container">
   <nav class="crumbs" id="crumbs" aria-label="Breadcrumb" data-testid="breadcrumb" hidden></nav>
   <div class="loading" id="boot"><div><div class="spinner"></div>Starting the database engine…</div></div>
+
+  <!-- What's a database (first lesson) -->
+  <section class="view" id="v-databases" aria-labelledby="h-databases">
+    <h1 id="h-databases" class="dot" data-testid="databases-title">What's a database</h1>
+    <div class="prose" id="databasesBody" data-testid="databases-body"></div>
+    <p style="margin-top:20px"><button class="btn" type="button" id="databasesPeek" data-testid="databases-see-table">See a real table in Free practice</button></p>
+    <div class="rule"></div>
+    <h2 class="dot">Check yourself</h2>
+    <form class="quiz" id="databasesCheck" onsubmit="return false" data-testid="databases-check"></form>
+  </section>
+
+  <!-- SQL flavours -->
+  <section class="view" id="v-flavours" aria-labelledby="h-flavours">
+    <h1 id="h-flavours" class="dot" data-testid="flavours-title">SQL flavours</h1>
+    <div class="prose" id="flavoursBody" data-testid="flavours-body"></div>
+    <div class="rule"></div>
+    <h2 class="dot">MySQL, T-SQL and this lab</h2>
+    <div id="flavoursTabs"></div>
+    <div class="rule"></div>
+    <h2 class="dot">Check yourself</h2>
+    <form class="quiz" id="flavoursCheck" onsubmit="return false" data-testid="flavours-check"></form>
+  </section>
+
+  <!-- SQL dialects reference (header tab) -->
+  <section class="view" id="v-dialects" aria-labelledby="h-dialects">
+    <h1 id="h-dialects" class="dot" data-testid="dialects-title">SQL dialects</h1>
+    <p class="lede">MySQL, T-SQL and the SQLite this lab runs, side by side. The lab accepts the MySQL and T-SQL forms from the course and tells you when it translates one. For the background, read the <a href="#/lesson/flavours" data-testid="dialects-flavours-link">SQL flavours</a> lesson.</p>
+    <div id="dialectsTabs"></div>
+  </section>
 
   <!-- 1. ERD -->
   <section class="view" id="v-erd" aria-labelledby="h-erd">
@@ -109,7 +140,7 @@
   <!-- 2. Build -->
   <section class="view" id="v-build" aria-labelledby="h-build">
     <h1 id="h-build" class="dot">Create tables and connect them</h1>
-    <p class="lede">Build the <code>Customers</code> and <code>Orders</code> tables step by step. The diagram of your database redraws itself from your tables after every run, the same way MySQL Workbench reverse engineers a database.</p>
+    <p class="lede">Build the <code>Customers</code> and <code>Orders</code> tables step by step. The diagram beside the editor redraws itself from your tables after every run, so you can see each table and relationship appear as you create it.</p>
     <div class="bench" style="margin-top:24px">
       <div>
         <ol class="tasklist" id="buildTabs" aria-label="Steps"></ol>

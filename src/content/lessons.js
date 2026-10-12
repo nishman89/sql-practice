@@ -1,17 +1,23 @@
 /* ---------- Learning path content ---------- */
-const C = (sql, run=true) => `<pre class="ex"${run?'':' data-norun'}>${esc(sql)}</pre>`;
+/* C(sql) is a runnable example. C(sql, false) is read-only; pass a label to say why (default: tables not in Northwind). */
+const C = (sql, run=true, label) => `<pre class="ex"${run?'':' data-norun'}${label?` data-label="${esc(label)}"`:''}>${esc(sql)}</pre>`;
+const TSQL_ONLY = 'T-SQL only: read it, but it won\'t run here';
+const MYSQL_ONLY = 'MySQL only: read it, but it won\'t run here';
 const TIP = t => `<div class="tip">${t}</div>`;
 
 const UNITS = [
-  {id:'u1', title:'Foundations', blurb:'See how a database is structured, build one yourself, then meet the Northwind data you\'ll query.', lessons:['erd','build','map']},
+  {id:'u1', title:'Foundations', blurb:'Learn what a database is, meet the flavours of SQL, read a database diagram, build tables yourself, then meet the Northwind data you\'ll query.', lessons:['databases','flavours','erd','build','map']},
   {id:'u2', title:'Querying one table', blurb:'Choose the columns and rows you need, then sort, trim, search and calculate.', lessons:['select','operators','sorting','distinct','wildcards','concat','arithmetic','cp1']},
   {id:'u3', title:'Summarising data', blurb:'Turn hundreds of rows into totals, averages and counts, and deal with missing values.', lessons:['aggregates','groupby','having','nulls','cp2']},
   {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['innerjoin','leftjoin','multijoin','cp3']},
   {id:'u5', title:'Subqueries', blurb:'Feed the result of one query into another.', lessons:['subwhere','subfrom','exists','cp4']},
-  {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, and saving queries as views.', lessons:['case','datesstrings','views']}
+  {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, and saving queries as views.', lessons:['case','datesstrings','views']},
+  {id:'u7', title:'Advanced topics', blurb:'Window functions, statistics, WITH, temporary tables, pivoting and making queries fast.', lessons:['windows','ranking','leadlag','frames','stats','cte','temptables','pivot','performance','cp5']}
 ];
 
 const LESSONS = {
+  databases:{title:'What\'s a database', summary:'Databases, DBMSs, tables, rows, columns and keys, and what SQL is for.', kind:'databases'},
+  flavours:{title:'SQL flavours', summary:'One language, several dialects: MySQL, T-SQL and the one this lab runs.', kind:'flavours'},
   erd:{title:'What\'s an ERD', summary:'Read a database diagram: tables, keys and relationships.', kind:'erd'},
   build:{title:'Create tables and connect them', summary:'Build two linked tables and watch the ERD draw itself.', kind:'build'},
   map:{title:'Meet Northwind', summary:'Explore the sample database every exercise from here on uses.', kind:'map'},
@@ -399,7 +405,209 @@ ${TIP('Views you create here last until you reload the page.')}`,
     ex:[
       {p:'Create the ProductCategorySummary view from the lesson (Category Name and Number of Products), then select everything from it.', hint:'Copy the example. Start with DROP VIEW IF EXISTS if it already exists.', sol:"DROP VIEW IF EXISTS ProductCategorySummary;\nCREATE VIEW ProductCategorySummary AS\nSELECT c.CategoryName AS 'Category Name',\n       COUNT(*)       AS 'Number of Products'\nFROM Categories c\nINNER JOIN Products p ON p.CategoryID = c.CategoryID\nGROUP BY c.CategoryName;\nSELECT * FROM ProductCategorySummary;"},
       {p:'Create a view called vw_CustomerOrderCounts with each customer\'s CompanyName and number of orders (call it OrderCount). Then use the view to list the customers with more than 20 orders.', hint:'CREATE VIEW … AS SELECT … GROUP BY …; then SELECT * FROM vw_CustomerOrderCounts WHERE OrderCount > 20;', sol:"DROP VIEW IF EXISTS vw_CustomerOrderCounts;\nCREATE VIEW vw_CustomerOrderCounts AS\nSELECT c.CompanyName, COUNT(o.OrderID) AS OrderCount\nFROM Customers c\nLEFT JOIN Orders o ON o.CustomerID = c.CustomerID\nGROUP BY c.CustomerID, c.CompanyName;\nSELECT * FROM vw_CustomerOrderCounts WHERE OrderCount > 20;"}
+    ]},
+  /* ===== Unit 7: Advanced topics (from the Advanced SQL slides) ===== */
+  windows:{title:'Window functions: OVER and PARTITION BY', summary:'Add a total, count or average to every row without losing any rows.',
+    learn:`
+<p>Aggregate functions such as <code>COUNT</code> and <code>AVG</code> squash rows together: one row per group. <strong>Analytic</strong> (or <strong>window</strong>) functions calculate across a set of rows but keep every row, so you can see the calculation next to the original data.</p>
+<p>Say you want each order alongside how many orders that employee has handled. With what you know so far, that needs a join to a grouped subquery:</p>
+${C("SELECT o.OrderID, o.CustomerID, o.EmployeeID,\n       c.EOCount AS 'Employee Order Count', o.OrderDate\nFROM Orders o\nINNER JOIN (\n    SELECT EmployeeID, COUNT(*) AS EOCount\n    FROM Orders\n    GROUP BY EmployeeID\n) c ON o.EmployeeID = c.EmployeeID;")}
+<p>A window function does the same in one line. <code>OVER (PARTITION BY …)</code> splits the rows into partitions, like <code>GROUP BY</code>, but the function's answer is added to every row instead of collapsing them:</p>
+${C("SELECT OrderID, EmployeeID,\n       COUNT(*) OVER (PARTITION BY EmployeeID) AS 'Employee Order Count'\nFROM Orders\nORDER BY OrderID;")}
+${TIP('The pattern is <code>FUNCTION(…) OVER (PARTITION BY column) AS …</code>. The calculation starts again at every partition boundary.')}
+<p>Leave out <code>PARTITION BY</code> to calculate across the whole result. The empty brackets are still needed:</p>
+${C("SELECT ProductName, UnitPrice,\n       COUNT(*) OVER ()       AS 'Total Count',\n       AVG(UnitPrice) OVER () AS 'Average Price'\nFROM Products;")}
+<p>The result is a number like any other, so you can do maths with it:</p>
+${C("SELECT ProductName, CategoryID, UnitPrice,\n       UnitPrice - AVG(UnitPrice) OVER (PARTITION BY CategoryID) AS 'Difference from Category Average'\nFROM Products;")}
+${TIP('Window functions run last, after <code>WHERE</code>, <code>GROUP BY</code> and <code>HAVING</code>, just before <code>ORDER BY</code>. They work in MySQL 8+, SQL Server 2012+ and this lab.')}`,
+    ex:[
+      {p:'Using an INNER JOIN (no window function), show OrderID, CustomerID, EmployeeID, the employee\'s total order count as Employee Order Count, and OrderDate.', hint:'Join Orders to a subquery that counts orders per EmployeeID.', sol:"SELECT o.OrderID, o.CustomerID, o.EmployeeID,\n       c.EOCount AS 'Employee Order Count', o.OrderDate\nFROM Orders o\nINNER JOIN (\n    SELECT EmployeeID, COUNT(*) AS EOCount\n    FROM Orders\n    GROUP BY EmployeeID\n) c ON o.EmployeeID = c.EmployeeID;"},
+      {p:'Show each product\'s ProductID, ProductName, CategoryName, and how many other products are in the same category.', hint:'COUNT(*) OVER (PARTITION BY p.CategoryID) counts the product itself too, so subtract 1.', sol:"SELECT p.ProductID AS 'Product ID',\n       p.ProductName AS 'Product Name',\n       c.CategoryName AS 'Category Name',\n       COUNT(*) OVER (PARTITION BY p.CategoryID) - 1 AS 'Other Products in Category'\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nORDER BY p.ProductID;"},
+      {p:'Show each product\'s ProductID, ProductName, CategoryName and the total UnitsOnOrder for its whole category.', hint:'SUM(p.UnitsOnOrder) OVER (PARTITION BY p.CategoryID)', sol:"SELECT p.ProductID, p.ProductName, c.CategoryName,\n       SUM(p.UnitsOnOrder) OVER (PARTITION BY p.CategoryID) AS 'Total Category Units on Order'\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nORDER BY p.ProductID;"},
+      {p:'Show every order\'s OrderID and Freight next to the average freight across all orders.', hint:'AVG(Freight) OVER () - empty brackets mean the whole table.', sol:"SELECT OrderID, Freight, AVG(Freight) OVER () AS 'Average Freight'\nFROM Orders;"}
+    ]},
+
+  ranking:{title:'Ranking: ROW_NUMBER, RANK and DENSE_RANK', summary:'Number and rank rows, overall or within each group.',
+    learn:`
+<p><code>ORDER BY</code> inside <code>OVER ( )</code> tells the window function what order to work through the rows. It's most often used to number or rank them:</p>
+${C("SELECT ProductName, UnitPrice,\n       ROW_NUMBER() OVER (ORDER BY UnitPrice DESC) AS 'Row Number'\nFROM Products;")}
+<p>This <code>ORDER BY</code> is independent of the one at the end of the query. Add <code>ORDER BY ProductName</code> to the example above: the row numbers stay attached to the prices.</p>
+<h3>When values tie</h3>
+<table class="mini"><tr><th>Function</th><th>Ties</th><th>Example</th></tr>
+<tr><td><code>ROW_NUMBER()</code></td><td>Every row gets a different number; tied rows are numbered in no guaranteed order</td><td>1, 2, 3, 4, 5</td></tr>
+<tr><td><code>RANK()</code></td><td>Ties share a number, then numbers are skipped</td><td>1, 2, 3, 3, 3, 6</td></tr>
+<tr><td><code>DENSE_RANK()</code></td><td>Ties share a number, nothing is skipped</td><td>1, 2, 3, 3, 3, 4</td></tr></table>
+${C("SELECT ProductName, UnitPrice,\n       ROW_NUMBER() OVER (ORDER BY UnitPrice DESC) AS 'Row Number',\n       RANK()       OVER (ORDER BY UnitPrice DESC) AS 'Rank',\n       DENSE_RANK() OVER (ORDER BY UnitPrice DESC) AS 'Dense Rank'\nFROM Products;")}
+${TIP('Because <code>ROW_NUMBER()</code> numbers ties in no guaranteed order, the same query can give different numbers each time. Use <code>RANK()</code> or <code>DENSE_RANK()</code> when ties must be treated equally.')}
+<p>Combine <code>PARTITION BY</code> and <code>ORDER BY</code> to rank within each group. Numbering restarts at every new category:</p>
+${C("SELECT ProductName, UnitPrice, CategoryID,\n       ROW_NUMBER() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC) AS 'Row Number'\nFROM Products;")}`,
+    ex:[
+      {p:'Show each order\'s OrderID, CustomerID and OrderDate, with its rank by order date for that customer (their first order is 1). Order the result by OrderID.', hint:'RANK() OVER (PARTITION BY CustomerID ORDER BY OrderDate)', ordered:[0], sol:"SELECT OrderID, CustomerID, OrderDate,\n       RANK() OVER (PARTITION BY CustomerID ORDER BY OrderDate) AS 'Order Date Rank per Customer'\nFROM Orders\nORDER BY OrderID;"},
+      {p:'Rank products within each category from most to least expensive, so tied prices share a rank and no numbers are skipped. Show CategoryID, ProductName, UnitPrice and the rank.', hint:'DENSE_RANK() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC)', sol:"SELECT CategoryID, ProductName, UnitPrice,\n       DENSE_RANK() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC) AS 'Price Rank'\nFROM Products;"},
+      {p:'List the three most expensive products in each category (CategoryID, ProductName, UnitPrice). If prices tie for third place, include them all.', hint:'Rank inside a subquery, then filter on the rank in the outer query: a window function can\'t go in WHERE.', sol:"SELECT CategoryID, ProductName, UnitPrice\nFROM (\n    SELECT CategoryID, ProductName, UnitPrice,\n           RANK() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC) AS PriceRank\n    FROM Products\n) ranked\nWHERE PriceRank <= 3;"}
+    ]},
+
+  leadlag:{title:'LEAD, LAG, FIRST_VALUE and LAST_VALUE', summary:'Look at other rows: the next, the previous, the first and the last.',
+    learn:`
+<p><code>LEAD()</code> looks ahead a number of rows; <code>LAG()</code> looks back. Both take three arguments: the column to return, how many rows to move, and a default for when there's no row to return.</p>
+${C("SELECT ProductName, UnitPrice,\n       LEAD(ProductName, 1, NULL) OVER (ORDER BY UnitPrice) AS 'Next Product by Price',\n       LAG(UnitPrice, 1, 0)       OVER (ORDER BY UnitPrice) AS 'Previous Price'\nFROM Products;")}
+<p><code>FIRST_VALUE()</code> returns a column from the first row of each partition, in the window's order:</p>
+${C("SELECT ProductName, SupplierID, UnitsOnOrder,\n       FIRST_VALUE(UnitsOnOrder) OVER (PARTITION BY SupplierID ORDER BY UnitsOnOrder DESC)\n           AS 'Most Units on Order from Supplier'\nFROM Products;")}
+<p>You can use the result inside other functions. Here, days since each customer's first order (T-SQL style <code>DATEDIFF</code>, which this lab accepts):</p>
+${C("SELECT OrderID, CustomerID, OrderDate,\n       DATEDIFF(DAY, FIRST_VALUE(OrderDate) OVER (PARTITION BY CustomerID ORDER BY OrderDate), GETDATE())\n           AS 'Days Since First Order'\nFROM Orders\nORDER BY OrderID;")}
+<h3>Spot the problem</h3>
+<p>Run this. You'd expect each row to show the employee's last order, but every row just shows its own OrderID:</p>
+${C("SELECT OrderID, EmployeeID,\n       LAST_VALUE(OrderID) OVER (PARTITION BY EmployeeID ORDER BY OrderID) AS 'Last Order for Employee'\nFROM Orders;")}
+${TIP('Window functions have a hidden <strong>window frame</strong>. With an <code>ORDER BY</code>, the default frame runs from the start of the partition to the <em>current row</em>, so <code>LAST_VALUE</code> only ever sees up to itself. The next lesson fixes it.')}`,
+    ex:[
+      {p:'Show each order\'s OrderID, OrderDate and Freight, with the freight of the previous order (by OrderID). The first order has no previous one, so show NULL.', hint:'LAG(Freight, 1, NULL) OVER (ORDER BY OrderID)', sol:"SELECT OrderID, OrderDate, Freight,\n       LAG(Freight, 1, NULL) OVER (ORDER BY OrderID) AS 'Freight for Previous Order'\nFROM Orders;"},
+      {p:'Show OrderID, CustomerID, EmployeeID, OrderDate and the number of days since that customer\'s first order up to today. Order by OrderID.', hint:'DATEDIFF(DAY, FIRST_VALUE(OrderDate) OVER (PARTITION BY CustomerID ORDER BY OrderDate), GETDATE())', ordered:[0], sol:"SELECT OrderID, CustomerID, EmployeeID, OrderDate,\n       DATEDIFF(DAY, FIRST_VALUE(OrderDate) OVER (PARTITION BY CustomerID ORDER BY OrderDate), GETDATE())\n           AS 'Days Since Customer First Order'\nFROM Orders\nORDER BY OrderID;"},
+      {p:'Show each product\'s ProductName, CategoryID and UnitPrice, with the name of the cheapest product in its category.', hint:'FIRST_VALUE(ProductName) OVER (PARTITION BY CategoryID ORDER BY UnitPrice)', sol:"SELECT ProductName, CategoryID, UnitPrice,\n       FIRST_VALUE(ProductName) OVER (PARTITION BY CategoryID ORDER BY UnitPrice) AS 'Cheapest in Category'\nFROM Products;"}
+    ]},
+
+  frames:{title:'Window frames and moving averages', summary:'Control exactly which rows a window function looks at.',
+    learn:`
+<p>Alongside <code>PARTITION BY</code> and <code>ORDER BY</code>, a window has a third part: the <strong>frame</strong>, written with <code>ROWS</code> or <code>RANGE</code>.</p>
+<table class="mini"><tr><th>Part</th><th>Options</th></tr>
+<tr><td><code>ROWS</code> / <code>RANGE</code></td><td><code>ROWS</code> counts physical rows; <code>RANGE</code> includes every row with the same (or a nearby) <code>ORDER BY</code> value</td></tr>
+<tr><td><code>BETWEEN</code> start</td><td><code>UNBOUNDED PRECEDING</code> (start of the partition), <code>n PRECEDING</code> or <code>CURRENT ROW</code></td></tr>
+<tr><td><code>AND</code> end</td><td><code>CURRENT ROW</code>, <code>n FOLLOWING</code> or <code>UNBOUNDED FOLLOWING</code> (end of the partition)</td></tr></table>
+<p>The default, when there's an <code>ORDER BY</code>, is <code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>. That's why <code>LAST_VALUE</code> returned the current row. Widen the frame to the whole partition:</p>
+${C("SELECT OrderID, EmployeeID,\n       LAST_VALUE(OrderID) OVER (PARTITION BY EmployeeID ORDER BY OrderID\n           ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS 'Last Order for Employee'\nFROM Orders;")}
+${TIP('Another way: use <code>FIRST_VALUE</code> and reverse the <code>ORDER BY</code> (<code>ORDER BY OrderID DESC</code>).')}
+<h3>Moving averages</h3>
+<p>A frame of one row either side gives a 3-point moving average:</p>
+${C("SELECT OrderID, OrderDate, Freight,\n       AVG(Freight) OVER (ORDER BY OrderID\n           ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS '3pt Moving Avg'\nFROM Orders;")}
+<p><code>UNBOUNDED PRECEDING</code> to the current row gives a running total:</p>
+${C("SELECT OrderID, Freight,\n       SUM(Freight) OVER (ORDER BY OrderID\n           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS 'Running Total'\nFROM Orders;")}
+<h3>RANGE over dates</h3>
+<p>To average over <em>days</em> rather than rows (two orders on the same day both count), MySQL uses <code>RANGE</code> with <code>INTERVAL</code>:</p>
+${C("SELECT OrderID, OrderDate, Freight,\n       AVG(Freight) OVER (ORDER BY OrderDate\n           RANGE BETWEEN INTERVAL 1 DAY PRECEDING AND INTERVAL 1 DAY FOLLOWING) AS '3 day moving average'\nFROM Orders;", false, MYSQL_ONLY)}
+<p>This lab does the same by ordering on the date as a day number with <code>julianday()</code>. Look at 1996-07-08, which has two orders:</p>
+${C("SELECT OrderID, OrderDate, Freight,\n       AVG(Freight) OVER (ORDER BY julianday(OrderDate)\n           RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS '3 day moving average'\nFROM Orders;")}`,
+    ex:[
+      {p:'Fix the LAST_VALUE query: show each OrderID and EmployeeID with the last OrderID that employee handled.', hint:'Add ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING inside OVER ( ).', sol:"SELECT OrderID, EmployeeID,\n       LAST_VALUE(OrderID) OVER (PARTITION BY EmployeeID ORDER BY OrderID\n           ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS 'Last Order for Employee'\nFROM Orders;"},
+      {p:'Total each order\'s price from `Order Details` (UnitPrice × Quantity × (1 − Discount)), join it to Orders, and show OrderID, OrderDate, the total price and a 5-point moving average of it, ordered by OrderDate then OrderID.', hint:'AVG(d.TotalPrice) OVER (ORDER BY o.OrderDate, o.OrderID ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING). The OrderID breaks ties between orders on the same day.', sol:"SELECT o.OrderID, o.OrderDate, d.TotalPrice,\n       AVG(d.TotalPrice) OVER (ORDER BY o.OrderDate, o.OrderID\n           ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS '5pt Moving Average'\nFROM Orders o\nINNER JOIN (\n    SELECT OrderID, SUM(UnitPrice * Quantity * (1 - Discount)) AS TotalPrice\n    FROM [Order Details]\n    GROUP BY OrderID\n) d ON o.OrderID = d.OrderID;"},
+      {p:'For orders shipped to Brazil, show OrderID, Freight and a running total of freight in OrderID order.', hint:'Filter with WHERE first: the window only sees the rows that are left.', sol:"SELECT OrderID, Freight,\n       SUM(Freight) OVER (ORDER BY OrderID ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS 'Running Total'\nFROM Orders\nWHERE ShipCountry = 'Brazil';"}
+    ]},
+
+  stats:{title:'Statistical functions', summary:'Percentiles, distributions and splitting rows into bands.',
+    learn:`
+<p>Some window functions describe where a row sits in the whole distribution:</p>
+<table class="mini"><tr><th>Function</th><th>Returns</th></tr>
+<tr><td><code>CUME_DIST() OVER (ORDER BY x)</code></td><td>The fraction of rows with a value less than or equal to this one (0 to 1)</td></tr>
+<tr><td><code>PERCENT_RANK() OVER (ORDER BY x)</code></td><td>The row's rank as a fraction: (rank − 1) ÷ (rows − 1), so the first row is 0 and the last is 1</td></tr>
+<tr><td><code>NTILE(n) OVER (ORDER BY x)</code></td><td>Splits the rows into <em>n</em> roughly equal bands, numbered 1 to <em>n</em></td></tr></table>
+${C("SELECT ProductName, UnitPrice,\n       CUME_DIST()    OVER (ORDER BY UnitPrice) AS 'Cume Dist',\n       PERCENT_RANK() OVER (ORDER BY UnitPrice) AS 'Percent Rank',\n       NTILE(4)       OVER (ORDER BY UnitPrice) AS 'Quartile'\nFROM Products;")}
+${TIP('Look at how each one treats ties: tied prices get the same <code>CUME_DIST</code> and <code>PERCENT_RANK</code>, but <code>NTILE</code> can put them in different bands.')}
+<h3>Percentiles in T-SQL</h3>
+<p>SQL Server can also return the value <em>at</em> a percentile. <code>PERCENTILE_DISC</code> returns a value that exists in the data; <code>PERCENTILE_CONT</code> interpolates between values if it has to. <code>PERCENTILE_CONT(0.5)</code> is the median.</p>
+${C("SELECT DISTINCT\n       PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY UnitPrice) OVER () AS 'Median (existing value)',\n       PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY UnitPrice) OVER () AS 'Median (interpolated)'\nFROM Products;", false, TSQL_ONLY)}
+<p>MySQL and this lab don't have them, but <code>CUME_DIST</code> gets you there: the median is the smallest value whose <code>CUME_DIST</code> reaches 0.5.</p>
+${C("SELECT MIN(UnitPrice) AS 'Median (existing value)'\nFROM (SELECT UnitPrice, CUME_DIST() OVER (ORDER BY UnitPrice) AS cd FROM Products) t\nWHERE cd >= 0.5;")}`,
+    ex:[
+      {p:'Show each product\'s ProductName, UnitPrice and its PERCENT_RANK by price (cheapest is 0).', hint:'PERCENT_RANK() OVER (ORDER BY UnitPrice)', sol:"SELECT ProductName, UnitPrice,\n       PERCENT_RANK() OVER (ORDER BY UnitPrice) AS 'Percent Rank'\nFROM Products;"},
+      {p:'Split products into 4 price bands with NTILE, cheapest first. Show ProductID, ProductName, UnitPrice and the band. Use ProductID to break ties.', hint:'NTILE(4) OVER (ORDER BY UnitPrice, ProductID)', sol:"SELECT ProductID, ProductName, UnitPrice,\n       NTILE(4) OVER (ORDER BY UnitPrice, ProductID) AS 'Price Band'\nFROM Products;"},
+      {p:'Which orders are in the cheapest 10% by freight? Show OrderID and Freight for orders whose CUME_DIST by freight is 0.1 or less.', hint:'Work out CUME_DIST in a subquery, then filter it in the outer WHERE.', sol:"SELECT OrderID, Freight\nFROM (\n    SELECT OrderID, Freight, CUME_DIST() OVER (ORDER BY Freight) AS cd\n    FROM Orders\n) t\nWHERE cd <= 0.1;"}
+    ]},
+
+  cte:{title:'WITH (common table expressions)', summary:'Name a subquery once at the top, then use it like a table.',
+    learn:`
+<p><code>WITH</code> defines one or more named subqueries before the main query. SQL Server calls them <strong>common table expressions</strong> (CTEs); Oracle calls it the subquery factoring clause. They:</p>
+<ul class="plain"><li>make long queries easier to read</li><li>let you define a subquery once and use it several times</li><li>disappear when the query finishes</li></ul>
+<p>Here's a join to a subquery, then the same query with <code>WITH</code>:</p>
+${C("SELECT ProductName\nFROM Products p\nINNER JOIN (\n    SELECT CategoryID FROM Products\n    GROUP BY CategoryID HAVING AVG(UnitPrice) > 30\n) m ON p.CategoryID = m.CategoryID;")}
+${C("WITH MeanAbove30 AS (\n    SELECT CategoryID FROM Products\n    GROUP BY CategoryID HAVING AVG(UnitPrice) > 30\n)\nSELECT ProductName\nFROM Products p\nINNER JOIN MeanAbove30 m ON p.CategoryID = m.CategoryID;")}
+<p>Chain several with commas. Each one can use the ones before it:</p>
+${C("WITH spend AS (\n    SELECT o.CustomerID, SUM(od.UnitPrice * od.Quantity * (1 - od.Discount)) AS Total\n    FROM Orders o INNER JOIN `Order Details` od ON o.OrderID = od.OrderID\n    GROUP BY o.CustomerID\n),\naverage AS (\n    SELECT AVG(Total) AS AvgTotal FROM spend\n)\nSELECT s.CustomerID, s.Total\nFROM spend s, average a\nWHERE s.Total > a.AvgTotal\nORDER BY s.Total DESC;")}
+${TIP('A CTE is a great place for a window function you want to filter on: rank in the CTE, then use <code>WHERE</code> in the main query.')}`,
+    ex:[
+      {p:'Using WITH, list the ProductName of every product in a category whose average unit price is above 30.', hint:'WITH MeanAbove30 AS (SELECT CategoryID FROM Products GROUP BY CategoryID HAVING AVG(UnitPrice) > 30) …', sol:"WITH MeanAbove30 AS (\n    SELECT CategoryID FROM Products\n    GROUP BY CategoryID HAVING AVG(UnitPrice) > 30\n)\nSELECT ProductName\nFROM Products p\nINNER JOIN MeanAbove30 m ON p.CategoryID = m.CategoryID;"},
+      {p:'Using WITH, show the first and last name and order count of every employee who has handled more than 100 orders.', hint:'Count orders per EmployeeID in the CTE, then join it to Employees.', sol:"WITH counts AS (\n    SELECT EmployeeID, COUNT(*) AS OrderCount\n    FROM Orders\n    GROUP BY EmployeeID\n)\nSELECT e.FirstName, e.LastName, c.OrderCount\nFROM Employees e\nINNER JOIN counts c ON c.EmployeeID = e.EmployeeID\nWHERE c.OrderCount > 100;"},
+      {p:'Using two chained CTEs, list each CustomerID whose total spend is above the average customer\'s total spend, with their total.', hint:'The first CTE totals spend per customer; the second averages the first.', sol:"WITH spend AS (\n    SELECT o.CustomerID, SUM(od.UnitPrice * od.Quantity * (1 - od.Discount)) AS Total\n    FROM Orders o INNER JOIN `Order Details` od ON o.OrderID = od.OrderID\n    GROUP BY o.CustomerID\n),\naverage AS (\n    SELECT AVG(Total) AS AvgTotal FROM spend\n)\nSELECT s.CustomerID, s.Total\nFROM spend s, average a\nWHERE s.Total > a.AvgTotal;"}
+    ]},
+
+  temptables:{title:'Temporary tables', summary:'Store a result for later queries in the same session.',
+    learn:`
+<p>A CTE vanishes when its query ends. If you want to keep a result for <em>several</em> queries, use a temporary table. It's dropped automatically when you disconnect, or you can drop it yourself.</p>
+<table class="mini"><tr><th></th><th>T-SQL</th><th>MySQL</th></tr>
+<tr><td>Create from a query</td><td><code>SELECT … INTO #Name FROM …</code></td><td><code>CREATE TEMPORARY TABLE Name AS SELECT …</code></td></tr>
+<tr><td>Name</td><td>Always starts with <code>#</code>; <code>##</code> makes it global</td><td>Any name</td></tr>
+<tr><td>Stored in</td><td><code>tempdb</code></td><td>The session</td></tr>
+<tr><td>Who can see it</td><td>Only your connection (unless <code>##</code>)</td><td>Only your session</td></tr></table>
+<p>This lab accepts both. Here's the T-SQL way: the first statement stores the table, the second uses it.</p>
+${C("DROP TABLE IF EXISTS #MeanAbove30;\n\nSELECT CategoryID INTO #MeanAbove30\nFROM Products\nGROUP BY CategoryID HAVING AVG(UnitPrice) > 30;\n\nSELECT ProductName\nFROM Products p\nINNER JOIN #MeanAbove30 m ON p.CategoryID = m.CategoryID;")}
+<p>Now it exists, you can query it on its own:</p>
+${C("SELECT * FROM #MeanAbove30;")}
+<p>And the MySQL way:</p>
+${C("DROP TABLE IF EXISTS OrderCounts;\n\nCREATE TEMPORARY TABLE OrderCounts AS\nSELECT CustomerID, COUNT(*) AS Orders\nFROM Orders GROUP BY CustomerID;\n\nSELECT * FROM OrderCounts ORDER BY Orders DESC;")}
+${TIP('Creating a temporary table that already exists gives an error, so start with <code>DROP TABLE IF EXISTS</code>. In this lab, temporary tables last until you reload the page.')}`,
+    ex:[
+      {p:'Store the CategoryIDs whose average unit price is above 30 in a temporary table called #MeanAbove30, then use it to list the matching ProductNames.', hint:'SELECT CategoryID INTO #MeanAbove30 … then join Products to #MeanAbove30. Start with DROP TABLE IF EXISTS #MeanAbove30.', sol:"DROP TABLE IF EXISTS #MeanAbove30;\nSELECT CategoryID INTO #MeanAbove30\nFROM Products\nGROUP BY CategoryID HAVING AVG(UnitPrice) > 30;\nSELECT ProductName\nFROM Products p\nINNER JOIN #MeanAbove30 m ON p.CategoryID = m.CategoryID;"},
+      {p:'Using CREATE TEMPORARY TABLE, store each CustomerID with its number of orders in a table called OrderCounts. Then list the customers with more than 20 orders.', hint:'CREATE TEMPORARY TABLE OrderCounts AS SELECT CustomerID, COUNT(*) AS Orders FROM Orders GROUP BY CustomerID;', sol:"DROP TABLE IF EXISTS OrderCounts;\nCREATE TEMPORARY TABLE OrderCounts AS\nSELECT CustomerID, COUNT(*) AS Orders\nFROM Orders GROUP BY CustomerID;\nSELECT CustomerID, Orders FROM OrderCounts WHERE Orders > 20;"}
+    ]},
+
+  pivot:{title:'Pivoting: long and wide data', summary:'Turn rows into columns, and columns back into rows.',
+    learn:`
+<p>To <strong>pivot</strong> is to move data from rows into columns: from <em>long</em> format to <em>wide</em>. <strong>Unpivoting</strong> goes the other way. Which you want depends on what the data is for.</p>
+<div class="two-tables"><table class="mini"><tr><th>Student</th><th>Subject</th><th>Score</th></tr><tr><td>Alice</td><td>English</td><td>60</td></tr><tr><td>Alice</td><td>Maths</td><td>70</td></tr><tr><td>Bob</td><td>English</td><td>72</td></tr><tr><td>Bob</td><td>Maths</td><td>83</td></tr></table>
+<table class="mini"><tr><th>Student</th><th>English</th><th>Maths</th></tr><tr><td>Alice</td><td>60</td><td>70</td></tr><tr><td>Bob</td><td>72</td><td>83</td></tr></table></div>
+<h3>T-SQL: PIVOT and UNPIVOT</h3>
+<p>SQL Server has operators for both. <code>PIVOT</code> needs an aggregate, in case more than one value lands in a cell:</p>
+${C("SELECT CompanyName, ContactType, ContactNumber\nFROM Customers\nUNPIVOT (ContactNumber FOR ContactType IN (Phone, Fax)) u;", false, TSQL_ONLY)}
+${C("SELECT CompanyName, Phone, Fax\nFROM #Contacts\nPIVOT (MAX(ContactNumber) FOR ContactType IN (Phone, Fax)) p;", false, TSQL_ONLY)}
+<h3>Everywhere else: CASE and UNION ALL</h3>
+<p>MySQL and this lab have no <code>PIVOT</code>, but the same results come from tools you know. Pivot with an aggregate around a <code>CASE</code>, one per new column:</p>
+${C("WITH scores AS (\n    SELECT 'Alice' AS Student, 'English' AS Subject, 60 AS Score UNION ALL\n    SELECT 'Alice', 'Maths', 70 UNION ALL\n    SELECT 'Bob',   'English', 72 UNION ALL\n    SELECT 'Bob',   'Maths', 83\n)\nSELECT Student,\n       MAX(CASE WHEN Subject = 'English' THEN Score END) AS English,\n       MAX(CASE WHEN Subject = 'Maths'   THEN Score END) AS Maths\nFROM scores\nGROUP BY Student;")}
+<p>Unpivot with one <code>SELECT</code> per column, stacked with <code>UNION ALL</code>:</p>
+${C("SELECT CompanyName, 'Phone' AS ContactType, Phone AS ContactNumber FROM Customers\nUNION ALL\nSELECT CompanyName, 'Fax', Fax FROM Customers\nORDER BY CompanyName;")}
+${TIP('This approach works in every dialect, including SQL Server, so it\'s worth knowing even if you use T-SQL.')}`,
+    ex:[
+      {p:'Unpivot the order dates: for every order show OrderID, a DateType (OrderDate, RequiredDate or ShippedDate) and the Date.', hint:'Three SELECTs, one per date column, joined with UNION ALL.', sol:"SELECT OrderID, 'OrderDate' AS DateType, OrderDate AS Date FROM Orders\nUNION ALL\nSELECT OrderID, 'RequiredDate', RequiredDate FROM Orders\nUNION ALL\nSELECT OrderID, 'ShippedDate', ShippedDate FROM Orders;"},
+      {p:'Pivot the number of orders each shipper (ShipVia) carried into one column per year: ShipVia, 1996, 1997 and 1998.', hint:"SUM(CASE WHEN YEAR(OrderDate) = 1996 THEN 1 ELSE 0 END) AS '1996', and so on, grouped by ShipVia.", sol:"SELECT ShipVia,\n       SUM(CASE WHEN YEAR(OrderDate) = 1996 THEN 1 ELSE 0 END) AS '1996',\n       SUM(CASE WHEN YEAR(OrderDate) = 1997 THEN 1 ELSE 0 END) AS '1997',\n       SUM(CASE WHEN YEAR(OrderDate) = 1998 THEN 1 ELSE 0 END) AS '1998'\nFROM Orders\nGROUP BY ShipVia;"},
+      {p:'For each CategoryName, show how many products are active and how many are discontinued, as two columns.', hint:'Join Products to Categories, group by CategoryName, and use SUM(CASE WHEN Discontinued = … THEN 1 ELSE 0 END) twice.', sol:"SELECT c.CategoryName,\n       SUM(CASE WHEN p.Discontinued = 0 THEN 1 ELSE 0 END) AS 'Active',\n       SUM(CASE WHEN p.Discontinued = 1 THEN 1 ELSE 0 END) AS 'Discontinued'\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nGROUP BY c.CategoryName;"}
+    ]},
+
+  performance:{title:'Performance tuning and indexes', summary:'Find out why a query is slow, and use an index to fix it.',
+    learn:`
+<p>Tuning is less about tricks and more about a process. Like diagnosing a slow car, you find the cause before swapping parts:</p>
+<ol class="order"><li>Identify the slow queries</li><li>Understand what the database is doing</li><li>Fix the root cause</li><li>Check it's actually faster</li></ol>
+<h3>Indexes</h3>
+<p>An index is like the index at the back of a book: instead of reading every page, the database jumps to the right one.</p>
+<table class="mini"><tr><th>Index</th><th>What it is</th></tr>
+<tr><td>Clustered</td><td>Sets the physical order of the table's rows, so there's only one. Usually the primary key.</td></tr>
+<tr><td>Non-clustered / secondary</td><td>A separate structure holding the indexed values and a pointer to each row. A table can have many.</td></tr>
+<tr><td>Unique</td><td>Also stops duplicate values.</td></tr>
+<tr><td>Composite</td><td>Covers several columns. It helps queries that filter on the first (leftmost) column(s).</td></tr>
+<tr><td>Full-text</td><td>For searching words in text; much faster than <code>LIKE '%word%'</code>.</td></tr>
+<tr><td>Spatial</td><td>For geographic data such as coordinates.</td></tr></table>
+<p>Indexes speed up reads but slow down inserts and updates, because every index must be kept up to date. Index the columns you filter, join and sort on, not everything.</p>
+<h3>Scans and seeks</h3>
+<table class="mini"><tr><th>How rows are found</th><th>MySQL <code>EXPLAIN</code> type</th><th>This lab's plan says</th><th>Good?</th></tr>
+<tr><td>Table scan: read every row</td><td><code>ALL</code></td><td><code>SCAN Orders</code></td><td>Fine for small tables; bad for big ones</td></tr>
+<tr><td>Index scan: read the whole index</td><td><code>index</code></td><td><code>SCAN Orders USING INDEX …</code></td><td>Better, but still reads everything</td></tr>
+<tr><td>Index seek: jump to the right rows</td><td><code>ref</code>, <code>range</code>, <code>const</code>, <code>eq_ref</code></td><td><code>SEARCH Orders USING INDEX …</code></td><td>What you want</td></tr>
+<tr><td>Sorting without an index</td><td><code>Using filesort</code> in Extra</td><td><code>USE TEMP B-TREE FOR ORDER BY</code></td><td>A warning sign on big tables</td></tr>
+<tr><td>A temporary table for grouping</td><td><code>Using temporary</code> in Extra</td><td><code>USE TEMP B-TREE FOR GROUP BY</code></td><td>A warning sign on big tables</td></tr></table>
+<h3>Reading a plan</h3>
+<p>In MySQL, put <code>EXPLAIN</code> (or <code>EXPLAIN ANALYZE</code>) before a query, or use Workbench's execution-plan button. In SQL Server, turn on the actual execution plan in SSMS. This lab accepts <code>EXPLAIN</code> and shows SQLite's plan:</p>
+${C("EXPLAIN SELECT * FROM Customers WHERE City = 'London';")}
+<p>It scans the whole table. Add an index on <code>City</code>, then explain the same query again:</p>
+${C("CREATE INDEX IF NOT EXISTS idx_customer_city ON Customers(City);\n\nEXPLAIN SELECT * FROM Customers WHERE City = 'London';")}
+<p>List the indexes on a table with MySQL's <code>SHOW INDEX</code>:</p>
+${C("SHOW INDEX FROM Customers;")}
+${TIP('Indexes you create here last until you reload the page. In MySQL, the key columns to read in <code>EXPLAIN</code> are <code>type</code>, <code>key</code> (the index used, or NULL), <code>rows</code> (rows it expects to read) and <code>Extra</code>.')}`,
+    ex:[
+      {p:'Use EXPLAIN to see how the database finds the orders for customer ALFKI (SELECT * FROM Orders WHERE CustomerID = \'ALFKI\'). If you haven\'t created an index yet, it should scan the whole table.', hint:"EXPLAIN SELECT * FROM Orders WHERE CustomerID = 'ALFKI';", sol:"EXPLAIN SELECT * FROM Orders WHERE CustomerID = 'ALFKI';"},
+      {p:'Create an index called idx_orders_customerid on Orders(CustomerID), then EXPLAIN the same query so it uses the index.', hint:'CREATE INDEX IF NOT EXISTS idx_orders_customerid ON Orders(CustomerID); then the EXPLAIN. The plan should say SEARCH … USING INDEX.', sol:"CREATE INDEX IF NOT EXISTS idx_orders_customerid ON Orders(CustomerID);\nEXPLAIN SELECT * FROM Orders WHERE CustomerID = 'ALFKI';"},
+      {p:'Investigate the indexes on the `Order Details` table with SHOW INDEX.', hint:'SHOW INDEX FROM `Order Details`;', sol:'SHOW INDEX FROM `Order Details`;'}
+    ]},
+
+  cp5:{title:'Checkpoint: advanced', summary:'Window functions, CTEs and pivots together.', checkpoint:true,
+    ex:[
+      {p:'For each category, show the CategoryName and the name and price of its most expensive product.', hint:'Rank products by price within each category in a CTE, then keep rank 1 and join to Categories.', sol:"WITH ranked AS (\n    SELECT CategoryID, ProductName, UnitPrice,\n           RANK() OVER (PARTITION BY CategoryID ORDER BY UnitPrice DESC) AS r\n    FROM Products\n)\nSELECT c.CategoryName, ranked.ProductName, ranked.UnitPrice\nFROM ranked\nINNER JOIN Categories c ON c.CategoryID = ranked.CategoryID\nWHERE r = 1;"},
+      {p:'For 1997, show each EmployeeID, month number and number of orders, with the change from that employee\'s previous month.', hint:'Count orders per employee per month in a CTE, then use LAG(Orders) OVER (PARTITION BY EmployeeID ORDER BY Month).', sol:"WITH monthly AS (\n    SELECT EmployeeID, MONTH(OrderDate) AS Month, COUNT(*) AS Orders\n    FROM Orders\n    WHERE YEAR(OrderDate) = 1997\n    GROUP BY EmployeeID, MONTH(OrderDate)\n)\nSELECT EmployeeID, Month, Orders,\n       Orders - LAG(Orders) OVER (PARTITION BY EmployeeID ORDER BY Month) AS 'Change'\nFROM monthly;"},
+      {p:'Pivot each employee\'s total freight into one column per year: EmployeeID, 1996, 1997 and 1998.', hint:"SUM(CASE WHEN YEAR(OrderDate) = 1996 THEN Freight ELSE 0 END) AS '1996', and so on.", sol:"SELECT EmployeeID,\n       SUM(CASE WHEN YEAR(OrderDate) = 1996 THEN Freight ELSE 0 END) AS '1996',\n       SUM(CASE WHEN YEAR(OrderDate) = 1997 THEN Freight ELSE 0 END) AS '1997',\n       SUM(CASE WHEN YEAR(OrderDate) = 1998 THEN Freight ELSE 0 END) AS '1998'\nFROM Orders\nGROUP BY EmployeeID;"}
     ]}
 };
 const PATH = UNITS.flatMap(u=>u.lessons.map(id=>({id, unit:u})));
-

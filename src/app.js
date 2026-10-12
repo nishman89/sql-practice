@@ -221,6 +221,8 @@ function renderERD(host, tables, {testPrefix='erd', positions, selected, onSelec
 
 /* ---------- Path progress ---------- */
 const FOUND = {
+  databases:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.dbDone?1:0,1], label:'Intro and quiz'},
+  flavours:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.flavDone?1:0,1], label:'Intro and quiz'},
   erd:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.quizDone?1:0,1], label:'Diagram and quiz'},
   build:{need:'Complete all six steps.', prog:()=>[BUILD_STEPS.filter((s,i)=>P.buildDone[i]).length, BUILD_STEPS.length], label:'6 guided steps'},
   map:{need:'Select at least three tables in the diagram to look inside them.', prog:()=>[Math.min(3,(P.mapTables||[]).length),3], label:'Explore the diagram'}
@@ -230,23 +232,27 @@ function lessonDone(id){ const [a,b]=lessonProg(id); return a>=b; }
 function nextLesson(){ return PATH.find(x=>!lessonDone(x.id)); }
 
 /* ---------- Routing ---------- */
-const VIEWS=['path','erd','build','map','lesson','free','quizzes','quiz'];
+const VIEWS=['path','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
 let current={view:'path',lesson:null};
 function route(){
   const parts=location.hash.replace(/^#\/?/,'').split('/');
   let view='path', lid=null;
   if (parts[0]==='lesson' && LESSONS[parts[1]]){ lid=parts[1]; view=LESSONS[lid].kind||'lesson'; }
   else if (parts[0]==='free') view='free';
+  else if (parts[0]==='dialects') view='dialects';
   else if (parts[0]==='quiz') view = parts[1] ? 'quiz' : 'quizzes';
   if (view!=='quiz') stopTimer();
   current={view,lesson:lid};
   VIEWS.forEach(v=>$('#v-'+v).classList.toggle('on', v===view));
-  const section = view==='free'?'free' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
+  const section = view==='free'?'free' : view==='dialects'?'dialects' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
   $$('[data-nav]').forEach(b=>{ if (b.dataset.nav===section) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   $('#pathHero').hidden = view!=='path'; $('#main').classList.toggle('on-path', view==='path');
   if (lid){ P.last=lid; save(); }
   if (view==='path') renderPath();
   if (view==='map') drawMap();
+  if (view==='databases') drawDatabases();
+  if (view==='flavours') drawFlavours();
+  if (view==='dialects') renderDialectTabs($('#dialectsTabs'), 'dialects');
   if (view==='build') buildEd.sync();
   if (view==='lesson') openLesson(lid);
   if (view==='free') fEd.sync();
@@ -257,7 +263,7 @@ function route(){
   const h1=view==='path'?$('#h-path'):$('#v-'+view+' h1'); if (h1){ h1.setAttribute('tabindex','-1'); h1.focus({preventScroll:true}); }
 }
 addEventListener('hashchange', route);
-function goto(to){ const hs = (to==='path'||to==='free'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
+function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-go]'); if (b){ e.preventDefault(); goto(b.dataset.go); } });
 
 function renderChrome(){
@@ -313,7 +319,9 @@ function renderPath(){
         h('a',{href:'#/lesson/'+id,'data-testid':`lesson-link-${id}`}, node, h('span',{class:'t'}, L.title, h('small',{},L.summary)), h('span',{class:'s','data-testid':`lesson-status-${id}`},status))));
     });
     v.append(h('section',{class:'unit','aria-label':`Unit ${ui+1}: ${u.title}`,'data-testid':`unit-${ui+1}`},
-      h('div',{class:'unit-h'}, h('div',{class:'n'},`Unit ${ui+1}`), h('h2',{},u.title), h('p',{},u.blurb), h('div',{class:'meta'}, `${done} of ${u.lessons.length} lessons complete`)),
+      h('div',{class:'unit-h'}, h('div',{class:'n'},`Unit ${ui+1}`), h('h2',{},u.title), h('p',{},u.blurb), h('div',{class:'meta'}, `${done} of ${u.lessons.length} lessons complete`),
+        (()=>{ const uq=QUIZZES.find(q=>q.unitQuiz===ui+1); if (!uq) return null; const rec=(P.quizzes||{})[uq.id];
+          return h('div',{class:'unit-quiz'}, h('button',{class:'btn small',type:'button','data-go':'quiz/'+uq.id,'data-testid':`unit-quiz-${ui+1}`}, `Unit ${ui+1} quiz`), h('span',{class:'small','data-testid':`unit-quiz-${ui+1}-score`}, rec?`Best ${rec.best.percent}%`:`${uq.questions.length} questions`)); })()),
       ol));
   });
   v.append(h('p',{class:'progress-note'}, 'Your progress is saved in this browser only. ', (doneL||exDone)?h('button',{class:'linklike',type:'button',onclick:resetAll,'data-testid':'reset-progress'},'Reset my progress'):null));
@@ -323,6 +331,81 @@ function resetAll(){
   const theme=P.theme; for (const k of Object.keys(P)) delete P[k];
   Object.assign(P,{buildStep:0,buildDone:{},exDone:{},drafts:{},quiz:{},theme});
   save(); freshSandbox(); persistSandbox(); prevTables=new Set(); drawBuildErd(); drawLesson(); renderBuild(); loadStepDraft(); curLesson=null; route(); toast('Progress reset');
+}
+
+/* ---------- SQL flavours lesson and the SQL dialects page ---------- */
+const DTABS=[['side','Side by side'],['mysql','MySQL'],['tsql','T-SQL'],['lab','This lab']];
+function renderDialectTabs(host, tp){
+  let cur=host.dataset.tab||'side';
+  const draw=()=>{
+    host.innerHTML=''; host.dataset.tab=cur;
+    const list=h('div',{class:'dtabs',role:'tablist','aria-label':'Dialect','data-testid':`${tp}-tabs`});
+    DTABS.forEach(([id,label])=>{
+      const b=h('button',{type:'button',role:'tab',id:`${tp}-tab-${id}`,'aria-selected':String(cur===id),'aria-controls':`${tp}-panel`,tabindex:cur===id?'0':'-1','data-testid':`${tp}-tab-${id}`},label);
+      b.addEventListener('click',()=>{ cur=id; draw(); $(`#${tp}-tab-${id}`).focus(); });
+      b.addEventListener('keydown',e=>{ const k=DTABS.findIndex(t=>t[0]===cur); if (e.key==='ArrowRight'||e.key==='ArrowLeft'){ e.preventDefault(); cur=DTABS[(k+(e.key==='ArrowRight'?1:DTABS.length-1))%DTABS.length][0]; draw(); $(`#${tp}-tab-${cur}`).focus(); } });
+      list.append(b);
+    });
+    const panel=h('div',{class:'dpanel',role:'tabpanel',id:`${tp}-panel`,'aria-labelledby':`${tp}-tab-${cur}`,'data-testid':`${tp}-panel`,'data-tab':cur});
+    const tb=h('tbody'); let group=null;
+    if (cur==='side'){
+      DIALECTS.forEach((r,i)=>{
+        if (r.group!==group){ group=r.group; tb.append(h('tr',{class:'grp'}, h('th',{colspan:'4',scope:'colgroup'}, group))); }
+        tb.append(h('tr',{'data-testid':`${tp}-row-${i+1}`}, h('td',{},r.task), h('td',{html:r.mysql}), h('td',{html:r.tsql}), h('td',{html:r.lab})));
+      });
+      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},h('tr',{},h('th',{},'Task'),h('th',{},'MySQL'),h('th',{},'T-SQL'),h('th',{},'This lab'))), tb)));
+    } else {
+      const info=DIALECT_INFO[cur];
+      panel.append(h('p',{class:'dinfo'}, h('b',{},info.name+'. '), info.who+' ', h('span',{class:'muted'},`Tool: ${info.tool}.`)));
+      DIALECTS.forEach((r,i)=>{
+        if (r.group!==group){ group=r.group; tb.append(h('tr',{class:'grp'}, h('th',{colspan:cur==='lab'?'3':'2',scope:'colgroup'}, group))); }
+        const tr=h('tr',{'data-testid':`${tp}-row-${i+1}`}, h('td',{},r.task), h('td',{html:r[cur]}));
+        if (cur==='lab') tr.append(h('td',{}, r.try ? h('button',{class:'btn small',type:'button','data-testid':`${tp}-try-${i+1}`,onclick:()=>openFree(r.try)},'Try it') : ''));
+        tb.append(tr);
+      });
+      const head=h('tr',{},h('th',{},'Task'),h('th',{},info.name)); if (cur==='lab') head.append(h('th',{},''));
+      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},head), tb)));
+    }
+    host.append(list, panel);
+  };
+  draw();
+}
+function renderCheck(form, Q, tp, saved, onAnswer){
+  form.innerHTML='';
+  Q.forEach((item,qi)=>{
+    const fs=h('fieldset',{class:'q','data-testid':`${tp}-question-${qi+1}`,'data-answer':'abc'[item.c]}, h('legend',{},`${qi+1}. ${item.q}`));
+    const fb=h('div',{class:'fb','aria-live':'polite','data-testid':`${tp}-question-${qi+1}-feedback`});
+    const mark=(ai, silent)=>{
+      $$('label',fs).forEach((l,i)=>{ l.classList.remove('right','wrong'); if (i===ai) l.classList.add(ai===item.c?'right':'wrong'); });
+      $$('input',fs)[ai].checked=true;
+      fb.className='fb '+(ai===item.c?'good':'bad');
+      fb.textContent=ai===item.c?'Correct. '+item.why:'Not quite. Try another answer.';
+      if (!silent) onAnswer(qi, ai);
+    };
+    item.a.forEach((txt,ai)=>{
+      const inp=h('input',{type:'radio',name:`${tp}-q${qi}`,value:ai,'data-testid':`${tp}-question-${qi+1}-option-${'abc'[ai]}-input`});
+      inp.addEventListener('change',()=>mark(ai));
+      fs.append(h('label',{'data-testid':`${tp}-question-${qi+1}-option-${'abc'[ai]}`}, inp, h('span',{},txt)));
+    });
+    fs.append(fb); form.append(fs);
+    if (saved[qi]!=null) mark(saved[qi], true);
+  });
+}
+function drawDatabases(){
+  $('#databasesBody').innerHTML=DATABASES_LEARN;
+  P.dbQuiz=P.dbQuiz||{};
+  renderCheck($('#databasesCheck'), DATABASES_CHECK, 'databases-check', P.dbQuiz, (qi,ai)=>{
+    P.dbQuiz[qi]=ai; P.dbDone=DATABASES_CHECK.every((x,i)=>P.dbQuiz[i]===x.c); save(); refreshChrome();
+  });
+}
+$('#databasesPeek').addEventListener('click',()=>openFree('SELECT *\nFROM Customers\nLIMIT 10;'));
+function drawFlavours(){
+  $('#flavoursBody').innerHTML=FLAVOURS_LEARN;
+  renderDialectTabs($('#flavoursTabs'), 'flavours');
+  P.flavQuiz=P.flavQuiz||{};
+  renderCheck($('#flavoursCheck'), FLAVOURS_CHECK, 'flavours-check', P.flavQuiz, (qi,ai)=>{
+    P.flavQuiz[qi]=ai; P.flavDone=FLAVOURS_CHECK.every((x,i)=>P.flavQuiz[i]===x.c); save(); refreshChrome();
+  });
 }
 
 /* ---------- 1. ERD lesson ---------- */
@@ -560,7 +643,7 @@ function renderLessonBody(){
     body.innerHTML=L.learn;
     $$('pre.ex',body).forEach((pre,n)=>{
       const sql=pre.textContent; const wrap=h('div',{class:'example','data-testid':`example-${n+1}`}); pre.replaceWith(wrap); wrap.append(pre);
-      if (pre.hasAttribute('data-norun')) wrap.prepend(h('span',{class:'tag'},'Read only: these tables aren\'t in Northwind'));
+      if (pre.hasAttribute('data-norun')){ wrap.classList.add('readonly'); wrap.prepend(h('span',{class:'tag'}, pre.dataset.label || 'Read only: these tables aren\'t in Northwind')); }
       else { wrap.classList.add('has-run'); wrap.append(h('button',{class:'btn small run',type:'button','data-testid':`run-example-${n+1}`,onclick:()=>{ lEd.value=sql; P.drafts[draftKey()]=sql; save(); runLesson(); if (innerWidth<1020) $('#lEditor').scrollIntoView({block:'start'}); }},'Run this')); }
     });
     body.append(h('p',{style:'margin-top:26px'}, h('button',{class:'btn primary',type:'button','data-testid':'start-exercises',onclick:()=>setTab(0)}, `Start the exercises (${L.ex.length})`)));
