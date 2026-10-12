@@ -60,7 +60,7 @@ const BUILD_DIFF = () => [
 ].join('');
 
 const UNITS = [
-  {id:'u1', title:'Foundations', blurb:'What a database is, the flavours of SQL, database diagrams, data types and the kinds of SQL command. Then build your own tables and add, change and remove data.', lessons:['databases','flavours','erd','datatypes','sqlcommands','build','changedata']},
+  {id:'u1', title:'Foundations', blurb:'What a database is, the flavours of SQL, database diagrams, data types and the kinds of SQL command. Then build your own tables, add, change and remove data, and learn how to design tables well with normalisation.', lessons:['databases','flavours','erd','datatypes','sqlcommands','build','changedata','normal']},
   {id:'u2', title:'Introduction to querying', blurb:'Meet Northwind, the database the rest of the course uses, then choose the columns and rows you need, and sort, trim, search and calculate.', lessons:['map','select','operators','sorting','distinct','wildcards','concat','arithmetic','cp1']},
   {id:'u3', title:'Summarising data', blurb:'Turn hundreds of rows into totals, averages and counts, and deal with missing values.', lessons:['aggregates','groupby','having','nulls','cp2']},
   {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['joinsintro','innerjoin','leftjoin','multijoin','cp3']},
@@ -117,16 +117,16 @@ ${TIP('SQLite is relaxed about types: it will store text in an <code>INTEGER</co
       {p:'Which columns in the Orders table are declared as INTEGER? Show their names.', hint:"pragma_table_info('Orders') can be used like a table: SELECT name FROM pragma_table_info('Orders') WHERE type = 'INTEGER';", sol:"SELECT name\nFROM pragma_table_info('Orders')\nWHERE type = 'INTEGER';"}
     ]},
 
-  sqlcommands:{title:'Types of SQL command', summary:'DDL, DML, DQL, DCL and TCL, and why TRUNCATE isn\'t the same as DELETE.', cmds:['CREATE','ALTER','DROP','TRUNCATE','INSERT','UPDATE','DELETE','SELECT','GRANT','COMMIT'], db:'mydb', rollback:true,
+  sqlcommands:{title:'Types of SQL command', summary:'DML, DDL, DCL and TCL, why TRUNCATE isn\'t the same as DELETE, and which groups this course covers.', cmds:['SELECT','INSERT','UPDATE','DELETE','CREATE','ALTER','DROP','TRUNCATE','GRANT','REVOKE','COMMIT','ROLLBACK','SAVEPOINT'], db:'mydb', rollback:true,
     learn:`
 <p>SQL commands are grouped by what they work on. Knowing the group tells you a lot about what a command does and how careful to be with it.</p>
+<p>SQL has four groups of commands:</p>
 <table class="mini cmd-groups"><tr><th>Group</th><th>Stands for</th><th>Works on</th><th>Commands</th></tr>
-<tr class="ddl"><td><strong>DDL</strong></td><td>Data Definition Language</td><td>The <strong>structure</strong>: tables, columns, keys, views</td><td><code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code>, <code>RENAME</code></td></tr>
-<tr class="dml"><td><strong>DML</strong></td><td>Data Manipulation Language</td><td>The <strong>rows</strong> inside the tables</td><td><code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td></tr>
-<tr><td><strong>DQL</strong></td><td>Data Query Language</td><td>Reading data</td><td><code>SELECT</code></td></tr>
-<tr><td><strong>DCL</strong></td><td>Data Control Language</td><td>Who's allowed to do what</td><td><code>GRANT</code>, <code>REVOKE</code></td></tr>
-<tr><td><strong>TCL</strong></td><td>Transaction Control Language</td><td>Grouping changes so they all happen, or none do</td><td><code>BEGIN</code>, <code>COMMIT</code>, <code>ROLLBACK</code>, <code>SAVEPOINT</code></td></tr></table>
-${TIP('Some books put <code>SELECT</code> inside DML rather than giving it its own group. Either is fine; what matters is the split between changing the <em>structure</em> (DDL) and changing the <em>data</em> (DML).')}
+<tr class="dml"><td><strong>DML</strong></td><td>Data Manipulation Language</td><td>The <strong>data</strong>: reading and changing the rows inside tables</td><td><code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td></tr>
+<tr class="ddl"><td><strong>DDL</strong></td><td>Data Definition Language</td><td>The <strong>structure</strong>: tables, columns, keys, views, indexes</td><td><code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code></td></tr>
+<tr><td><strong>DCL</strong></td><td>Data Control Language</td><td><strong>Permissions</strong>: who's allowed to do what</td><td><code>GRANT</code>, <code>REVOKE</code></td></tr>
+<tr><td><strong>TCL</strong></td><td>Transaction Control Language</td><td><strong>Transactions</strong>: grouping changes so they all happen, or none do</td><td><code>COMMIT</code>, <code>ROLLBACK</code>, <code>SAVEPOINT</code></td></tr></table>
+${TIP('Some books and websites give <code>SELECT</code> a group of its own, <strong>DQL</strong> (Data Query Language), because it only reads data. Either way, the important split is between changing the <em>data</em> (DML) and changing the <em>structure</em> (DDL).')}
 <p>This lesson uses the tables from <a href="#/lesson/build">Creating tables</a>. Every run starts from a fresh copy:</p>
 ${MYDB_TABLES}
 <h3>DELETE, TRUNCATE and DROP</h3>
@@ -150,8 +150,16 @@ ${DIFF({title:'Emptying a table in each dialect', sqlite:'DELETE FROM Orders;', 
 <h3>Undoing changes with transactions (TCL)</h3>
 <p>A transaction groups changes so they all happen or none do. <code>ROLLBACK</code> undoes everything since the transaction started. This example uses a <strong>savepoint</strong>, a marker you can roll back to:</p>
 ${C("SAVEPOINT before_delete;\nDELETE FROM Orders;\nSELECT COUNT(*) AS 'Orders after DELETE' FROM Orders;\n\nROLLBACK TO before_delete;\nSELECT COUNT(*) AS 'Orders after ROLLBACK' FROM Orders;")}
-${DIFF({title:'Transactions in each dialect', sqlite:'BEGIN;\n…\nCOMMIT;   -- or ROLLBACK;', mysql:'START TRANSACTION;\n…\nCOMMIT;   -- or ROLLBACK;', tsql:'BEGIN TRANSACTION;\n…\nCOMMIT;   -- or ROLLBACK;', note:'In MySQL, DDL such as <code>TRUNCATE</code>, <code>DROP</code> and <code>CREATE</code> commits automatically, so it can\'t be rolled back. SQL Server and SQLite can roll DDL back inside a transaction.'})}`,
+${DIFF({title:'Transactions in each dialect', sqlite:'BEGIN;\n…\nCOMMIT;   -- or ROLLBACK;', mysql:'START TRANSACTION;\n…\nCOMMIT;   -- or ROLLBACK;', tsql:'BEGIN TRANSACTION;\n…\nCOMMIT;   -- or ROLLBACK;', note:'In MySQL, DDL such as <code>TRUNCATE</code>, <code>DROP</code> and <code>CREATE</code> commits automatically, so it can\'t be rolled back. SQL Server and SQLite can roll DDL back inside a transaction.'})}
+<h3>What this course covers, and what it doesn't</h3>
+<table class="mini"><tr><th>Group</th><th>In this course</th></tr>
+<tr><td><strong>DML</strong></td><td><strong>Most of the course.</strong> <code>SELECT</code> from <a href="#/lesson/select">Simple queries</a> onwards, and <code>INSERT</code>, <code>UPDATE</code> and <code>DELETE</code> in <a href="#/lesson/changedata">Inserting, updating and deleting data</a>.</td></tr>
+<tr><td><strong>DDL</strong></td><td><strong>Covered.</strong> <code>CREATE</code> and <code>ALTER</code> in <a href="#/lesson/build">Creating tables</a>, plus views, temporary tables and indexes later on. <code>TRUNCATE</code> and <code>DROP</code> here.</td></tr>
+<tr><td><strong>TCL</strong></td><td><strong>Only this lesson's savepoint example.</strong> Transactions matter most in applications, where several changes must succeed or fail together, such as moving money between two accounts.</td></tr>
+<tr><td><strong>DCL</strong></td><td><strong>Not covered.</strong> SQLite has no user accounts, so there's nothing to grant. In MySQL and SQL Server, a database administrator uses it to control who can read or change each table (see the example below).</td></tr></table>
+${DIFF({title:'DCL: giving and taking away permission', sqlite:'~Not available: SQLite has no users or permissions', mysql:"GRANT SELECT ON northwind.Customers TO 'trainee'@'localhost';\nREVOKE SELECT ON northwind.Customers FROM 'trainee'@'localhost';", tsql:'GRANT SELECT ON Customers TO trainee;\nREVOKE SELECT ON Customers FROM trainee;'})}`,
     check:[
+      {q:'In the four groups used here, which group does SELECT belong to?', a:['DDL','DML','DCL'], c:1, why:'SELECT works with the data in tables, so it\'s DML, alongside INSERT, UPDATE and DELETE. Some sources give it a group of its own, DQL.'},
       {q:'Which group does TRUNCATE belong to?', a:['DML, like DELETE','DDL, like DROP','TCL, like ROLLBACK'], c:1, why:'TRUNCATE works on the table as a whole rather than on chosen rows, so it\'s DDL, even though it removes data.'},
       {q:'You need to remove only Rich Gurney\'s orders. Which command?', a:['DELETE … WHERE customer_id = 3','TRUNCATE TABLE Orders','DROP TABLE Orders'], c:0, why:'Only DELETE can pick rows with WHERE. TRUNCATE empties the whole table and DROP removes it.'},
       {q:'In MySQL, which of these can be undone with ROLLBACK inside a transaction?', a:['TRUNCATE TABLE Orders','DROP TABLE Orders','DELETE FROM Orders'], c:2, why:'DELETE is DML, so it can be rolled back. In MySQL, DDL like TRUNCATE and DROP commits straight away.'},
@@ -196,6 +204,59 @@ ${DIFF({title:'Getting the ID of the row you just inserted', sqlite:'SELECT last
       {p:'Nish Mandal has been measured again: he\'s 1.86. Update his height, then show his row.', hint:"UPDATE Customers SET height = 1.86 WHERE customer_name = 'Nish Mandal';", sol:"UPDATE Customers\nSET height = 1.86\nWHERE customer_name = 'Nish Mandal';\nSELECT * FROM Customers WHERE customer_name = 'Nish Mandal';"},
       {p:'Order 1002 was cancelled. Delete it, then show every order.', hint:'DELETE FROM Orders WHERE order_number = 1002;', sol:"DELETE FROM Orders\nWHERE order_number = 1002;\nSELECT * FROM Orders;"},
       {p:'Remove Rich Gurney completely: his orders first, then the customer. Then show every customer.', hint:'Two DELETEs: Orders WHERE customer_id = 3, then Customers WHERE customer_id = 3. The other way round, the foreign key stops you.', sol:"DELETE FROM Orders    WHERE customer_id = 3;\nDELETE FROM Customers WHERE customer_id = 3;\nSELECT * FROM Customers;"}
+    ]},
+
+  normal:{title:'Normalisation: 1NF to 3NF', summary:'Split data into well-designed tables so each fact is stored once: first, second and third normal form.', cmds:['1NF','2NF','3NF','PRIMARY KEY','FOREIGN KEY'],
+    learn:`
+<p><strong>Normalisation</strong> is a way of designing tables so that every fact is stored in exactly one place. You work through a series of rules called <strong>normal forms</strong>. Each one fixes a kind of problem, and most databases aim for the <strong>third normal form (3NF)</strong>.</p>
+<h3>Why it matters</h3>
+<p>Here's an order sheet kept in one big table, the way it might start life in a spreadsheet:</p>
+<table class="mini"><tr><th>order_number</th><th>customer_name</th><th>customer_city</th><th>products</th><th>prices</th><th>quantities</th></tr>
+<tr><td>1001</td><td>Nish Mandal</td><td>Birmingham</td><td>Tea, Cake</td><td>3.00, 5.00</td><td>2, 1</td></tr>
+<tr><td>1002</td><td>Cathy French</td><td>London</td><td>Coffee</td><td>4.00</td><td>3</td></tr>
+<tr><td>1004</td><td>Nish Mandal</td><td>Birmingham</td><td>Cake</td><td>5.00</td><td>2</td></tr></table>
+<p>It holds the right information, but it causes three kinds of problem, called <strong>anomalies</strong>:</p>
+<table class="mini"><tr><th>Anomaly</th><th>What goes wrong</th></tr>
+<tr><td><strong>Update</strong></td><td>If Nish moves to Leeds, his city must be changed on every one of his orders. Miss one and the data contradicts itself.</td></tr>
+<tr><td><strong>Insert</strong></td><td>You can't record a new product and its price until someone orders it, because there's nowhere to put it.</td></tr>
+<tr><td><strong>Delete</strong></td><td>Delete order 1002 and you lose the only record that Coffee costs 4.00.</td></tr></table>
+<h3>First normal form (1NF): one value per cell</h3>
+<ul class="plain"><li>Every cell holds a <strong>single value</strong>: no lists like "Tea, Cake".</li><li>There are <strong>no repeating groups</strong> of columns (product1, product2, product3…).</li><li>Every row can be identified by a <strong>primary key</strong>.</li></ul>
+<p>Give each product on an order its own row. No single column is unique any more, so the key is <strong>order_number + product</strong> together:</p>
+<table class="mini"><tr><th class="hl-key">order_number</th><th class="hl-key">product</th><th>customer_name</th><th>customer_city</th><th>price</th><th>quantity</th></tr>
+<tr><td>1001</td><td>Tea</td><td>Nish Mandal</td><td>Birmingham</td><td>3.00</td><td>2</td></tr>
+<tr><td>1001</td><td>Cake</td><td>Nish Mandal</td><td>Birmingham</td><td>5.00</td><td>1</td></tr>
+<tr><td>1002</td><td>Coffee</td><td>Cathy French</td><td>London</td><td>4.00</td><td>3</td></tr>
+<tr><td>1004</td><td>Cake</td><td>Nish Mandal</td><td>Birmingham</td><td>5.00</td><td>2</td></tr></table>
+<h3>Second normal form (2NF): depend on the whole key</h3>
+<p>In 2NF, every column that isn't part of the key must depend on the <strong>whole</strong> key, not just part of it. That only matters when the key has more than one column, as it does here:</p>
+<ul class="plain"><li><code>quantity</code> depends on the order <em>and</em> the product: fine.</li><li><code>customer_name</code> and <code>customer_city</code> depend only on <code>order_number</code>.</li><li><code>price</code> depends only on <code>product</code>.</li></ul>
+<p>Move each of those into a table where it depends on the whole key:</p>
+<div class="two-tables">
+<table class="mini"><tr><th colspan="3">Orders</th></tr><tr><th class="hl-key">order_number</th><th>customer_name</th><th>customer_city</th></tr><tr><td>1001</td><td>Nish Mandal</td><td>Birmingham</td></tr><tr><td>1002</td><td>Cathy French</td><td>London</td></tr><tr><td>1004</td><td>Nish Mandal</td><td>Birmingham</td></tr></table>
+<table class="mini"><tr><th colspan="3">OrderLines</th></tr><tr><th class="hl-key">order_number</th><th class="hl-key">product</th><th>quantity</th></tr><tr><td>1001</td><td>Tea</td><td>2</td></tr><tr><td>1001</td><td>Cake</td><td>1</td></tr><tr><td>1002</td><td>Coffee</td><td>3</td></tr><tr><td>1004</td><td>Cake</td><td>2</td></tr></table>
+<table class="mini"><tr><th colspan="2">Products</th></tr><tr><th class="hl-key">product</th><th>price</th></tr><tr><td>Tea</td><td>3.00</td></tr><tr><td>Cake</td><td>5.00</td></tr><tr><td>Coffee</td><td>4.00</td></tr></table>
+</div>
+<p>Each price is now stored once, and a product can exist before anyone orders it.</p>
+<h3>Third normal form (3NF): nothing but the key</h3>
+<p>In 3NF, no column may depend on another column that isn't the key. In <code>Orders</code>, <code>customer_city</code> depends on <code>customer_name</code>, not on the order: this is called a <strong>transitive dependency</strong>. So customers get a table of their own, with an ID, and each order stores just the customer's ID as a <strong>foreign key</strong>:</p>
+<div class="two-tables">
+<table class="mini"><tr><th colspan="3">Customers</th></tr><tr><th class="hl-key">customer_id</th><th>customer_name</th><th>city</th></tr><tr><td>1</td><td>Nish Mandal</td><td>Birmingham</td></tr><tr><td>2</td><td>Cathy French</td><td>London</td></tr></table>
+<table class="mini"><tr><th colspan="2">Orders</th></tr><tr><th class="hl-key">order_number</th><th>customer_id</th></tr><tr><td>1001</td><td>1</td></tr><tr><td>1002</td><td>2</td></tr><tr><td>1004</td><td>1</td></tr></table>
+</div>
+<p>Now Nish's city is stored once: if he moves, you change one row. These are the same <code>Customers</code> and <code>Orders</code> you built in <a href="#/lesson/build">Creating tables</a>, and it's exactly why Northwind has separate <code>Customers</code>, <code>Orders</code>, <code>Order Details</code> and <code>Products</code> tables.</p>
+${TIP('A way to remember the three rules: every column depends on <strong>the key</strong> (1NF), <strong>the whole key</strong> (2NF), and <strong>nothing but the key</strong> (3NF).')}
+<h3>Nothing is lost</h3>
+<p>Splitting tables doesn't lose anything: a join puts the original sheet back together. This builds the 3NF tables with <code>WITH</code> and joins them. You'll learn both in later units, so just run it for now:</p>
+${C("WITH Customers(customer_id, customer_name, city) AS (VALUES\n    (1, 'Nish Mandal', 'Birmingham'), (2, 'Cathy French', 'London')),\nOrders(order_number, customer_id) AS (VALUES\n    (1001, 1), (1002, 2), (1004, 1)),\nProducts(product, price) AS (VALUES\n    ('Tea', 3.00), ('Cake', 5.00), ('Coffee', 4.00)),\nOrderLines(order_number, product, quantity) AS (VALUES\n    (1001, 'Tea', 2), (1001, 'Cake', 1), (1002, 'Coffee', 3), (1004, 'Cake', 2))\nSELECT o.order_number, c.customer_name, c.city, l.product, p.price, l.quantity\nFROM OrderLines l\nJOIN Orders o    ON o.order_number = l.order_number\nJOIN Customers c ON c.customer_id = o.customer_id\nJOIN Products p  ON p.product = l.product\nORDER BY o.order_number, l.product;")}
+<h3>What we're not covering</h3>
+<p>There are stricter normal forms beyond 3NF, such as <strong>Boyce–Codd normal form (BCNF)</strong>, 4NF and 5NF. They deal with rarer problems, and 3NF is the standard most databases are designed to. Sometimes designers also <strong>denormalise</strong> on purpose, copying data back into fewer tables to make reports faster, but only once the normalised design is in place.</p>
+${SAME('Normalisation is about table design, so it\'s the same whichever database you use.')}`,
+    check:[
+      {q:'A Spartans table has a column holding "C#, SQL, Java" for the courses each Spartan has taken. Which normal form does it break?', a:['1NF: a cell holds more than one value','2NF: a column depends on part of the key','3NF: a column depends on another non-key column'], c:0, why:'1NF needs one value per cell. Each course should be its own row, usually in a separate table linking Spartans to courses.'},
+      {q:'In an OrderLines table with the key (order_number, product), there\'s a price column that depends only on product. Which normal form does that break?', a:['1NF','2NF','3NF'], c:1, why:'price depends on only part of the key, which 2NF forbids. Move it to a Products table keyed by product.'},
+      {q:'An Orders table has order_number (the key), customer_id and customer_city. Why isn\'t it in 3NF?', a:['It has no primary key','customer_city depends on customer_id, not on the order','order_number should be text'], c:1, why:'That\'s a transitive dependency: the city belongs to the customer. Store it once, in the Customers table.'},
+      {q:'Which anomaly is it when deleting the only order for a product also loses that product\'s price?', a:['An insert anomaly','An update anomaly','A delete anomaly'], c:2, why:'Removing one fact (the order) accidentally removes another (the price). A separate Products table prevents it.'}
     ]},
 
   select:{title:'Simple queries', summary:'Choose which columns to show and filter the rows you want.', cmds:['SELECT','FROM','WHERE','COUNT(*)','AS'],

@@ -52,7 +52,8 @@ const DATABASES_LEARN = `
 <p><strong>SQL</strong> (Structured Query Language) is how you talk to a relational database. Its statements fall into two groups:</p>
 <table class="mini"><tr><th>Group</th><th>Statements</th><th>Used to</th></tr>
 <tr><td>Data definition (DDL)</td><td><code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code></td><td>Build and change the structure: tables, columns, keys</td></tr>
-<tr><td>Data manipulation (DML)</td><td><code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td><td>Read and change the data itself</td></tr></table>
+<tr><td>Data manipulation (DML)</td><td><code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td><td>Read and change the data itself</td></tr>
+<tr><td>Data control (DCL) and transaction control (TCL)</td><td><code>GRANT</code>, <code>REVOKE</code>; <code>COMMIT</code>, <code>ROLLBACK</code>, <code>SAVEPOINT</code></td><td>Control who can do what, and group changes together</td></tr></table>
 <p>The four things you do with data are often called <strong>CRUD</strong>: Create (<code>INSERT</code>), Read (<code>SELECT</code>), Update (<code>UPDATE</code>) and Delete (<code>DELETE</code>). Most of this course is about reading data with <code>SELECT</code>. The <a href="#/lesson/sqlcommands">Types of SQL command</a> lesson covers all the groups, including why <code>TRUNCATE</code> is DDL but <code>DELETE</code> is DML.</p>`;
 
 const DATABASES_CHECK = [

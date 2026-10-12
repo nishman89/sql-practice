@@ -99,7 +99,7 @@ const QUIZZES = [
     ]},
   /* ===== End-of-unit quizzes (type 'mixed': multiple-choice questions have options; query tasks have a lesson) ===== */
   { id:'unit-1', unitQuiz:1, type:'mcq', title:'Unit 1 quiz: Foundations', timeLimits:[15, 20, 0], defaultLimit:15,
-    blurb:'Databases, SQL flavours, ERDs, data types, creating tables and changing data.',
+    blurb:'Databases, SQL flavours, ERDs, data types, SQL command types, creating tables, changing data and normalisation.',
     questions:[
       {unit:1, q:'What is a database management system (DBMS)?', options:['A diagram showing how tables are linked','The rows stored in a table','Software that stores, manages and protects a database','A spreadsheet with more than one sheet'], answer:2, why:'MySQL, SQL Server, PostgreSQL and SQLite are DBMSs: the software that stores the data, answers queries and controls access.'},
       {unit:1, q:'In a relational table, what is a column?', options:['One fact that every row has, such as City','One complete record, such as one customer','A link to another table','A saved query'], answer:0, why:'A column (field) is one attribute of every row. A row (record) is one item, such as one customer.'},
@@ -110,6 +110,8 @@ const QUIZZES = [
       {unit:1, q:'What does FOREIGN KEY (customer_id) REFERENCES Customers(customer_id) do?', options:['Only allows customer_id values that exist in Customers','Copies every customer into the table','Makes customer_id unique','Deletes orders when a customer is added'], answer:0, why:'A foreign key makes sure each value points at a row that really exists in the other table.'},
       {unit:1, q:'What does SELECT 7 / 2 return in SQLite?', options:['3.5','3','4','An error'], answer:1, why:'Dividing two whole numbers gives a whole number in SQLite (and T-SQL), so the .5 is dropped. Write 7 / 2.0, or CAST one side AS REAL, to get 3.5.'},
       {unit:1, q:'What happens if you run UPDATE Products SET UnitPrice = 0 with no WHERE clause?', options:['Nothing: UPDATE needs a WHERE','Only the first product changes','Every product\'s price is set to 0','You get an error'], answer:2, why:'Without WHERE, UPDATE and DELETE affect every row. Run a SELECT with the same WHERE first to check which rows you\'ll change.'},
+      {unit:1, q:'Which normal form says every non-key column must depend on the whole primary key, not just part of it?', options:['First normal form (1NF)','Second normal form (2NF)','Third normal form (3NF)','Boyce–Codd normal form'], answer:1, why:'2NF removes partial dependencies, which only happen when the key has more than one column. 1NF is one value per cell; 3NF removes columns that depend on other non-key columns.'},
+      {unit:1, q:'Which of these is DDL rather than DML?', options:['DELETE','UPDATE','TRUNCATE','INSERT'], answer:2, why:'TRUNCATE empties a table as a whole, so it\'s DDL like CREATE, ALTER and DROP. DELETE, UPDATE and INSERT work on rows, so they\'re DML.'},
       {unit:1, q:'Which data type suits a price such as 18.99?', options:['INT','VARCHAR(10)','DATE','DECIMAL(10,2)'], answer:3, why:'DECIMAL stores exact numbers with a fixed number of decimal places, which is what money needs. INT drops the decimals.'}
     ]},
 
