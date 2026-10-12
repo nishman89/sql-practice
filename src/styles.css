@@ -664,3 +664,15 @@ table.compare-3 td{white-space:normal}
 .tables-strip[hidden],.mydb-note[hidden]{display:none}
 
 #lBody .tbl-wrap{max-height:none}
+table.choose-os td.os{text-align:center;font-size:1.05rem}
+table.choose-os th:nth-child(3),table.choose-os th:nth-child(4){text-align:center}
+table.choose-os td.os small{display:block;font-size:.72rem;color:var(--muted)}
+table.choose-os .linkish{font-weight:700;text-align:left}
+.os-yes{color:var(--ok);font-weight:700}
+.os-no{color:var(--muted)}
+.os-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,14rem),1fr));gap:12px;margin:12px 0 16px}
+.os-summary div{display:grid;gap:4px;background:var(--paper);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;border-top:4px solid var(--ink)}
+.os-summary b{font-family:var(--f-head);font-size:1.05rem}
+.os-summary span{font-size:.9rem;color:var(--ink-2)}
+#installIntro .tbl-wrap,.page-col .tbl-wrap{max-height:none}
+table.choose-os td:nth-child(2){white-space:nowrap}

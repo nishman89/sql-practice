@@ -419,7 +419,12 @@ function addCopyButtons(root){
   });
 }
 function drawInstall(){
-  const intro=$('#installIntro'); if (!intro.childElementCount) intro.innerHTML=INSTALL_INTRO;
+  const intro=$('#installIntro');
+  if (!intro.childElementCount){
+    intro.innerHTML=INSTALL_INTRO;
+    // Option names in the chooser open that guide's tab
+    intro.addEventListener('click',e=>{ const b=e.target.closest('[data-install-tab]'); if (!b) return; installTab=b.dataset.installTab; drawInstall(); $('#installTabs').scrollIntoView({behavior:'smooth',block:'start'}); $(`#install-tab-${installTab}`).focus({preventScroll:true}); });
+  }
   const host=$('#installTabs'); host.innerHTML='';
   const list=h('div',{class:'dtabs install-tabs',role:'tablist','aria-label':'Setup guides'});
   INSTALL_OPTIONS.forEach(o=>{
