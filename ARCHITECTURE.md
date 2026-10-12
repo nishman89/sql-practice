@@ -80,6 +80,7 @@ const PATH    = UNITS.flatMap(…);                                             
 | `title`, `summary` | Shown on the path and at the top of the lesson |
 | `cmds` | The commands the lesson uses, shown as chips under the summary |
 | exercise `starter` | Optional text placed in the editor the first time an exercise is opened |
+| `rollback: true` | Every run in the lesson is wrapped in a `SAVEPOINT` and undone (`runSafe()`), so `INSERT`, `UPDATE` and `DELETE` can be practised without changing Northwind |
 | `check` | Questions instead of exercises, for a lesson that can't run here (Stored procedures) |
 | `learn` | HTML for the Learn tab. `C(sql)` makes a runnable example, `C(sql, false)` a read-only one, `TIP(html)` a tip box |
 | `ex` | The exercises: `p` (the task), `hint`, `sol` (a model answer) and optionally `ordered` |
@@ -105,7 +106,8 @@ data feeds the SQL flavours lesson and the SQL dialects page; a row's `try` adds
 Read-only examples in a lesson use `C(sql, false, label)`; `READ_ONLY('mysql' | 'tsql', tool)` makes a label with the
 dialect's icon. `DIFF({ title, sqlite, mysql, tsql, note })` draws a callout showing the same job in each dialect, with
 the icons 🪶 SQLite, 🐬 MySQL and 🪟 T-SQL from the course notes. Values are code; start one with `~` for plain text.
-`SAME(extra)` is the note for lessons where nothing differs, and `BUILD_DIFF()` is the comparison drawn on the Creating
+`CERR(sql)` is a runnable example that's meant to fail, such as a delete blocked by a foreign key; the checks fail the
+build if it *doesn't* error. `SAME(extra)` is the note for lessons where nothing differs, and `BUILD_DIFF()` is the comparison drawn on the Creating
 tables page. `VENN(regions, label)` draws a join Venn diagram as inline SVG (each one gets unique clip and mask ids), and
 `FAKE` is the `WITH` block that builds the made-up student and course tables used in Introduction to joins.
 
