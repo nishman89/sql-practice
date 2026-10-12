@@ -27,7 +27,7 @@ The site is a **single static HTML file** with a **SQL engine inside it**.
 | Decision | Why |
 |---|---|
 | **A real SQL engine in the browser** | Learners need to run real SQL and see real errors. Installing MySQL or SQL Server is the biggest barrier to practising, and a server-side sandbox would need hosting, security and money. sql.js gives a full engine with nothing to install. |
-| **SQLite with a dialect layer** | The course teaches MySQL and T-SQL. Rather than teach a third dialect, the site accepts the course's syntax and translates it, telling the learner when it does. |
+| **SQLite only** | One dialect, taught consistently. Every lesson, exercise and quiz is plain SQLite; MySQL and T-SQL appear only in the SQL flavours lesson and the SQL dialects comparison. When learners type another dialect's syntax, they're shown the SQLite way rather than having it silently translated. |
 | **The asm.js build of sql.js** | It's plain JavaScript, so it runs under strict hosting rules that block WebAssembly or extra files. It costs ~1.3 MB, which loads in a second or two. |
 | **One self-contained file** | It works from GitHub Pages, from a double-click on someone's desktop, from SharePoint or inside a learning platform, with no paths to configure. |
 | **Marking by result, not by text** | There are many correct ways to write most queries. Comparing what a query *returns* with what the model answer returns accepts all of them. |
@@ -95,11 +95,10 @@ const DIALECT_INFO = { mysql, tsql, lab };                         // the senten
 const FLAVOURS_LEARN = `…`;  const FLAVOURS_CHECK = [ { q, a:[3], c, why }, … ];
 ```
 
-`renderDialectTabs(host, prefix)` draws the four tabs (Side by side, MySQL, T-SQL, This lab) from `DIALECTS`. The same
+`renderDialectTabs(host, prefix)` draws the four tabs (Side by side, MySQL, T-SQL, This dialect: SQLite) from `DIALECTS`; the SQLite column is highlighted. The same
 data feeds the SQL flavours lesson and the SQL dialects page; a row's `try` adds a **Try it** button on the lab tab.
 
-Read-only examples in a lesson use `C(sql, false, label)`; `TSQL_ONLY` and `MYSQL_ONLY` are ready-made labels for
-syntax the lab can't run.
+Read-only examples in a lesson use `C(sql, false, label)`, for SQL that isn't meant to run against Northwind.
 
 ### Quizzes: `src/content/quizzes.js`
 
@@ -156,7 +155,7 @@ the same code in Node.
 | Northwind | `nw` | Lessons, quizzes, Free practice, Meet Northwind | Rebuilt from the embedded copy on every page load (`freshNorthwind()`) |
 | Sandbox | `sb` | Create tables | Starts empty. Exported to `localStorage` after every run (`persistSandbox()`), so a learner's tables survive a reload |
 
-Both have foreign keys switched on (`PRAGMA foreign_keys = ON`) and the extra functions registered by `addFns()`.
+Both have foreign keys switched on (`PRAGMA foreign_keys = ON`, in `addFns()`). No extra functions are added: what runs is plain SQLite.
 
 ### Running a script: `runScript(db, sql, mode, opts)`
 
@@ -166,17 +165,14 @@ Both have foreign keys switched on (`PRAGMA foreign_keys = ON`) and the extra fu
    ├─ splitStatements()   split on ; outside quotes, backticks, [brackets] and comments
    │
    ├─ for each statement:
-   │    transform()       dialect rules: CREATE/DROP DATABASE, USE, SHOW TABLES, DESCRIBE, SHOW INDEX,
-   │    │                 SELECT … INTO #temp, #temp names, EXPLAIN → EXPLAIN QUERY PLAN,
-   │    │                 T-SQL-only PIVOT/UNPIVOT/PERCENTILE and MySQL RANGE … INTERVAL (refused with an alternative),
-   │    │                 AUTO_INCREMENT / IDENTITY, multi-column ALTER TABLE ADD, TOP n,
-   │    │                 stored procedures (refused with an explanation)
-   │    └─ rewriteFns()   function rewrites: DATE_ADD/DATE_SUB … INTERVAL, TIMESTAMPDIFF(unit,…),
-   │                      T-SQL DATEDIFF(part,…) and DATEADD(part,…)
+   │    transform()       checks the statement against OTHER_DIALECTS: MySQL / T-SQL syntax SQLite doesn't have
+   │                      (TOP, AUTO_INCREMENT, #temp, SELECT … INTO, SHOW, DESCRIBE, CREATE DATABASE, PIVOT,
+   │                      LEFT(), INTERVAL …). If one matches, it stops with a message showing the SQLite way.
+   │                      Nothing is rewritten.
    │
    ├─ db.exec()           SQLite runs it
    │
-   └─ report             { items: log lines and translation notes, results: [{columns, values}],
+   └─ report             { items: log lines and notes, results: [{columns, values}],
                             error: {message, hint, sql}, ran: [the SQL that actually ran] }
 ```
 
@@ -186,12 +182,16 @@ Both have foreign keys switched on (`PRAGMA foreign_keys = ON`) and the extra fu
 - `mode` is `'sandbox'` or `'nw'`. It changes a few rules: `DROP DATABASE` clears the sandbox (through `opts.onReset`)
   but is skipped on Northwind.
 
-### Extra functions: `addFns(db)`
+### Functions from other dialects: `FN_HINTS`
 
-MySQL and T-SQL functions that SQLite doesn't have are registered as JavaScript functions: `YEAR`, `MONTH`, `DAY`,
-`DATEDIFF`, `TIMESTAMPDIFF`, `DATE_FORMAT`, `NOW`, `CURDATE`, `GETDATE`, `LEN`, `LOCATE`, `CHARINDEX`, `LEFT`, `RIGHT`
-and `REGEXP`, plus the internal targets of the rewrites (`DATE_ADD_I`, `TSQL_DATEDIFF`, `TSQL_DATEADD`). Dates are
-stored as `YYYY-MM-DD` text, which is what these functions read and return.
+SQLite reports an unknown function as "no such function: YEAR". `friendlyError()` looks the name up in `FN_HINTS` and
+adds the SQLite equivalent, for example `strftime('%Y', OrderDate)` for `YEAR()` or `julianday(end) - julianday(start)`
+for `DATEDIFF()`.
+
+### Northwind's types
+
+Northwind uses SQLite's own column types: `INTEGER`, `REAL` and `TEXT`. Dates are `TEXT` in the form `'YYYY-MM-DD'`, so
+they sort correctly and work with `date()`, `julianday()` and `strftime()`. Text columns are `COLLATE NOCASE`.
 
 ---
 
@@ -391,7 +391,7 @@ to configure.
 | Change the pass mark | `QUIZ_SETTINGS` in `src/content/quizzes.js`. |
 | Change a quiz's time limits | `timeLimits` and `defaultLimit` on that quiz. |
 | Add a multiple-choice question | Add `{ unit, q, options, answer, why }` (and optional `code`) to the `mcq` quiz. |
-| Accept more MySQL/T-SQL syntax | A statement rewrite in `transform()`, a function rewrite in `rewriteFns()`, or a new function in `addFns()` (`src/engine.js`). |
+| Explain more MySQL / T-SQL syntax | Add `[pattern, message, the SQLite way]` to `OTHER_DIALECTS`, or a function to `FN_HINTS` (`src/engine.js`). |
 | Explain a new kind of error | Add a pattern to `friendlyError()` in `src/engine.js`. |
 | Change a Create tables step | `BUILD_STEPS` in `src/app.js` (`title`, `short`, `why`, `starter`, `example`, `checks`). |
 | Change the Northwind diagram layout | The `x`/`y` positions in `NW_POS` in `src/app.js`. |
@@ -405,14 +405,15 @@ to configure.
 
 - **Advanced topics (unit 7):** written from the Sparta Global *Advanced SQL* slides: analytic functions (PARTITION BY,
   ORDER BY, LEAD/LAG, FIRST/LAST_VALUE, window frames), statistical functions, WITH, temporary tables, PIVOT and
-  performance tuning. T-SQL-only features are shown read-only with a portable alternative that runs in the lab.
+  performance tuning, written in SQLite. Where the slides use a T-SQL or MySQL-only feature (PIVOT, PERCENTILE_CONT,
+  #temp tables, RANGE … INTERVAL), the lesson teaches the SQLite way instead.
 - **Lessons and exercises:** written from the Sparta Global SQL lesson notes (*SQL Querying* and *Creating Tables and
   Connecting Them*). The exercises from the notes are kept, with their answers checked against the data, and extra
   exercises, checkpoints and quizzes were added. They're now maintained directly in `src/content/`.
 - **Northwind:** built once from Microsoft's `instnwnd.sql` script by `scripts/build-northwind.py` into
   `data/northwind.db`. The 8 core tables are kept (the territory and demographic tables and the picture columns are
   left out), dates are converted to `YYYY-MM-DD`, and text columns use `COLLATE NOCASE` so comparisons ignore case
-  like MySQL. Only rerun the script if you need to change the database.
+  like MySQL. Columns use SQLite's types (INTEGER, REAL, TEXT). Only rerun the script if you need to change the database.
 
 ---
 
@@ -502,8 +503,8 @@ variables). The README's Playwright and Selenium examples make a good smoke test
 | Decision | Benefit | Trade-off |
 |---|---|---|
 | Static site, no backend | Free hosting, nothing to maintain or secure, works offline once loaded | No shared data - trainers can't see learners' scores |
-| SQL engine in the browser | Real SQL with nothing to install | A 1.8 MB page; SQLite isn't MySQL, so some syntax needs translating and a few features (stored procedures) aren't possible |
-| Translating MySQL/T-SQL | Learners use the syntax they're taught | The translations cover the course's syntax, not every MySQL feature |
+| SQL engine in the browser | Real SQL with nothing to install | A 1.8 MB page; learners practise SQLite, so MySQL or T-SQL users need the SQL dialects tab for the differences |
+| SQLite only | One consistent dialect; learners see the real SQLite way | Learners who type MySQL or T-SQL get an error first (with the SQLite version) instead of their query running |
 | Marking by result | Any correct query passes | A query that's right by luck on this data also passes; avoid tasks whose answer is empty or trivially matched |
 | Model answers in the page | Marking is instant and works offline | A determined learner could read them - fine for practice, not for assessment |
 | Northwind reloaded on every visit | Learners can't permanently break it | Views and data changes in Free practice are lost on reload |
@@ -517,9 +518,8 @@ result (for example that a query uses a JOIN), add an optional field to the task
 test it against the learner's SQL in `runLesson()` (`src/app.js`) and `submitQuiz()` (`src/quiz.js`), and teach
 `checkTask()` in `scripts/check.mjs` to validate the new field.
 
-**A new MySQL function** - register it in `addFns()` with `f('NAME', (a, b) => …)`. If its arguments use keywords
-SQLite can't parse (like `INTERVAL 5 DAY`), rewrite the call into a plain function call in `rewriteFns()` first, as
-`DATE_ADD` does.
+**Explaining another dialect's syntax** - add a row to `OTHER_DIALECTS` in `src/engine.js`: a regular expression,
+the message, and the SQLite way to write it. For an unknown function, add its name to `FN_HINTS`.
 
 **A new Foundations-style page** - add a `<section class="view" id="v-name">` to `src/index.html`, a lesson with
 `kind: 'name'` to `LESSONS`, a branch for it in `route()`, and an entry in `FOUND` saying when it's complete.

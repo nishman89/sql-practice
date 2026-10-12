@@ -21,8 +21,8 @@ tablets and phones.
 |---|---|
 | **Learning path** (home) | Every unit and lesson as a route. Finished lessons are ticked, the next lesson is highlighted and checkpoints are shown as diamonds. The **Continue** card shows the next unfinished lesson and a trail of progress across the whole path. |
 | **What's a database** | The first lesson: what a database and a DBMS are, why not a spreadsheet, tables, rows, columns, primary and foreign keys, data types, NoSQL, and what SQL does (DDL, DML and CRUD), with a labelled example table and three **Check yourself** questions. |
-| **SQL flavours** | The second lesson: what SQL dialects are, the flavours learners will meet (MySQL, T-SQL, PostgreSQL, Oracle, SQLite), what's the same and what changes, which SQL the lab runs, a tabbed MySQL / T-SQL / lab comparison and three **Check yourself** questions. |
-| **SQL dialects** (header tab) | The same comparison on its own page: **Side by side**, **MySQL**, **T-SQL** and **This lab** tabs covering returning rows, wildcards, names and values, functions, tables and procedures, and advanced features. On the **This lab** tab, **Try it** opens an example in Free practice. |
+| **SQL flavours** | The second lesson: what SQL dialects are, the flavours learners will meet (MySQL, T-SQL, PostgreSQL, Oracle, SQLite), what's the same and what changes, that the course uses SQLite, a tabbed MySQL / T-SQL / SQLite comparison and three **Check yourself** questions. |
+| **SQL dialects** (header tab) | The same comparison on its own page: **Side by side**, **MySQL**, **T-SQL** and **This dialect: SQLite** tabs covering returning rows, wildcards, names and values, functions, tables and procedures, and advanced features. On the **This dialect: SQLite** tab, **Try it** opens an example in Free practice. |
 | **What's an ERD** | Entities, attributes, primary and foreign keys, crow's foot notation and the three kinds of relationship, with an interactive diagram and three **Check yourself** questions. |
 | **Create tables and connect them** | Six guided steps that build a `Customers` and an `Orders` table, insert data, join them, trigger a foreign key error and add columns. The ERD beside the editor redraws itself from the learner's tables after every run. |
 | **Meet Northwind** | The full Northwind ERD. Select a table to see its columns, its keys, what it links to and its first five rows. |
@@ -43,7 +43,7 @@ tablets and phones.
 | **6. Going further** | CASE expressions · Dates and text functions · Views |
 | **7. Advanced topics** | Window functions: OVER and PARTITION BY · Ranking: ROW_NUMBER, RANK and DENSE_RANK · LEAD, LAG, FIRST_VALUE and LAST_VALUE · Window frames and moving averages · Statistical functions · WITH (common table expressions) · Temporary tables · Pivoting · Performance tuning and indexes · *Checkpoint* |
 
-39 lessons, 112 exercises and 89 runnable examples in total. Unit 7 follows the *Advanced SQL* slides.
+39 lessons, 112 exercises and 91 runnable examples in total, all written in SQLite. Unit 7 follows the *Advanced SQL* slides.
 
 ### How the exercises work
 
@@ -89,30 +89,27 @@ links to.
 
 ### Which SQL does it run?
 
-The site runs **SQLite**, but the course teaches MySQL and T-SQL, so it accepts the syntax from the course notes and
-translates it. A note appears whenever it does.
+**SQLite.** Every lesson, example, exercise and quiz is written in SQLite, and it runs inside the learner's browser, so
+there's nothing to install. Northwind uses SQLite's own column types (`INTEGER`, `REAL` and `TEXT`, with dates stored as
+`'YYYY-MM-DD'` text), and its text columns are `COLLATE NOCASE`, so `'london'` matches `'London'`.
 
-| You write | The site runs |
+MySQL and T-SQL appear in two places only: the **SQL flavours** lesson and the **SQL dialects** tab, which compare the
+three dialects side by side. If someone types MySQL or T-SQL out of habit, they get a message showing the SQLite way:
+
+| You type | You're told |
 |---|---|
-| `INT NOT NULL AUTO_INCREMENT PRIMARY KEY` or `IDENTITY(1,1)` | `INTEGER PRIMARY KEY AUTOINCREMENT` |
-| `CREATE DATABASE`, `USE` | Skipped: there's already a database |
-| `DROP DATABASE` | Drops all your tables (Create tables lesson only) |
-| `ALTER TABLE t ADD a INT, b INT` | One `ADD COLUMN` per column |
-| `SELECT TOP 10 …` | `SELECT … LIMIT 10` |
-| `SHOW TABLES`, `DESCRIBE t`, `SHOW INDEX FROM t` | Equivalent queries on the schema |
-| T-SQL `SELECT … INTO #name FROM …`, `#name`, `##name` | `CREATE TEMP TABLE name AS SELECT …`, a temporary table |
-| `EXPLAIN SELECT …`, `EXPLAIN ANALYZE SELECT …` | `EXPLAIN QUERY PLAN SELECT …` (`SCAN` = full table scan, `SEARCH … USING INDEX` = index seek) |
-| `DATE_ADD(d, INTERVAL 5 DAY)`, `TIMESTAMPDIFF(YEAR, a, b)` | Built-in equivalents |
-| T-SQL `DATEDIFF(d, start, end)`, `DATEADD(d, 5, x)` | Built-in equivalents |
-
-These functions work as they do in MySQL or T-SQL: `CONCAT`, `YEAR`, `MONTH`, `DAY`, `DATEDIFF(end, start)`,
-`DATE_FORMAT`, `CURDATE`, `NOW`, `GETDATE`, `LEFT`, `RIGHT`, `LOCATE`, `CHARINDEX`, `LEN`, `REGEXP`. Text comparisons in
-Northwind ignore case, as they do with MySQL's default settings, so `'london'` matches `'London'`.
-
-**Not available:** stored procedures (`CREATE PROCEDURE`, `CALL`, `EXEC`), adding a foreign key with `ALTER TABLE`, the
-T-SQL `LIKE '[ABC]%'` character list, T-SQL `FORMAT`, T-SQL `PIVOT` / `UNPIVOT` and `PERCENTILE_CONT` / `PERCENTILE_DISC`,
-and MySQL's `RANGE … INTERVAL` window frames. Each gives a message explaining the alternative, and the lessons show those
-examples as read-only, labelled *T-SQL only* or *MySQL only*. Practise these in MySQL Workbench or SQL Server Management Studio.
+| `SELECT TOP 10 …` | TOP is T-SQL; put `LIMIT 10` at the end |
+| `YEAR(OrderDate)`, `MONTH(…)` | Use `strftime('%Y', OrderDate)` / `strftime('%m', …)` |
+| `DATEDIFF(…)` | Use `julianday(end) - julianday(start)` |
+| `DATE_ADD(d, INTERVAL 5 DAY)`, `DATEADD(…)` | Use `date(d, '+5 days')` |
+| `LEFT(s, 3)`, `RIGHT(s, 3)` | Use `substr(s, 1, 3)` / `substr(s, -3)` |
+| `LOCATE`, `CHARINDEX`, `LEN`, `DATE_FORMAT`, `NOW()`, `GETDATE()` | The SQLite function to use instead |
+| `REGEXP` | Use `GLOB '[BS]*'` or `LIKE` |
+| `AUTO_INCREMENT`, `IDENTITY(1,1)` | Use `INTEGER PRIMARY KEY AUTOINCREMENT` |
+| `SELECT … INTO #name`, `#name` | Use `CREATE TEMP TABLE name AS SELECT …` |
+| `SHOW TABLES`, `DESCRIBE t`, `SHOW INDEX FROM t` | Use `sqlite_master`, `PRAGMA table_info('t')`, `PRAGMA index_list('t')` |
+| `CREATE DATABASE`, `USE` | Not needed: a SQLite database is one file |
+| `PIVOT`, `PERCENTILE_CONT`, stored procedures | Not in SQLite, with the alternative (CASE pivots, `CUME_DIST`, views) |
 
 ### Finding your way around
 
@@ -120,7 +117,7 @@ examples as read-only, labelled *T-SQL only* or *MySQL only*. Practise these in 
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
 - **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 39").
-- **SQL dialects** – the header tab with the MySQL / T-SQL / lab comparison, available from every page.
+- **SQL dialects** – the header tab with the MySQL / T-SQL / SQLite comparison, available from every page.
 - **Next lesson** – the footer of every lesson links to the previous and next lessons.
 - **Tables** – the buttons above the editor insert a table name at the cursor (`Order Details` comes with the backticks it needs).
 - **Errors** – an error message comes with advice, for example a reminder that text needs single quotes.
@@ -303,7 +300,7 @@ select: {
     <p>Every query answers two questions…</p>
     ${C("SELECT * FROM Customers;")}                  ← an example with a Run this button
     ${C("SELECT … FROM student …", false)}            ← a read-only example (tables not in Northwind)
-    ${C("… PIVOT (…)", false, TSQL_ONLY)}             ← a read-only example labelled "T-SQL only" (or MYSQL_ONLY)
+    ${C("…", false, 'Your own label')}               ← a read-only example with a custom label
     ${TIP('<code>SELECT</code> filters columns…')}    ← a pink tip box
     <h3>Apostrophes inside text</h3>                  ← a sub-heading
   `,
@@ -321,8 +318,8 @@ work. A checkpoint is a lesson with `checkpoint: true` and no `learn`.
 
 ### Exercises
 
-Each exercise is marked by running its `sol` and comparing results, so `sol` must be a query that works here (MySQL
-syntax is fine; see [Which SQL does it run?](#which-sql-does-it-run)).
+Each exercise is marked by running its `sol` and comparing results, so `sol` must be a query that runs in SQLite (see
+[Which SQL does it run?](#which-sql-does-it-run)).
 
 - Add `ordered: [columns]` when the task asks for an order, listing the column positions (from 0) that are sorted on.
   `ordered: [1]` means "the second column must come back in the same order". Listing only the sort columns means rows
@@ -380,7 +377,7 @@ used twice, or if a multiple-choice question doesn't have exactly four different
 | The What's an ERD page and its questions | The `v-erd` section of `src/index.html`, and `drawLesson()` in `src/app.js` |
 | The Create tables steps | `BUILD_STEPS` in `src/app.js` |
 | The Northwind table notes and diagram layout | `NW_NOTES` and `NW_POS` in `src/app.js` |
-| MySQL/T-SQL syntax the site accepts | `transform()`, `rewriteFns()` and `addFns()` in `src/engine.js` |
+| The messages for MySQL / T-SQL syntax | `OTHER_DIALECTS` and `FN_HINTS` in `src/engine.js` |
 | Advice shown with error messages | `friendlyError()` in `src/engine.js` |
 | Header, home hero and footer | `src/index.html` (styles under "Header", "Home hero" and "Footer" in `src/styles.css`) |
 
@@ -405,14 +402,14 @@ nothing to host except that one file.
 └── src/
     ├── index.html                 The page shell: header, the static pages, and placeholders filled by the build
     ├── styles.css                 Sparta Global theme
-    ├── engine.js                  The SQL layer: dialect translation, running scripts, friendly errors, answer checking
+    ├── engine.js                  The SQL layer: running scripts, SQLite guidance for other dialects, friendly errors, answer checking
     ├── app.js                     Pages and UI: path, lessons, Foundations pages, ERDs, Free practice, progress
     ├── quiz.js                    The query quiz
     ├── assets/                    Sparta Global logos and favicon (inlined into the page by the build)
     └── content/
         ├── lessons.js             Units, lessons, examples and exercises
         ├── intro.js               The What's a database lesson text and its questions
-        ├── dialects.js            The SQL flavours lesson text and the MySQL / T-SQL / lab comparison
+        ├── dialects.js            The SQL flavours lesson text and the MySQL / T-SQL / SQLite comparison
         └── quizzes.js             The end-of-unit quizzes, the Query quiz, the Multiple-choice quiz and the pass mark
 ```
 
@@ -442,7 +439,7 @@ Every important element has a stable hook:
 | **Any lesson** | `breadcrumb` · `breadcrumb-path` · `breadcrumb-unit` · `lesson-position` · `lesson-footer` · `lesson-status` (with `data-done`) · `previous-lesson` · `next-lesson` |
 | **What's a database lesson** | `databases-title` · `databases-body` · `databases-see-table` · `databases-check` · `databases-check-question-1` … `-3` (with `data-answer`) · options `databases-check-question-N-option-a` and `…-option-a-input` · `databases-check-question-N-feedback` |
 | **SQL flavours lesson** | `flavours-title` · `flavours-body` · the comparison (prefix `flavours-`, see next row) · `flavours-check` · `flavours-check-question-1` … `-3` (with `data-answer`) · options `flavours-check-question-N-option-a` and `…-option-a-input` · `flavours-check-question-N-feedback` |
-| **Dialect comparison** | On the SQL dialects page the prefix is `dialects-` (`dialects-title`, `dialects-flavours-link`); in the lesson it's `flavours-`. `<prefix>-tabs` · tabs `<prefix>-tab-side`, `-tab-mysql`, `-tab-tsql`, `-tab-lab` (with `aria-selected`; Left/Right arrows move between them) · `<prefix>-panel` (with `data-tab`) · rows `<prefix>-row-1` … · on the lab tab `<prefix>-try-N` |
+| **Dialect comparison** | On the SQL dialects page the prefix is `dialects-` (`dialects-title`, `dialects-flavours-link`); in the lesson it's `flavours-`. `<prefix>-tabs` · tabs `<prefix>-tab-side`, `-tab-mysql`, `-tab-tsql`, `-tab-lab` (the SQLite tab; with `aria-selected`; Left/Right arrows move between them) · `<prefix>-panel` (with `data-tab`) · rows `<prefix>-row-1` … · on the SQLite tab `<prefix>-try-N` |
 | **Northwind ERD pop-up** | Open buttons: `lesson-open-erd` · `exercise-open-erd` · `free-open-erd` · `question-N-open-erd` (quizzes) · the pop-up: `erd-dialog` · `erd-dialog-close` · `erd-dialog-diagram` · each table `dialog-table-customers`, `dialog-table-order-details` … · `erd-dialog-detail` · `erd-dialog-table` (the selected table's name) |
 | **Lesson tabs** | `lesson-title` · `lesson-tabs` · `tab-learn` · `tab-exercise-1` … (with `data-done`) · `lesson-body` |
 | **Learn tab** | `example-1` … · `run-example-1` … · `start-exercises` |
