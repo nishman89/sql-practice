@@ -3,30 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SQL practice lab</title>
+<title>SQL Practice Lab | Sparta Global</title>
+<meta name="description" content="Learn and practise SQL against the Northwind database: a learning path, query quizzes and free practice, all in your browser.">
+<link rel="icon" type="image/svg+xml" href="__FAVICON__">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /*__CSS__*/
 </style>
 </head>
 <body>
-<header class="mast" data-testid="site-header">
-  <div class="mast-in">
-    <div class="brand"><a href="#/path" class="bname" data-testid="home-logo">SQL practice lab</a><small>Runs in your browser. Nothing to install.</small></div>
-    <nav class="steps" aria-label="Main" data-testid="main-nav">
-      <button data-go="path" data-testid="nav-path">Learning path</button>
-      <button data-go="quiz" data-testid="nav-quiz">Query quiz</button>
-      <button data-go="free" data-testid="nav-free">Free practice</button>
+<a class="visually-hidden skip" href="#main">Skip to content</a>
+<header class="site-header mast" id="site-header" data-testid="site-header">
+  <div class="container bar">
+    <a class="brand" href="#/path" aria-label="Sparta Global SQL Practice Lab home" id="home-logo" data-testid="home-logo">
+      <img src="__SPARTA_LOGO__" alt="Sparta Global" width="120" height="47">
+      <span class="brand__label">SQL PRACTICE LAB</span>
+    </a>
+
+    <!-- Desktop navigation -->
+    <nav class="nav-desktop" id="main-nav" data-testid="main-nav" aria-label="Main">
+      <ul>
+        <li><a href="#/path" data-nav="path" data-testid="nav-path">Learning path</a></li>
+        <li><a href="#/quiz" data-nav="quiz" data-testid="nav-quiz">Query quiz</a></li>
+        <li><a href="#/free" data-nav="free" data-testid="nav-free">Free practice</a></li>
+      </ul>
     </nav>
-    <button class="theme-btn" id="themeBtn" data-testid="theme-toggle" aria-label="Switch light or dark theme" title="Switch theme">
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>
-    </button>
+
+    <!-- Phones: one "Menu" button that opens a full-width panel -->
+    <details class="nav-mobile" id="mobile-menu" data-testid="mobile-menu">
+      <summary aria-label="Open menu"><span class="burger" aria-hidden="true"></span>Menu</summary>
+      <nav aria-label="Main (mobile)">
+        <ul>
+          <li><a href="#/path" data-nav="path" data-testid="mobile-nav-path">Learning path</a></li>
+          <li><a href="#/quiz" data-nav="quiz" data-testid="mobile-nav-quiz">Query quiz</a></li>
+          <li><a href="#/free" data-nav="free" data-testid="mobile-nav-free">Free practice</a></li>
+        </ul>
+      </nav>
+    </details>
   </div>
 </header>
 
-<main id="main">
+<section class="hero" id="pathHero" data-testid="hero" hidden>
+  <div class="container hero__inner">
+    <span class="hero__badge">MySQL and T-SQL</span>
+    <h1 class="hero__title" id="h-path">SQL Practice Lab<span class="hero__dot">.</span></h1>
+    <p class="hero__sub">Learn to query a real database, one lesson at a time, right in your browser.</p>
+    <div class="hero__actions" id="heroActions"></div>
+  </div>
+</section>
+
+<main id="main" class="container">
   <nav class="crumbs" id="crumbs" aria-label="Breadcrumb" data-testid="breadcrumb" hidden></nav>
   <div class="loading" id="boot"><div><div class="spinner"></div>Starting the database engine…</div></div>
 
@@ -161,6 +189,15 @@
   <section class="view" id="v-quiz" aria-labelledby="h-quiz"></section>
   <div id="lessonFoot"></div>
 </main>
+<button class="to-top" type="button" id="back-to-top" data-testid="back-to-top" aria-label="Back to top" hidden>↑</button>
+
+<footer class="site-footer" data-testid="site-footer">
+  <div class="container inner">
+    <img src="__SPARTA_LOGO_WHITE__" alt="Sparta Global" width="110" height="43">
+    <p>The Northwind sample database is © Microsoft and is used under the MIT licence. Queries run in your browser using sql.js (SQLite), so nothing you type is sent anywhere.</p>
+    <p class="small">© <span id="footer-year">2026</span> Sparta Global. Progress is saved in your browser only.</p>
+  </div>
+</footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- Built by scripts/build.mjs: the placeholders below are replaced with sql.js, the Northwind database and the app code -->

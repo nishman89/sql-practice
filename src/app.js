@@ -12,13 +12,11 @@ const store = {
 const P = Object.assign({ buildStep:0, buildDone:{}, exDone:{}, drafts:{}, tab:{}, quiz:{}, quizzes:{}, mapTables:[], sandbox:null, theme:null }, store.read());
 const save = () => store.write(P);
 
-/* ---------- Theme ---------- */
-function applyTheme(){ if (P.theme) document.documentElement.setAttribute('data-theme', P.theme); else document.documentElement.removeAttribute('data-theme'); }
-applyTheme();
-$('#themeBtn').addEventListener('click', () => {
-  const dark = P.theme ? P.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-  P.theme = dark ? 'light' : 'dark'; applyTheme(); save();
-});
+/* ---------- Header, footer and back-to-top (shared look with the ISTQB study site) ---------- */
+$('#footer-year').textContent=String(new Date().getFullYear());
+(()=>{ const b=$('#back-to-top'); const t=()=>{ b.hidden=window.scrollY<900; }; addEventListener('scroll',t,{passive:true}); t();
+  b.addEventListener('click',()=>window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})); })();
+document.addEventListener('click',e=>{ const m=$('#mobile-menu'); if (m.open && (!m.contains(e.target) || e.target.closest('a'))) m.open=false; });
 
 /* ---------- Databases ---------- */
 let SQL, nw, sb;
@@ -244,7 +242,8 @@ function route(){
   current={view,lesson:lid};
   VIEWS.forEach(v=>$('#v-'+v).classList.toggle('on', v===view));
   const section = view==='free'?'free' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
-  $$('nav.steps button').forEach(b=>{ if (b.dataset.go===section) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  $$('[data-nav]').forEach(b=>{ if (b.dataset.nav===section) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  $('#pathHero').hidden = view!=='path'; $('#main').classList.toggle('on-path', view==='path');
   if (lid){ P.last=lid; save(); }
   if (view==='path') renderPath();
   if (view==='map') drawMap();
@@ -255,7 +254,7 @@ function route(){
   if (view==='quiz') openQuiz(parts[1]);
   renderChrome();
   window.scrollTo({top:0});
-  const h1=$('#v-'+view+' h1'); if (h1){ h1.setAttribute('tabindex','-1'); h1.focus({preventScroll:true}); }
+  const h1=view==='path'?$('#h-path'):$('#v-'+view+' h1'); if (h1){ h1.setAttribute('tabindex','-1'); h1.focus({preventScroll:true}); }
 }
 addEventListener('hashchange', route);
 function goto(to){ const hs = (to==='path'||to==='free'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
@@ -295,11 +294,12 @@ function renderPath(){
   UNITS.forEach((u,ui)=>{ if (ui) trail.append(h('b')); u.lessons.forEach(id=>trail.append(h('i',{class:(lessonDone(id)?'d ':'')+(nxt&&nxt.id===id?'n ':'')+(LESSONS[id].checkpoint?'cp':''),title:LESSONS[id].title}))); });
   card.append(trail, h('div',{class:'hero-stats','data-testid':'overall-progress','data-lessons-done':String(doneL),'data-exercises-done':String(exDone)}, `${doneL} of ${PATH.length} lessons complete. ${exDone} of ${exTotal} exercises solved.`));
   card.append(h('div',{style:'display:flex;gap:10px;flex-wrap:wrap;align-items:center'},
-    nxt ? h('button',{class:'btn primary',type:'button','data-go':nxt.id,'data-testid':'continue'}, doneL?'Continue':'Start the path') : h('button',{class:'btn primary',type:'button','data-go':'free'},'Free practice'),
-    (doneL||exDone) ? h('button',{class:'btn ghost small',type:'button',onclick:resetAll,'data-testid':'reset-progress'},'Reset my progress') : null));
-  v.append(h('div',{class:'path-hero'},
-    h('div',{}, h('h1',{class:'dot',id:'h-path'},'Learn SQL one query at a time'), h('p',{class:'lede'},'Six units take you from reading a database diagram to writing subqueries and views. Every lesson shows you an idea, lets you run it, then gives you exercises that are checked against the real Northwind data. Your progress is saved on this device.')),
-    card));
+    nxt ? h('button',{class:'btn primary',type:'button','data-go':nxt.id,'data-testid':'continue'}, doneL?'Continue':'Start the path') : h('button',{class:'btn primary',type:'button','data-go':'free'},'Free practice')));
+  v.append(h('div',{class:'path-hero'}, card));
+  const ha=$('#heroActions'); ha.innerHTML='';
+  ha.append(h('button',{class:'btn primary',type:'button','data-go':nxt?nxt.id:'free','data-testid':'hero-start'}, nxt?(doneL?'Continue learning':'Start the learning path'):'Free practice'),
+    h('button',{class:'btn light',type:'button','data-go':'quiz','data-testid':'hero-quiz'},'Take a query quiz'),
+    h('button',{class:'btn light',type:'button','data-go':'free','data-testid':'hero-free'},'Free practice'));
   let num=0;
   UNITS.forEach((u,ui)=>{
     const done=u.lessons.filter(lessonDone).length;
@@ -316,6 +316,7 @@ function renderPath(){
       h('div',{class:'unit-h'}, h('div',{class:'n'},`Unit ${ui+1}`), h('h2',{},u.title), h('p',{},u.blurb), h('div',{class:'meta'}, `${done} of ${u.lessons.length} lessons complete`)),
       ol));
   });
+  v.append(h('p',{class:'progress-note'}, 'Your progress is saved in this browser only. ', (doneL||exDone)?h('button',{class:'linklike',type:'button',onclick:resetAll,'data-testid':'reset-progress'},'Reset my progress'):null));
 }
 function resetAll(){
   if (!confirm('Reset all your progress, drafts and the tables you built? This can\'t be undone.')) return;

@@ -16,7 +16,19 @@ const parts = [
   ['__NWDB__', fs.readFileSync(path.join(root, 'data/northwind.db')).toString('base64')],
 ];
 
+const dataUri = (p, type) => `data:${type};base64,${fs.readFileSync(path.join(root, p)).toString('base64')}`;
+const assets = [
+  ['__SPARTA_LOGO__', dataUri('src/assets/sparta-logo.png', 'image/png')],
+  ['__SPARTA_LOGO_WHITE__', dataUri('src/assets/sparta-logo-white.png', 'image/png')],
+  ['__FAVICON__', dataUri('src/assets/favicon.svg', 'image/svg+xml')],
+];
+
 let html = read('src/index.html');
+// Images are inlined as data URIs so the site stays a single file
+for (const [marker, value] of assets) {
+  if (!html.includes(marker)) throw new Error(`Placeholder ${marker} is missing from src/index.html`);
+  html = html.split(marker).join(value);
+}
 for (const [marker, value] of parts) {
   const at = html.indexOf(marker);
   if (at < 0) throw new Error(`Placeholder ${marker} is missing from src/index.html`);
