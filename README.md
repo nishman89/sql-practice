@@ -20,6 +20,7 @@ tablets and phones.
 | Page | What it does |
 |---|---|
 | **Learning path** (home) | Every unit and lesson as a route. Finished lessons are ticked, the next lesson is highlighted and checkpoints are shown as diamonds. The **Continue** card shows the next unfinished lesson and a trail of progress across the whole path. |
+| **Capstone project** | The last lesson on the path, from the Sparta Global SQL project brief: create Course and Spartan tables, add data, draw an ERD of an improved design, then answer nine Northwind questions, in the learner's **own** SQL Server or MySQL (it links to the install guides first). Each question shows the result to check against and the lesson to revise, with 🐬 / 🪟 reminders, a tick-off checklist that completes the lesson, and a Print or save as PDF button. Model answers stay with trainers. |
 | **Install on your computer** | Step-by-step guides for practising outside the browser, linked from the home page and the Introduction: 🪟 SQL Server with Docker and VS Code (Windows and Mac, using the `kcornwall/sqlnorthwind` image), 🪟 SQL Server on Windows with SSMS, 🐬 MySQL on Windows, 🐬 MySQL on Mac, and 🐬 MySQL with Docker. Every command has a Copy button, and the MySQL Northwind script is downloadable from the page. |
 | **Introduction** (header tab) | How the site works: how it's organised, what's inside a lesson, how answers are marked, the **Show Northwind ERD** button, the dialect icons and where progress is saved. |
 | **What's a database** | The first lesson: what a database and a DBMS are, why not a spreadsheet, tables, rows, columns, primary and foreign keys, data types, NoSQL, and what SQL does (DDL, DML and CRUD), with a labelled example table and three **Check yourself** questions. |
@@ -44,8 +45,9 @@ tablets and phones.
 | **5. Subqueries** | Introduction to subqueries · Subqueries in WHERE · Subqueries in FROM and SELECT · EXISTS and NOT EXISTS · *Checkpoint* |
 | **6. Going further** | CASE statements · Date and string functions · Views · Stored procedures |
 | **7. Advanced topics** | Window functions · Ranking functions · Comparing rows · Window frames · Statistical functions · Common table expressions · Temporary tables · Pivoting · Performance tuning · *Checkpoint* |
+| **8. Capstone project** | Capstone project (in the learner's own SQL Server or MySQL) |
 
-44 lessons, 132 exercises and 118 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
+45 lessons, 132 exercises and 118 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
 exercises. **Inserting, updating and deleting data** undoes every run straight afterwards, so learners can practise
 `INSERT`, `UPDATE` and `DELETE` on Northwind without changing it. **Introduction to joins** uses Venn diagrams and two small made-up tables (students and courses, built with
@@ -129,7 +131,7 @@ showing the SQLite way:
 - **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Learning path**, **Introduction**, **SQL dialects**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
-- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 44").
+- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 45").
 - **SQL dialects** – the header tab with the MySQL / T-SQL / SQLite comparison, available from every page.
 - **Next lesson** – the footer of every lesson links to the previous and next lessons.
 - **Tables** – the buttons above the editor insert a table name at the cursor (`Order Details` comes with the backticks it needs).
@@ -414,6 +416,7 @@ used twice, or if a multiple-choice question doesn't have exactly four different
 | The Northwind table notes and diagram layout | `NW_NOTES` and `NW_POS` in `src/app.js` |
 | The messages for MySQL / T-SQL syntax | `OTHER_DIALECTS` and `FN_HINTS` in `src/engine.js` |
 | Advice shown with error messages | `friendlyError()` in `src/engine.js` |
+| The capstone project | `CAPSTONE_HTML` and `CAPSTONE_TASKS` in `src/content/capstone.js` (`CAP_Q()` is one question with its expected result and revision links) |
 | The install guides | `INSTALL_INTRO` and `INSTALL_OPTIONS` in `src/content/install.js` (one entry per tab; `CMD()` makes a command with a Copy button) |
 | Header, home hero and footer | `src/index.html` (styles under "Header", "Home hero" and "Footer" in `src/styles.css`) |
 
@@ -447,6 +450,7 @@ nothing to host except that one file.
         ├── lessons.js             Units, lessons, examples and exercises
         ├── intro.js               The What's a database lesson, the Introduction page, and their questions
         ├── install.js             The Install on your computer guides
+        ├── capstone.js            The capstone project brief, expected results and checklist
         ├── dialects.js            The SQL flavours lesson text and the MySQL / T-SQL / SQLite comparison
         └── quizzes.js             The end-of-unit quizzes, the Query quiz, the Multiple-choice quiz and the pass mark
 ```
@@ -473,6 +477,7 @@ Every important element has a stable hook:
 | **Header** (every page) | `site-header` · `home-logo` · `main-nav` · `nav-path` · `nav-intro` · `nav-dialects` · `nav-quiz` · `nav-free` · `back-to-top` · `site-footer` |
 | **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-intro` · `mobile-nav-dialects` · `mobile-nav-quiz` · `mobile-nav-free` |
 | **Home hero** | `hero` · `hero-start` · `hero-intro` · `hero-install` · `hero-quiz` · `hero-free` |
+| **Capstone project** | `capstone-title` · `capstone-print` · `capstone-body` · `capstone-before` · `capstone-install-link` · `capstone-q-1-1` … `capstone-q-2-9` · `capstone-checklist` · `capstone-task-setup`, `capstone-task-1-1` … `capstone-task-2-9`, `capstone-task-submit` |
 | **Install on your computer** | `install-title` · `install-intro` · `install-guides` · `install-tab-docker-sqlserver` / `-windows-sqlserver` / `-windows-mysql` / `-mac-mysql` / `-docker-mysql` · `install-panel` (with `data-guide`) · `copy-command` · `download-mysql-northwind` |
 | **Introduction** | `intro-title` · `intro-body` · `intro-install-link` · `intro-card-path` / `-dialects` / `-quizzes` / `-free` · `intro-open-erd` · `intro-start` |
 | **Learning path** | `continue-card` · `overall-progress` (with `data-lessons-done` and `data-exercises-done`) · `continue` · `reset-progress` · `unit-1` … `unit-7` · `unit-quiz-1` … `unit-quiz-7` (each unit's quiz button) · `unit-quiz-N-score` · `lesson-<id>` (with `data-status`: `done`, `next`, `started` or `todo`) · `lesson-link-<id>` · `lesson-status-<id>` · `lesson-cmds-<id>` (the command chips) |

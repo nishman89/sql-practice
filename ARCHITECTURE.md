@@ -46,6 +46,7 @@ after `#`, shows one section, and calls its render function.
 |---|---|---|
 | `#/path` | `v-path` | `renderPath()` |
 | `#/intro` | `v-intro` | `drawIntro()`: `SITE_INTRO` from `src/content/intro.js` |
+| `#/lesson/capstone` | `v-capstone` | `drawCapstone()`: `CAPSTONE_HTML` and a checklist from `CAPSTONE_TASKS`, ticks saved in `P.capstone` |
 | `#/install` | `v-install` | `drawInstall()`: `INSTALL_INTRO` and one tab per entry in `INSTALL_OPTIONS` (`src/content/install.js`); `addCopyButtons()` adds a Copy button to every `pre.cmd` |
 | `#/lesson/databases` | `v-databases` | `drawDatabases()`: lesson text and `renderCheck()` |
 | `#/lesson/flavours` | `v-flavours` | `drawFlavours()`: lesson text, `renderDialectTabs()`, `renderCheck()` |
@@ -268,6 +269,7 @@ multiple choice, otherwise it's a query task. A quiz can mix both, as the end-of
 |---|---|---|
 | What's a database | All three Check yourself questions are answered correctly (`P.dbDone`) | `drawDatabases()` |
 | SQL flavours | All three Check yourself questions are answered correctly (`P.flavDone`) | `drawFlavours()` |
+| Capstone project | Every task in its checklist is ticked (`P.capstone`) | `drawCapstone()` |
 | What's an ERD | All three Check yourself questions are answered correctly (`P.quizDone`) | `drawLesson()` |
 | Create tables | All six steps pass their checklist (`P.buildDone`) | `BUILD_STEPS`, `renderBuild()`, `runBuild()` |
 | Meet Northwind | Three or more tables have been opened (`P.mapTables`) | `drawMap()` |
@@ -493,6 +495,7 @@ There is no server. Everything a visitor sees comes from the one file; the only 
 | `src/engine.js` | Dialect layer, `runScript()`, `friendlyError()`, extra SQL functions, `expected()` and `compare()` | - (no DOM) |
 | `src/content/lessons.js` | `UNITS`, `LESSONS`, `PATH`, and the `C()` / `TIP()` helpers | `esc()` from `engine.js` |
 | `src/content/intro.js` | `DATABASES_LEARN`, `DATABASES_CHECK`, `SITE_INTRO` | - |
+| `src/content/capstone.js` | `CAPSTONE_HTML`, `CAPSTONE_TASKS`, `CAP_Q()` | `DIFF()`, `TIP()` from `lessons.js` |
 | `src/content/install.js` | `INSTALL_INTRO`, `INSTALL_OPTIONS`, `CMD()` | `TIP()` from `lessons.js` |
 | `public/downloads/MySQLNorthwindDatabase.sql` | The MySQL Northwind script (from the course setup pack; the reserved word `RANK` is quoted so it runs on MySQL 8+) | - |
 | `src/content/dialects.js` | `DIALECTS`, `DIALECT_INFO`, `FLAVOURS_LEARN`, `FLAVOURS_CHECK` | `esc()` from `engine.js` |
