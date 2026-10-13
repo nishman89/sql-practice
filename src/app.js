@@ -387,9 +387,9 @@ function renderDialectTabs(host, tp){
     if (cur==='side'){
       DIALECTS.forEach((r,i)=>{
         if (r.group!==group){ group=r.group; tb.append(h('tr',{class:'grp'}, h('th',{colspan:'4',scope:'colgroup'}, group))); }
-        tb.append(h('tr',{'data-testid':`${tp}-row-${i+1}`}, h('td',{},r.task), h('td',{html:r.mysql}), h('td',{html:r.tsql}), h('td',{class:'this-col',html:r.lab})));
+        tb.append(h('tr',{'data-testid':`${tp}-row-${i+1}`}, h('td',{},r.task), h('td',{html:r.mysql}), h('td',{html:r.tsql}), h('td',{html:r.lab})));
       });
-      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},h('tr',{},h('th',{},'Task'),h('th',{},'🐬 MySQL'),h('th',{},'🪟 T-SQL'),h('th',{class:'this-col'},'🪶 SQLite'))), tb)));
+      panel.append(h('div',{class:'tbl-wrap'}, h('table',{class:'mini dialect-table'}, h('thead',{},h('tr',{},h('th',{},'Task'),h('th',{},'🐬 MySQL'),h('th',{},'🪟 T-SQL'),h('th',{},'🪶 SQLite'))), tb)));
     } else {
       const info=DIALECT_INFO[cur];
       panel.append(h('p',{class:'dinfo'}, h('b',{},info.name+'. '), info.who+' ', h('span',{class:'muted'},`Tool: ${info.tool}.`)));

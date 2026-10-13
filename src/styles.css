@@ -57,7 +57,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* Home hero, matching the ISTQB study site */
 .hero{background:var(--ink);color:#fff;padding:3.5rem 0;border-bottom:6px solid var(--pink)}
-.hero__badge{display:inline-block;padding:.3rem .9rem;border:2px solid var(--pink-soft);border-radius:999px;color:var(--pink-soft);font-weight:700;font-size:.85rem;letter-spacing:.08em}
 .hero__title{font-size:clamp(2.5rem,7vw,4.5rem);line-height:1.05;margin:1rem 0 .5rem;color:#fff}
 .hero__dot{color:var(--pink)}
 .hero__sub{font-size:clamp(1.1rem,2.4vw,1.4rem);color:#ddd;margin:0;max-width:52rem}
@@ -509,25 +508,19 @@ table.dialect-table code{white-space:normal;overflow-wrap:anywhere}
 .quiz-group-h{margin:30px 0 4px;font-size:1.5rem}
 .unit-cards{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));margin-top:14px}
 .unit-cards .quiz-card h2{font-size:1.2rem}
-.flavour.this{border-top-color:var(--pink);box-shadow:0 0 0 2px var(--pink-soft),var(--shadow)}
-table.dialect-table th.this-col{background:var(--pink-dark)}
-table.dialect-table td.this-col{background:var(--pink-tint)}
 
 /* Dialect callouts (🪶 SQLite, 🐬 MySQL, 🪟 T-SQL) */
 .ddiff{background:var(--paper);border-radius:12px;box-shadow:var(--shadow);margin:6px 0 18px;overflow:hidden;border-left:5px solid var(--ink)}
 .ddiff-h{font-weight:700;font-size:.92rem;padding:10px 14px 6px}
 .ddiff-row{display:grid;grid-template-columns:11.5rem minmax(0,1fr);gap:12px;align-items:start;padding:8px 14px;border-top:1px solid var(--line)}
-.ddiff-row.sqlite{background:var(--pink-tint)}
 .ddiff-row pre{margin:0;font-family:var(--f-mono);font-size:.84rem;white-space:pre-wrap;overflow-wrap:anywhere}
 .ddiff-row code{background:transparent;padding:0;font-size:.84rem;overflow-wrap:anywhere}
 .ddiff-text{font-size:.93rem;color:var(--ink-2)}
 .ddiff-tag{font-weight:700;font-size:.88rem;white-space:nowrap;display:inline-flex;gap:6px;align-items:center}
-.ddiff-row.sqlite .ddiff-tag{color:var(--pink-dark)}
 .ddiff-note{margin:0;padding:8px 14px 10px;border-top:1px solid var(--line);font-size:.9rem;color:var(--ink-2)}
 @media (max-width:640px){ .ddiff-row{grid-template-columns:minmax(0,1fr);gap:4px} }
 .dialect-legend{list-style:none;padding:0;margin:8px 0 16px;display:grid;gap:8px}
 .dialect-legend .ddiff-tag{background:var(--paper);border-radius:999px;padding:3px 12px;box-shadow:var(--shadow);margin-right:6px}
-.dialect-legend .ddiff-tag.sqlite{color:var(--pink-dark)}
 .ficon{font-size:1.1em}
 .example.readonly .tag{font-weight:700}
 

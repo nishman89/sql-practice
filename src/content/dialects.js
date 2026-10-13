@@ -62,7 +62,7 @@ const FLAVOURS_LEARN = `
 <div class="flavour-cards">
   <div class="flavour mysql"><b><span class="ficon" aria-hidden="true">🐬</span> MySQL</b><span>Open source, owned by Oracle. Very common behind websites. Used with MySQL Workbench.</span></div>
   <div class="flavour tsql"><b><span class="ficon" aria-hidden="true">🪟</span> T-SQL</b><span>Transact-SQL, Microsoft's dialect for SQL Server and Azure SQL. Used with SSMS.</span></div>
-  <div class="flavour sqlite this"><b><span class="ficon" aria-hidden="true">🪶</span> SQLite</b><span>A small engine built into phones, apps and browsers. <strong>This course uses SQLite</strong>, and it runs right here.</span></div>
+  <div class="flavour sqlite"><b><span class="ficon" aria-hidden="true">🪶</span> SQLite</b><span>A small engine built into phones, apps and browsers. <strong>This course uses SQLite</strong>, and it runs right here.</span></div>
 </div>
 <p>There are others, too: PostgreSQL is popular for newer applications, and Oracle Database has its own dialect, PL/SQL. Once you know one flavour well, picking up another is mostly a matter of looking up the differences.</p>
 <div class="two-col">
