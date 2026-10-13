@@ -760,7 +760,7 @@ function renderLessonBody(){
     body.innerHTML=L.learn; wireTabs(body);
     $$('pre.ex',body).forEach((pre,n)=>{
       const sql=pre.textContent; const wrap=h('div',{class:'example','data-testid':`example-${n+1}`}); pre.replaceWith(wrap); wrap.append(pre);
-      if (pre.hasAttribute('data-norun')){ wrap.classList.add('readonly'); wrap.prepend(h('span',{class:'tag'}, pre.dataset.label || 'Read only: these tables aren\'t in Northwind')); }
+      if (pre.hasAttribute('data-norun')){ wrap.classList.add('readonly'); wrap.prepend(h('span',{class:'tag'}, pre.dataset.label || 'Try this in your own database')); }
       else { wrap.classList.add('has-run'); wrap.append(h('button',{class:'btn small run',type:'button','data-testid':`run-example-${n+1}`,onclick:()=>{ lEd.value=sql; P.drafts[draftKey()]=sql; save(); runLesson(); if (innerWidth<1020) $('#lEditor').scrollIntoView({block:'start'}); }},'Run this')); }
     });
     if (L.ex) body.append(h('p',{style:'margin-top:26px'}, h('button',{class:'btn primary',type:'button','data-testid':'start-exercises',onclick:()=>setTab(0)}, `Start the exercises (${L.ex.length})`)));

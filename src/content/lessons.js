@@ -39,7 +39,7 @@ const DIFF = o => {
   const sub = o.common && rows.length ? `<div class="ddiff-sub">${o.otherTitle||'Where they differ'}</div>` : '';
   return `<div class="ddiff">${o.title?`<div class="ddiff-h">${o.title}</div>`:''}${common}${sub}${rows.map(k=>`<div class="ddiff-row ${k}"><span class="ddiff-tag"><span aria-hidden="true">${DIALECT_ICON[k]}</span> ${DIALECT_LABEL[k]}</span>${val(o[k])}</div>`).join('')}${o.note?`<p class="ddiff-note">${o.note}</p>`:''}</div>`;
 };
-const READ_ONLY = (dialect, tool) => `${DIALECT_ICON[dialect]} ${DIALECT_LABEL[dialect]}: read it here, run it in ${tool}`;
+const READ_ONLY = (dialect, tool) => `${DIALECT_ICON[dialect]} ${DIALECT_LABEL[dialect]}: try this in ${tool}`;
 
 /* "Same in all three" note, for lessons where the dialects don't differ */
 const SAME = extra => `<div class="dsame"><span class="dsame-icons" aria-hidden="true">🪶 🐬 🪟</span><div><strong>Same in SQLite, MySQL and T-SQL.</strong> ${extra || 'Everything in this lesson works the same in all three.'}</div></div>`;
@@ -357,6 +357,10 @@ ${C('SELECT CompanyName, City, Country\nFROM Customers;')}
 <p><code>WHERE</code> keeps only the rows that match a condition. Text values go in single quotes; numbers don't.</p>
 ${C("SELECT CompanyName, City\nFROM Customers\nWHERE City = 'Paris';")}
 ${C('SELECT ProductName, UnitsInStock\nFROM Products\nWHERE UnitsInStock > 100;')}
+<h3>The order you write it vs the order it runs</h3>
+<p>You write <code>SELECT</code> first, but the database doesn't run it first. It finds the table (<code>FROM</code>) and filters the rows (<code>WHERE</code>) before it works out the columns in <code>SELECT</code>:</p>
+${RUN_ORDER(['SELECT','FROM'])}
+<p>You'll meet the other clauses as you go: <code>ORDER BY</code> and <code>DISTINCT</code> later in this unit, and <code>GROUP BY</code> and <code>HAVING</code> in Unit 3. This order explains a lot of SQL's rules, so the diagram will come up again.</p>
 ${TIP('<code>SELECT</code> filters <strong>columns</strong>. <code>WHERE</code> filters <strong>rows</strong>. They work independently.')}
 <p>To count the matching rows, use <code>COUNT(*)</code>. <code>AS</code> gives the result column a readable name, called an alias.</p>
 ${C("SELECT COUNT(*) AS 'Number of Customers'\nFROM Customers\nWHERE City = 'Paris';")}
@@ -409,10 +413,8 @@ ${C("SELECT CompanyName, ContactName\nFROM Customers\nWHERE Country = 'France'\n
 ${C('SELECT ProductName, UnitPrice\nFROM Products\nORDER BY UnitPrice DESC;')}
 <p>Add more columns to break ties. Here customers are sorted by country, and alphabetically within each country:</p>
 ${C('SELECT Country, CompanyName\nFROM Customers\nORDER BY Country ASC, CompanyName ASC;')}
-<h3>The order SQL runs in</h3>
-<p>The order you <em>write</em> a query isn't the order the database <em>runs</em> it. You write <code>SELECT</code> first, but it runs fifth, after the rows have been found and filtered:</p>
-${RUN_ORDER(['SELECT','FROM'])}
-<p>So the database finds the table (<code>FROM</code>) and filters the rows (<code>WHERE</code>) before it works out the columns in <code>SELECT</code>, and it sorts (<code>ORDER BY</code>) last of all. You'll meet <code>GROUP BY</code> and <code>HAVING</code> in Unit 3, and <code>DISTINCT</code> in the next lesson.</p>
+<h3>Why ORDER BY can use an alias</h3>
+<p>Remember the diagram from <a href="#/lesson/select">Simple queries</a>: the database runs <code>ORDER BY</code> last, after <code>SELECT</code>. By then the alias exists, so <code>ORDER BY "Stock Value"</code> works. <code>WHERE</code> runs before <code>SELECT</code>, which is why it can't use an alias.</p>
 <p>Because <code>ORDER BY</code> runs last, it can use an alias you created in <code>SELECT</code>:</p>
 ${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products\nORDER BY \"Stock Value\" DESC;")}
 ${TIP('You can also write <code>ORDER BY 2</code> to sort by the second column, but avoid it. If someone reorders the columns later, it silently sorts the wrong one.')}
@@ -428,7 +430,7 @@ ${DIFF({title:'Sorting in each dialect', common:'ORDER BY Country, CompanyName D
 <p><code>DISTINCT</code> removes duplicate rows from your result. Many customers share a country, but each country appears once here:</p>
 ${C("SELECT DISTINCT Country\nFROM Customers\nWHERE ContactTitle = 'Owner';")}
 ${TIP('<code>DISTINCT</code> looks at all the selected columns together. A row is only a duplicate if <em>every</em> column matches, so more columns usually means fewer duplicates.')}
-<p>Why all the columns? Look back at the diagram in <a href="#/lesson/sorting">Sorting data</a>: <code>DISTINCT</code> runs at step 6, straight after <code>SELECT</code>. By then the columns have been chosen, so it compares the finished rows. Add a column and it compares that too:</p>
+<p>Why all the columns? Look back at the diagram in <a href="#/lesson/select">Simple queries</a>: <code>DISTINCT</code> runs at step 6, straight after <code>SELECT</code>. By then the columns have been chosen, so it compares the finished rows. Add a column and it compares that too:</p>
 ${C("SELECT DISTINCT Country, City\nFROM Customers\nWHERE ContactTitle = 'Owner';")}
 <p>Inside <code>COUNT</code>, it counts the different values:</p>
 ${C('SELECT COUNT(DISTINCT Country) AS \'Countries\'\nFROM Customers;')}
@@ -470,7 +472,7 @@ ${DIFF({title:'Matching a set of characters in each dialect', sqlite:"WHERE Cate
 <tr><td><code>[ ]</code></td><td>Any one character in the set</td><td><code>'^[AEIOU]'</code>: starts with a vowel</td></tr>
 <tr><td><code>|</code></td><td>Or</td><td><code>'Ch|Ma'</code>: contains Ch or Ma</td></tr></table>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName REGEXP '^[AEIOU]';", false, READ_ONLY('mysql','MySQL Workbench'))}
-<p>SQLite reserves the word <code>REGEXP</code>, but doesn't come with a regular expression engine, so it won't run here. For the same results, use <code>GLOB</code> or <code>LIKE</code>:</p>
+<p>SQLite doesn't come with a regular expression engine, so try the <code>REGEXP</code> example above in MySQL Workbench. Here in SQLite, <code>GLOB</code> and <code>LIKE</code> get the same results:</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*'\n   OR ProductName LIKE '%ale'\n   OR ProductName LIKE '%Ch%';")}
 ${DIFF({title:'Regular expressions in each dialect', sqlite:'~No REGEXP built in: use GLOB or LIKE', mysql:"WHERE ProductName REGEXP '^[AEIOU]'", tsql:"~No REGEXP: use LIKE '[AEIOU]%'"})}`,
     ex:[
@@ -618,7 +620,7 @@ ${C("SELECT SupplierID,\n       SUM(UnitsOnOrder) AS 'Total On Order',\n       A
 <h3>Why not put it in WHERE?</h3>
 <p>It seems natural to filter on the average with <code>WHERE</code>, like any other condition. Run it and the database refuses:</p>
 ${CERR("SELECT SupplierID, AVG(UnitsOnOrder) AS 'Avg On Order'\nFROM Products\nWHERE AVG(UnitsOnOrder) > 5\nGROUP BY SupplierID;")}
-<p>The reason is the order the database runs a query in, which you saw in <a href="#/lesson/sorting">Sorting data</a>. Look where <code>WHERE</code>, <code>GROUP BY</code> and <code>HAVING</code> come on the right:</p>
+<p>The reason is the order the database runs a query in, from the diagram in <a href="#/lesson/select">Simple queries</a>. Look where <code>WHERE</code>, <code>GROUP BY</code> and <code>HAVING</code> come on the right:</p>
 ${RUN_ORDER(['WHERE','GROUP BY','HAVING'])}
 <ol class="why-steps">
 <li><strong><code>FROM</code> (1)</strong> fetches every row of Products.</li>
