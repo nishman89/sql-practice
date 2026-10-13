@@ -85,7 +85,8 @@ columns are fine, and row order only matters when the exercise asks for it (for 
 | **Query quiz** | 28, covering units 2 to 7 | 60 min, 75 min or none | Writing a query |
 | **Multiple-choice quiz** | 40, across all six units | 60 min, 75 min or none | Selecting ONE option |
 
-1. Choose a quiz on the **Quizzes** page (or the **Unit N quiz** button under each unit on the learning path), then a time limit.
+1. Choose a quiz on the **Quizzes** page, and whether to be marked **at the end** (like a real test) or **straight
+   away** (each answer is marked as soon as you answer it, then locks) (or the **Unit N quiz** button under each unit on the learning path), then a time limit.
 2. Press **Start the quiz**. Questions are shown one at a time; the numbered buttons at the top jump between them and fill in once a question has an answer.
 3. Answer each question. In the Query quiz you can **Run** your query as often as you like to see its results, but you **won't be told whether it's right** until you submit.
 4. Every question has a **Northwind ERD** button. It opens the diagram over the question, so you can check table and column names without leaving the quiz (the timer keeps running). Press **Esc** or **Close** to go back.
@@ -508,7 +509,7 @@ Every important element has a stable hook:
 | **Meet Northwind** | `northwind-erd` · each table `northwind-table-customers`, `northwind-table-order-details` … · `table-detail` · `query-table` |
 | **Free practice** | `restore-northwind` |
 | **Quizzes page** | `quizzes-title` · `unit-quizzes` · `final-quizzes` · `quiz-card-unit-1` … `quiz-card-unit-7` · `quiz-card-queries` / `quiz-card-mcq` · `quiz-card-<id>-count` · `quiz-card-<id>-last` · `quiz-card-<id>-best` · `open-quiz-unit-1` … `open-quiz-unit-7` · `open-quiz-queries` / `open-quiz-mcq` |
-| **Quiz start** | `back-to-quizzes` · `quiz-title` · `quiz-start` · `question-count` · `pass-mark` · `last-attempt` · `time-limit` (`<select name="time-limit">`: unit 1 `15`, `20`, `0`; units 2–7 `20`, `30`, `0`; final quizzes `60`, `75`, `0`) · `start-quiz` |
+| **Quiz start** | `back-to-quizzes` · `quiz-title` · `quiz-start` · `question-count` · `pass-mark` · `last-attempt` · `mark-mode` · `mark-at-end` / `mark-straight-away` (instant marking: then `question-N-check` for query tasks and `question-N-feedback`, with `data-correct`, on each answered question) · `time-limit` (`<select name="time-limit">`: unit 1 `15`, `20`, `0`; units 2–7 `20`, `30`, `0`; final quizzes `60`, `75`, `0`) · `start-quiz` |
 | **Quiz question** (N = 1, 2, 3…) | `question-nav` · `question-nav-N` · `question-N` (with `data-unit`) · `question-N-number` · `question-N-unit` · `question-N-prompt` · `question-N-open-erd` |
 | **Query quiz question** | `question-N` has `data-solution` · `question-N-input` · `question-N-run` · `question-N-results` |
 | **Multiple-choice question** | `question-N` has `data-answer` (`a`–`d`) · `question-N-code` (when there's a query) · `question-N-instruction` ("Select ONE") · options `question-N-option-a` (the label) and `question-N-option-a-input` (the radio, `name="question-N"`, with `data-option`) |

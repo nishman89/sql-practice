@@ -71,9 +71,13 @@ function renderQuizStart(v){
       h('li',{}, 'Leaving this page ends the attempt without saving it.')),
     rec ? h('p',{'data-testid':'last-attempt'}, `Last attempt: ${attemptText(rec.last)}. Best: ${rec.best.percent}%.`) : null,
     h('label',{class:'field'}, h('span',{},'Time limit'), sel),
-    h('button',{class:'btn primary',type:'button',id:'start-quiz','data-testid':'start-quiz',onclick:()=>startQuiz(+sel.value)},'Start the quiz')));
+    h('fieldset',{class:'mark-mode','data-testid':'mark-mode'}, h('legend',{},'When do you want to see if you\'re right?'),
+      h('label',{}, h('input',{type:'radio',name:'mark-mode',value:'end',id:'mark-end',checked:true,'data-testid':'mark-at-end'}), h('span',{}, h('b',{},'At the end'), ' – like a real test: everything is marked when you submit')),
+      h('label',{}, h('input',{type:'radio',name:'mark-mode',value:'now',id:'mark-now','data-testid':'mark-straight-away'}), h('span',{}, h('b',{},'Straight away'), ' – see whether each answer is right as soon as you answer it. Answers lock once checked.'))),
+    h('button',{class:'btn primary',type:'button',id:'start-quiz','data-testid':'start-quiz',onclick:()=>startQuiz(+sel.value, $('#mark-now').checked)},'Start the quiz')));
 }
-function startQuiz(limit){
+function startQuiz(limit, instant=false){
+  QZ.instant = instant; QZ.checked = QZ.questions.map(()=>null);   // instant marking: the mark for each checked question
   QZ.answers = QZ.questions.map(q=> isMcq(q) ? null : '');
   QZ.runs = QZ.questions.map(()=>null);
   QZ.phase='doing'; QZ.i=0; QZ.limit=limit*60; QZ.started=Date.now();
@@ -91,6 +95,15 @@ function tick(){
   if (left<=0){ stopTimer(); closeErd(); toast('Time\'s up. Your answers have been submitted.'); submitQuiz(true); }
 }
 function saveCurrent(){ if (QZ && QZ.phase==='doing' && !isMcq(QZ.questions[QZ.i]) && qEd) QZ.answers[QZ.i]=qEd.value; }
+function feedbackBox(q, mark, N){
+  const ok=mark.state==='right';
+  const box=h('div',{class:'instant '+(ok?'right':'wrong'),'data-testid':`question-${N}-feedback`,'data-correct':String(ok),role:'status'},
+    h('b',{}, ok?'Correct.':'Not quite.'), mark.msg?' '+mark.msg:'');
+  if (isMcq(q)){ if (!ok) box.append(h('p',{}, 'The answer is ', h('b',{}, `${LETTERS[q.answer]}) `), ...fmtPrompt(q.options[q.answer]), '.')); }
+  else box.append(h('div',{class:'rv-h'},'One possible answer'), h('pre',{'data-testid':`question-${N}-instant-model`}, q.sol));
+  box.append(h('p',{class:'rv-why'}, q.why));
+  return box;
+}
 function renderQuizDoing(v){
   const q=QZ.questions[QZ.i], n=QZ.questions.length, N=QZ.i+1, type=isMcq(q)?'mcq':'query';
   const navq=h('ol',{class:'qnav','aria-label':'Questions','data-testid':'question-nav'});
@@ -108,17 +121,27 @@ function renderQuizDoing(v){
     const opts=h('div',{class:'mcq-opts',role:'radiogroup','aria-label':`Question ${N} options`});
     q.options.forEach((text,k)=>{
       const inp=h('input',{type:'radio',name:`question-${N}`,id:`question-${N}-option-${LETTERS[k]}`,value:LETTERS[k],'data-option':LETTERS[k],'data-testid':`question-${N}-option-${LETTERS[k]}-input`,checked:QZ.answers[QZ.i]===k});
-      inp.addEventListener('change',()=>{ QZ.answers[QZ.i]=k; refreshAnswered(); });
-      opts.append(h('label',{class:'mcq-opt',for:`question-${N}-option-${LETTERS[k]}`,'data-testid':`question-${N}-option-${LETTERS[k]}`}, inp, h('span',{class:'key'},LETTERS[k]+')'), h('span',{}, ...fmtPrompt(text))));
+      if (QZ.instant && QZ.checked[QZ.i]) inp.disabled=true;
+      inp.addEventListener('change',()=>{ QZ.answers[QZ.i]=k; refreshAnswered();
+        if (QZ.instant){ QZ.checked[QZ.i]={state:k===q.answer?'right':'wrong',msg:''}; renderQuiz(); } });
+      const st = QZ.instant && QZ.checked[QZ.i] ? (k===q.answer?' is-right':(QZ.answers[QZ.i]===k?' is-wrong':'')) : '';
+      opts.append(h('label',{class:'mcq-opt'+st,for:`question-${N}-option-${LETTERS[k]}`,'data-testid':`question-${N}-option-${LETTERS[k]}`}, inp, h('span',{class:'key'},LETTERS[k]+')'), h('span',{}, ...fmtPrompt(text))));
     });
     card.append(opts);
+    if (QZ.instant && QZ.checked[QZ.i]) card.append(feedbackBox(q, QZ.checked[QZ.i], N));
   } else {
     const edHost=h('div',{class:'editor-wrap'}); const out=h('div',{class:'out',id:'quiz-results','data-testid':`question-${N}-results`});
     v.append(edHost, out);
     qEd=makeEditor(edHost,{ label:`Your answer to question ${N}`, onRun:()=>{ saveCurrent(); const rep=runSafe(qEd.value); QZ.runs[QZ.i]=rep; renderReport(out, rep); refreshAnswered(); }, onChange:()=>{ saveCurrent(); refreshAnswered(); }, id:'quiz' });
     qEd.ta.setAttribute('data-testid',`question-${N}-input`); qEd.runBtn.setAttribute('data-testid',`question-${N}-run`);
     qEd.value=QZ.answers[QZ.i] || `-- Question ${N}\n\n`;
-    if (QZ.runs[QZ.i]) renderReport(out, QZ.runs[QZ.i]); else renderReport(out, emptyRep(), {empty:'Run your query to check it does what you expect. It won\'t be marked until you submit.'});
+    if (QZ.runs[QZ.i]) renderReport(out, QZ.runs[QZ.i]); else renderReport(out, emptyRep(), {empty: QZ.instant ? 'Run your query to see its results, then press Check answer.' : 'Run your query to check it does what you expect. It won\'t be marked until you submit.'});
+    if (QZ.instant){
+      if (QZ.checked[QZ.i]){ qEd.ta.readOnly=true; qEd.runBtn.disabled=false; v.append(feedbackBox(q, QZ.checked[QZ.i], N)); }
+      else v.append(h('p',{class:'check-row'}, h('button',{class:'btn primary',type:'button','data-testid':`question-${N}-check`,onclick:()=>{
+        saveCurrent(); if (!isAnsweredFor('query', QZ.answers[QZ.i])){ toast('Write a query first.'); return; }
+        QZ.checked[QZ.i]=markQuery(q, QZ.answers[QZ.i]); refreshAnswered(); renderQuiz(); }},'Check answer'), h('span',{class:'small'},' Your answer locks once it\'s checked.')));
+    }
   }
   const bar=h('div',{class:'submit-bar','data-testid':'submit-bar'},
     h('span',{class:'answered'}, h('b',{id:'answered-count','data-testid':'answered-count'},'0'), ` of ${n} answered`),
@@ -156,6 +179,7 @@ function submitQuiz(timeUp){
   if (!timeUp && missing && !confirm(`You haven't answered ${missing} question${missing===1?'':'s'}. Submit anyway?`)) return;
   stopTimer();
   const marks=QZ.questions.map((q,k)=>{
+    if (QZ.instant && QZ.checked[k]) return QZ.checked[k];
     const a=QZ.answers[k];
     if (isMcq(q)) return a==null ? {state:'blank',msg:''} : {state:a===q.answer?'right':'wrong',msg:''};
     return markQuery(q, a);

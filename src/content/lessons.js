@@ -34,7 +34,7 @@ const DIALECT_LABEL = { sqlite:'SQLite', mysql:'MySQL', tsql:'T-SQL' };
 const DIFF = o => {
   const val = v => v.startsWith('~') ? `<span class="ddiff-text">${esc(v.slice(1))}</span>` : /\n/.test(v) ? `<pre>${esc(v)}</pre>` : `<code>${esc(v)}</code>`;
   // common: the way that works in all three, shown first. Dialect rows that only repeat it are left out.
-  const rows=['sqlite','mysql','tsql'].filter(k=>o[k]!=null && o[k]!==o.common);
+  const rows=['sqlite','mysql','tsql'].filter(k=>o[k]!=null && (o.all || o[k]!==o.common));
   const common = o.common ? `<div class="ddiff-row common"><span class="ddiff-tag"><span aria-hidden="true">🪶 🐬 🪟</span> All three</span>${val(o.common)}</div>` : '';
   const sub = o.common && rows.length ? `<div class="ddiff-sub">${o.otherTitle||'Where they differ'}</div>` : '';
   return `<div class="ddiff">${o.title?`<div class="ddiff-h">${o.title}</div>`:''}${common}${sub}${rows.map(k=>`<div class="ddiff-row ${k}"><span class="ddiff-tag"><span aria-hidden="true">${DIALECT_ICON[k]}</span> ${DIALECT_LABEL[k]}</span>${val(o[k])}</div>`).join('')}${o.note?`<p class="ddiff-note">${o.note}</p>`:''}</div>`;
@@ -507,6 +507,14 @@ ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> 
 
   wildcards:{title:'Wildcards', summary:'Match patterns in text instead of exact values.', cmds:['LIKE','%','_','GLOB','REGEXP (MySQL)'],
     learn:`
+<p>Wildcards let you match a <em>pattern</em> instead of an exact value. All three dialects have <code>LIKE</code> with <code>%</code> and <code>_</code>, but each has its own extras, so here's what works where:</p>
+<div class="tbl-wrap"><table class="mini dialect-matrix"><tr><th>Pattern</th><th>Means</th><th>🪶 SQLite</th><th>🐬 MySQL</th><th>🪟 T-SQL</th></tr>
+<tr><td><code>LIKE 'Ch%'</code></td><td><code>%</code>: any number of characters</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>LIKE '_A'</code></td><td><code>_</code>: exactly one character</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>LIKE '[BS]%'</code></td><td>One character from a set</td><td>✗ (matched literally)</td><td>✗</td><td>✓</td></tr>
+<tr><td><code>GLOB '[BS]*'</code></td><td>Sets, with <code>*</code> and <code>?</code></td><td>✓</td><td>✗</td><td>✗</td></tr>
+<tr><td><code>REGEXP '^[BS]'</code></td><td>Regular expressions</td><td>✗</td><td>✓</td><td>✗</td></tr></table></div>
+
 <p><code>LIKE</code> compares text against a pattern. Two wildcards do the work:</p>
 <table class="mini"><tr><th>Wildcard</th><th>Matches</th><th>Example</th></tr>
 <tr><td><code>%</code></td><td>Any number of characters, including none</td><td><code>'Ch%'</code> matches Chai, Chang, Chartreuse verte</td></tr>
@@ -514,7 +522,7 @@ ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> 
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName LIKE 'Ch%';")}
 ${C("SELECT CompanyName, Region\nFROM Customers\nWHERE Region LIKE '_A';")}
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName LIKE '%ale%';")}
-${DIFF({title:'LIKE in each dialect', common:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", note:'<code>LIKE</code>, <code>%</code> and <code>_</code> are standard SQL, so they work the same everywhere. Whether upper and lower case match depends on the database: SQLite\'s <code>LIKE</code> ignores case for A to Z, and MySQL and SQL Server usually ignore it too because of their default settings.'})}
+${DIFF({title:'LIKE in each dialect', all:true, otherTitle:'In each dialect', sqlite:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", mysql:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", tsql:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", common:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", note:'<code>LIKE</code>, <code>%</code> and <code>_</code> are standard SQL, so they work the same everywhere. Whether upper and lower case match depends on the database: SQLite\'s <code>LIKE</code> ignores case for A to Z, and MySQL and SQL Server usually ignore it too because of their default settings.'})}
 <h3>Character sets with GLOB</h3>
 <p>SQLite also has <code>GLOB</code>. It uses <code>*</code> for any characters and <code>?</code> for one character, and it understands <strong>sets</strong>: <code>[BS]</code> means B or S, and <code>[^BS]</code> means anything else.</p>
 ${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName GLOB '[BS]*';")}
@@ -548,15 +556,18 @@ ${C("SELECT CONCAT(FirstName, ' ', LastName) AS 'Full Name', Title\nFROM Employe
 <h3>Two ways that work everywhere, and a shortcut</h3>
 <p><code>CONCAT_WS</code> ("with separator") puts the same separator between every value, so you only type it once. Like <code>CONCAT</code>, it works in all three dialects:</p>
 ${C("SELECT CONCAT_WS(', ', Address, City, Country) AS 'Address'\nFROM Customers;")}
-<p>SQLite also has a shortcut, the <code>||</code> operator. It's handy, but it only works in SQLite (T-SQL's shortcut is <code>+</code>, and MySQL has none), so prefer <code>CONCAT</code>:</p>
+<p>Each dialect also has its own shortcut. SQLite uses the <code>||</code> operator:</p>
 ${C("SELECT FirstName || ' ' || LastName AS 'Full Name'\nFROM Employees;")}
-${TIP('Don\'t use <code>+</code> to join text in SQLite or MySQL: it adds numbers, so <code>\'Nancy\' + \'Davolio\'</code> gives 0. (T-SQL is different, see below.)')}
+<p><strong>In T-SQL, you can join text with <code>+</code></strong>, which you'll see a lot in SQL Server code:</p>
+${C("SELECT FirstName + ' ' + LastName AS 'Full Name'\nFROM Employees;", false, READ_ONLY('tsql','SQL Server Management Studio'))}
+<p>MySQL has no operator for joining text at all, so there you always use <code>CONCAT</code>. Because the shortcuts differ, <code>CONCAT</code> is the one to learn: it works everywhere.</p>
+${TIP('Don\'t use <code>+</code> to join text in SQLite or MySQL: there it adds numbers, so <code>\'Nancy\' + \'Davolio\'</code> gives 0. Only T-SQL joins text with <code>+</code>.')}
 <h3>When a value is missing</h3>
 <p>A missing value is <code>NULL</code> (more in <a href="#/lesson/nulls">Working with NULL values</a>). Customers in Germany have no <code>Region</code>, and the three ways of joining text treat that differently:</p>
 ${C("SELECT CompanyName || ', ' || Region          AS 'Using ||',\n       CONCAT(CompanyName, ', ', Region)      AS 'Using CONCAT',\n       CONCAT_WS(', ', CompanyName, Region)  AS 'Using CONCAT_WS'\nFROM Customers\nWHERE Country = 'Germany';")}
 <p><code>||</code> gives NULL as soon as one value is missing. <code>CONCAT</code> treats the missing value as empty, leaving a stray comma. <code>CONCAT_WS</code> skips it, separator and all.</p>
 <h3>In each dialect</h3>
-${DIFF({title:'Joining text in each dialect', common:"CONCAT(FirstName, ' ', LastName)\nCONCAT_WS(' ', FirstName, LastName)", otherTitle:'Each dialect\'s shortcut', sqlite:"FirstName || ' ' || LastName", mysql:'~No operator: || means OR, and + adds numbers', tsql:"FirstName + ' ' + LastName", note:'Learn <code>CONCAT()</code> and <code>CONCAT_WS()</code>: they work in all three (<code>CONCAT_WS</code> needs SQL Server 2017 or later). Watch out for NULLs, though: the table below shows how each one treats them.'})}
+${DIFF({title:'Joining text in each dialect', all:true, common:"CONCAT(FirstName, ' ', LastName)\nCONCAT_WS(' ', FirstName, LastName)", otherTitle:'Every way in each dialect', sqlite:"CONCAT(FirstName, ' ', LastName)\nCONCAT_WS(' ', FirstName, LastName)\nFirstName || ' ' || LastName      -- SQLite's operator", mysql:"CONCAT(FirstName, ' ', LastName)\nCONCAT_WS(' ', FirstName, LastName)\n-- no operator: || means OR, + adds numbers", tsql:"CONCAT(FirstName, ' ', LastName)\nCONCAT_WS(' ', FirstName, LastName)\nFirstName + ' ' + LastName        -- T-SQL's operator", note:'Learn <code>CONCAT()</code> and <code>CONCAT_WS()</code>: they work in all three (<code>CONCAT_WS</code> needs SQL Server 2017 or later). Watch out for NULLs, though: the table below shows how each one treats them.'})}
 <div class="tbl-wrap"><table class="mini dialect-matrix"><tr><th>When one value is NULL…</th><th>🪶 SQLite</th><th>🐬 MySQL</th><th>🪟 T-SQL</th></tr>
 <tr><td>The operator (<code>||</code> or <code>+</code>)</td><td><code>||</code> gives NULL</td><td>(no operator)</td><td><code>+</code> gives NULL</td></tr>
 <tr><td><code>CONCAT()</code></td><td>Treats it as empty</td><td><strong>Gives NULL</strong></td><td>Treats it as empty</td></tr>
