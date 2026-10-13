@@ -681,7 +681,7 @@ const BUILD_STEPS=[
     starter:'-- Add three customers, then six orders that belong to them\n\n',
     mysql:`INSERT INTO Customers (customer_name, height, is_happy) VALUES\n('Nish Mandal',    1.85, TRUE),\n('Cathy French',   1.70, FALSE),\n('Rich Gurney',    1.80, TRUE);\n\nINSERT INTO Orders (order_number, customer_id) VALUES\n(1001, 1), (1002, 2), (1003, 3),\n(1004, 1), (1005, 2), (1006, 3);`,
     tsql:`INSERT INTO Customers (customer_name, height, is_happy) VALUES\n('Nish Mandal',    1.85, 1),\n('Cathy French',   1.70, 0),\n('Rich Gurney',    1.80, 1);\n\nINSERT INTO Orders (order_number, customer_id) VALUES\n(1001, 1), (1002, 2), (1003, 3),\n(1004, 1), (1005, 2), (1006, 3);`,
-    diffNote:'A <code>BIT</code> column in T-SQL takes <code>1</code> and <code>0</code>, not <code>TRUE</code> and <code>FALSE</code>.',
+    diffNote:'T-SQL has no <code>TRUE</code> and <code>FALSE</code> keywords, so a <code>BIT</code> column is given <code>1</code> and <code>0</code>.',
     example:`INSERT INTO Customers (customer_name, height, is_happy) VALUES\n('Nish Mandal',    1.85, TRUE),\n('Cathy French',   1.70, FALSE),\n('Rich Gurney',    1.80, TRUE);\n\nINSERT INTO Orders (order_number, customer_id) VALUES\n(1001, 1),\n(1002, 2),\n(1003, 3),\n(1004, 1),\n(1005, 2),\n(1006, 3);\n\nSELECT * FROM Customers;`,
     checks:T=>{ const c=findT(T,'customers'), o=findT(T,'orders'); const nc=c?count(c.name):0, no=o?count(o.name):0; return [
       [`Customers has at least 3 rows (now ${nc})`, nc>=3],

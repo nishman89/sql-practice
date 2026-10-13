@@ -25,6 +25,13 @@ ${lines.join('')}${written.map((c,i)=>block(c,i,lx)).join('')}${runs.map((c,i)=>
 let TABS_N = 0;
 const TABS = tabs => { const n=++TABS_N;
   return `<div class="ltabs" data-ltabs><div class="ltabs-list" role="tablist">${tabs.map((t,i)=>`<button type="button" role="tab" id="lt${n}-${i}" aria-controls="lp${n}-${i}" aria-selected="${i===0}" tabindex="${i===0?0:-1}" data-testid="dtype-tab-${i+1}">${t.label}</button>`).join('')}</div>${tabs.map((t,i)=>`<div class="ltabs-panel" role="tabpanel" id="lp${n}-${i}" aria-labelledby="lt${n}-${i}"${i===0?'':' hidden'}>${t.html}</div>`).join('')}</div>`; };
+/* A section heading that says which dialects it applies to: HD('all' | ['sqlite','mysql',…], title, optional tag) */
+const HD = (keys, title, tag) => {
+  const ks = keys==='all' ? ['sqlite','mysql','tsql'] : keys;
+  const names = ks.map(k=>DIALECT_LABEL[k]);
+  const t = tag || (ks.length===3 ? 'All three' : ks.length===1 ? names[0]+' only' : names.join(' and '));
+  return `<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">${ks.map(k=>DIALECT_ICON[k]).join(' ')}</span> ${title} <span class="h-tag">${t}</span></h3>`;
+};
 const TIP = t => `<div class="tip">${t}</div>`;
 
 /* Dialect callouts, marked with the same icons as the course notes. Each value is code;
@@ -188,9 +195,10 @@ ${C("INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Ana Lopez
 ${DIFF({title:'Seeing a table\'s columns and types in each dialect', sqlite:"PRAGMA table_info('Customers');", mysql:'DESCRIBE Customers;', tsql:"EXEC sp_help 'Customers';", note:'MySQL and SQL Server can also query <code>INFORMATION_SCHEMA.COLUMNS</code>, which works in both.'})}
 <p>Here's the SQLite one:</p>
 ${C("PRAGMA table_info('Customers');")}
+${HD(['sqlite'],'typeof(): how a value was stored')}
 <p><code>typeof()</code> shows how SQLite actually stored a value. It's SQLite-only: MySQL and SQL Server enforce each column's type, so a value is always stored as its column's type and there's nothing to check.</p>
 ${C("SELECT typeof(42), typeof(1.85), typeof('Nish'), typeof(NULL);")}
-<h3>Converting with CAST</h3>
+${HD('all','Converting with CAST')}
 <p><code>CAST(value AS type)</code> changes a value from one type to another. It works in all three dialects:</p>
 ${C("SELECT CAST('42' AS INTEGER)  AS 'Text to number',\n       CAST(1.85 AS INTEGER)  AS 'Decimals dropped',\n       CAST(42 AS TEXT)       AS 'Number to text';")}
 <h3>The whole-number division trap</h3>
@@ -212,7 +220,7 @@ ${DIFF({title:'7 / 2 in each dialect', common:'7 / 2.0       -- 3.5\n7 * 1.0 / 2
 <tr class="dml"><td><strong>DML</strong></td><td>Data Manipulation Language</td><td>The <strong>data</strong>: reading and changing the rows inside tables</td><td><code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td></tr>
 <tr class="ddl"><td><strong>DDL</strong></td><td>Data Definition Language</td><td>The <strong>structure</strong>: tables, columns, keys, views, indexes</td><td><code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code></td></tr>
 <tr><td><strong>DCL</strong></td><td>Data Control Language</td><td><strong>Permissions</strong>: who's allowed to do what</td><td><code>GRANT</code>, <code>REVOKE</code></td></tr>
-<tr><td><strong>TCL</strong></td><td>Transaction Control Language</td><td><strong>Transactions</strong>: grouping changes so they all happen, or none do</td><td><code>COMMIT</code>, <code>ROLLBACK</code>, <code>SAVEPOINT</code></td></tr></table>
+<tr><td><strong>TCL</strong></td><td>Transaction Control Language</td><td><strong>Transactions</strong>: grouping changes so they all happen, or none do</td><td><code>COMMIT</code>, <code>ROLLBACK</code>, <code>SAVEPOINT</code> (T-SQL writes <code>SAVE TRANSACTION</code>)</td></tr></table>
 ${TIP('Some books and websites give <code>SELECT</code> a group of its own, <strong>DQL</strong> (Data Query Language), because it only reads data. Either way, the important split is between changing the <em>data</em> (DML) and changing the <em>structure</em> (DDL).')}
 <p>This lesson uses the tables from <a href="#/lesson/build">Creating tables</a>. Every run starts from a fresh copy:</p>
 ${MYDB_TABLES}
@@ -237,7 +245,7 @@ ${DIFF({title:'Emptying a table in each dialect', common:'DELETE FROM Orders;', 
 <h3>Undoing changes with transactions (TCL)</h3>
 <p>A transaction groups changes so they all happen or none do. <code>ROLLBACK</code> undoes everything since the transaction started. This example uses a <strong>savepoint</strong>, a marker you can roll back to:</p>
 ${C("SAVEPOINT before_delete;\nDELETE FROM Orders;\nSELECT COUNT(*) AS 'Orders after DELETE' FROM Orders;\n\nROLLBACK TO before_delete;\nSELECT COUNT(*) AS 'Orders after ROLLBACK' FROM Orders;")}
-${DIFF({title:'Transactions in each dialect', common:'COMMIT;     -- keep the changes\nROLLBACK;   -- undo them', otherTitle:'Starting a transaction', sqlite:'BEGIN;', mysql:'START TRANSACTION;', tsql:'BEGIN TRANSACTION;', note:'In MySQL, DDL such as <code>TRUNCATE</code>, <code>DROP</code> and <code>CREATE</code> commits automatically, so it can\'t be rolled back. SQL Server and SQLite can roll DDL back inside a transaction.'})}
+${DIFF({title:'Transactions in each dialect', common:'COMMIT;     -- keep the changes\nROLLBACK;   -- undo them', otherTitle:'Starting a transaction, and savepoints', sqlite:'BEGIN;\nSAVEPOINT name;\nROLLBACK TO name;', mysql:'START TRANSACTION;\nSAVEPOINT name;\nROLLBACK TO name;', tsql:'BEGIN TRANSACTION;\nSAVE TRANSACTION name;\nROLLBACK TRANSACTION name;', note:'In MySQL, DDL such as <code>TRUNCATE</code>, <code>DROP</code> and <code>CREATE</code> commits automatically, so it can\'t be rolled back. SQL Server and SQLite can roll DDL back inside a transaction.'})}
 <h3>What this course covers, and what it doesn't</h3>
 <table class="mini"><tr><th>Group</th><th>In this course</th></tr>
 <tr><td><strong>DML</strong></td><td><strong>Most of the course.</strong> <code>SELECT</code> from <a href="#/lesson/select">Simple queries</a> onwards, and <code>INSERT</code>, <code>UPDATE</code> and <code>DELETE</code> in <a href="#/lesson/changedata">Inserting, updating and deleting data</a>.</td></tr>
@@ -486,6 +494,7 @@ ${DIFF({title:'Sorting in each dialect', common:'ORDER BY Country, CompanyName D
 
   distinct:{title:'Removing duplicates and limiting results', summary:'Show each value only once, and return only the first few rows.', cmds:['DISTINCT','COUNT(DISTINCT …)','LIMIT','OFFSET'],
     learn:`
+${HD('all','Removing duplicates with DISTINCT')}
 <p><code>DISTINCT</code> removes duplicate rows from your result. Many customers share a country, but each country appears once here:</p>
 ${C("SELECT DISTINCT Country\nFROM Customers\nWHERE ContactTitle = 'Owner';")}
 ${TIP('<code>DISTINCT</code> looks at all the selected columns together. A row is only a duplicate if <em>every</em> column matches, so more columns usually means fewer duplicates.')}
@@ -493,11 +502,16 @@ ${TIP('<code>DISTINCT</code> looks at all the selected columns together. A row i
 ${C("SELECT DISTINCT Country, City\nFROM Customers\nWHERE ContactTitle = 'Owner';")}
 <p>Inside <code>COUNT</code>, it counts the different values:</p>
 ${C('SELECT COUNT(DISTINCT Country) AS \'Countries\'\nFROM Customers;')}
-<h3>Returning only the first rows</h3>
-<p>Put <code>LIMIT</code> at the end of the query to return only the first few rows:</p>
+${HD(['sqlite','mysql'],'Returning the first rows with LIMIT')}
+<p><code>LIMIT</code> works in SQLite and MySQL, but <strong>not in SQL Server</strong>: T-SQL uses <code>TOP</code> instead, shown below. Put <code>LIMIT</code> at the end of the query to return only the first few rows:</p>
 ${C("SELECT CompanyName, City\nFROM Customers\nWHERE Country = 'France'\nORDER BY CompanyName DESC\nLIMIT 3;")}
 <p>Add <code>OFFSET</code> to skip rows first, which is how pages of results work:</p>
 ${C("SELECT ProductName\nFROM Products\nORDER BY ProductName\nLIMIT 5 OFFSET 10;")}
+${HD(['tsql'],'Returning the first rows with TOP')}
+<p>T-SQL has no <code>LIMIT</code>. Instead, <code>TOP</code> goes straight after <code>SELECT</code>:</p>
+${C("SELECT TOP 5 ProductName, UnitPrice\nFROM Products\nORDER BY UnitPrice DESC;", false, READ_ONLY('tsql','SQL Server Management Studio'))}
+<p>To skip rows first, T-SQL adds <code>OFFSET … FETCH</code> to the <code>ORDER BY</code>. This skips the 10 most expensive products and returns the next 5:</p>
+${C("SELECT ProductName, UnitPrice\nFROM Products\nORDER BY UnitPrice DESC\nOFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY;", false, READ_ONLY('tsql','SQL Server Management Studio'))}
 ${DIFF({title:'Limiting rows in each dialect', sqlite:'-- first 5 rows\nSELECT … ORDER BY UnitPrice DESC LIMIT 5\n-- skip 10, then 5\nSELECT … ORDER BY UnitPrice DESC LIMIT 5 OFFSET 10', mysql:'-- first 5 rows\nSELECT … ORDER BY UnitPrice DESC LIMIT 5\n-- skip 10, then 5\nSELECT … ORDER BY UnitPrice DESC LIMIT 5 OFFSET 10\nSELECT … ORDER BY UnitPrice DESC LIMIT 10, 5', tsql:'-- first 5 rows\nSELECT TOP 5 … ORDER BY UnitPrice DESC\n-- skip 10, then 5\nSELECT … ORDER BY UnitPrice DESC\n    OFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY', note:'T-SQL puts <code>TOP</code> straight after <code>SELECT</code>, and paging needs an <code>ORDER BY</code>. MySQL\'s short form <code>LIMIT 10, 5</code> means skip 10, then take 5: the opposite order to how it reads.'})}
 ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> rows, not the top ones. Sort first.')}`,
     ex:[
@@ -517,7 +531,7 @@ ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> 
 <tr><td><code>GLOB '[BS]*'</code></td><td>Sets, with <code>*</code> and <code>?</code></td><td>✓</td><td>✗</td><td>✗</td></tr>
 <tr><td><code>REGEXP '^[BS]'</code></td><td>Regular expressions</td><td>✗</td><td>✓</td><td>✗</td></tr></table></div>
 
-<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">🪶 🐬 🪟</span> LIKE with % and _ <span class="h-tag">All three</span></h3>
+${HD('all','LIKE with % and _')}
 <p><code>LIKE</code> compares text against a pattern. Two wildcards do the work:</p>
 <table class="mini"><tr><th>Wildcard</th><th>Matches</th><th>Example</th></tr>
 <tr><td><code>%</code></td><td>Any number of characters, including none</td><td><code>'Ch%'</code> matches Chai, Chang, Chartreuse verte</td></tr>
@@ -529,7 +543,7 @@ ${C("SELECT CompanyName, Region\nFROM Customers\nWHERE Region LIKE '_A';")}
 <p>With <code>%</code> at both ends, the letters can be <strong>anywhere</strong> in the name. Products with "ale" in them:</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName LIKE '%ale%';")}
 ${DIFF({title:'LIKE in each dialect', all:true, otherTitle:'In each dialect', sqlite:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", mysql:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", tsql:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", common:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", note:'<code>LIKE</code>, <code>%</code> and <code>_</code> are standard SQL, so they work the same everywhere. Whether upper and lower case match depends on the database: SQLite\'s <code>LIKE</code> ignores case for A to Z, and MySQL and SQL Server usually ignore it too because of their default settings.'})}
-<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">🪶</span> Character sets with GLOB <span class="h-tag">SQLite only</span></h3>
+${HD(['sqlite'],'Character sets with GLOB')}
 <p>SQLite also has <code>GLOB</code>. It uses <code>*</code> for any characters and <code>?</code> for one character, and it understands <strong>sets</strong>: <code>[BS]</code> means B or S, and <code>[^BS]</code> means anything else.</p>
 <p>Categories whose name <strong>starts with B or S</strong>, followed by anything:</p>
 ${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName GLOB '[BS]*';")}
@@ -537,10 +551,10 @@ ${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName GLOB '[BS]*';")}
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*';")}
 ${TIP('<code>LIKE</code> ignores upper and lower case (for A to Z), but <code>GLOB</code> doesn\'t: <code>GLOB \'c*\'</code> won\'t match Chai.')}
 ${DIFF({title:'Matching a set of characters in each dialect', sqlite:"WHERE CategoryName GLOB '[BS]*'", mysql:"WHERE CategoryName REGEXP '^[BS]'", tsql:"WHERE CategoryName LIKE '[BS]%'", note:'T-SQL lets you put a set in square brackets inside <code>LIKE</code>. MySQL and SQLite don\'t: MySQL uses <code>REGEXP</code>, and SQLite uses <code>GLOB</code>.'})}
-<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">🪟</span> Character sets inside LIKE <span class="h-tag">T-SQL only</span></h3>
+${HD(['tsql'],'Character sets inside LIKE')}
 <p>In T-SQL, <code>LIKE</code> itself understands sets in square brackets: <code>[BS]</code> means B or S, and <code>[^BS]</code> means anything else. Categories whose name starts with B or S:</p>
 ${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName LIKE '[BS]%';", false, READ_ONLY('tsql','SQL Server Management Studio'))}
-<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">🐬</span> Regular expressions with REGEXP <span class="h-tag">MySQL only</span></h3>
+${HD(['mysql'],'Regular expressions with REGEXP')}
 <p>MySQL has <code>REGEXP</code> (also written <code>RLIKE</code>). It uses <strong>regular expressions</strong>, often shortened to <em>regex</em>: a mini-language for <strong>pattern recognition</strong> in text. Regular expressions can describe far more than <code>LIKE</code> can, such as "starts with a vowel", "ends in a number" or "contains Ch or Ma". Unlike <code>LIKE</code>, a regular expression matches anywhere in the text unless you say otherwise. The basics:</p>
 <table class="mini"><tr><th>Pattern</th><th>Means</th><th>Example</th></tr>
 <tr><td><code>^</code></td><td>Starts with</td><td><code>'^Ch'</code>: Chai, Chang</td></tr>
@@ -562,20 +576,24 @@ ${DIFF({title:'Regular expressions in each dialect', sqlite:'~No REGEXP built in
 
   concat:{title:'Concatenation', summary:'Join text together, cope with missing values, and give columns readable names.', cmds:['CONCAT()','CONCAT_WS()','||','AS'],
     learn:`
+${HD('all','Joining text with CONCAT')}
 <p><code>CONCAT</code> joins values into one piece of text. Anything in quotes, such as <code>', '</code>, is added as written.</p>
 ${C("SELECT CompanyName AS 'Company Name',\n       CONCAT(City, ', ', Country) AS 'Location'\nFROM Customers;")}
 <p>An alias (<code>AS</code>) is a temporary label for a column. It changes the column heading in your result, not anything in the database. Put it in quotes if it has spaces.</p>
 ${C("SELECT CONCAT(FirstName, ' ', LastName) AS 'Full Name', Title\nFROM Employees;")}
-<h3>Two ways that work everywhere, and a shortcut</h3>
+${HD('all','One separator for everything: CONCAT_WS')}
 <p><code>CONCAT_WS</code> ("with separator") puts the same separator between every value, so you only type it once. Like <code>CONCAT</code>, it works in all three dialects:</p>
 ${C("SELECT CONCAT_WS(', ', Address, City, Country) AS 'Address'\nFROM Customers;")}
-<p>Each dialect also has its own shortcut. SQLite uses the <code>||</code> operator:</p>
+${HD(['sqlite'],'The || operator')}
+<p>Each dialect also has a shortcut for joining text. SQLite's is the <code>||</code> operator:</p>
 ${C("SELECT FirstName || ' ' || LastName AS 'Full Name'\nFROM Employees;")}
+${HD(['tsql'],'The + operator')}
 <p><strong>In T-SQL, you can join text with <code>+</code></strong>, which you'll see a lot in SQL Server code:</p>
 ${C("SELECT FirstName + ' ' + LastName AS 'Full Name'\nFROM Employees;", false, READ_ONLY('tsql','SQL Server Management Studio'))}
+${HD(['mysql'],'No operator in MySQL')}
 <p>MySQL has no operator for joining text at all, so there you always use <code>CONCAT</code>. Because the shortcuts differ, <code>CONCAT</code> is the one to learn: it works everywhere.</p>
 ${TIP('Don\'t use <code>+</code> to join text in SQLite or MySQL: there it adds numbers, so <code>\'Nancy\' + \'Davolio\'</code> gives 0. Only T-SQL joins text with <code>+</code>.')}
-<h3>When a value is missing</h3>
+${HD('all','When a value is missing','All three, but they behave differently')}
 <p>A missing value is <code>NULL</code> (more in <a href="#/lesson/nulls">Working with NULL values</a>). Customers in Germany have no <code>Region</code>, and the three ways of joining text treat that differently:</p>
 ${C("SELECT CompanyName || ', ' || Region          AS 'Using ||',\n       CONCAT(CompanyName, ', ', Region)      AS 'Using CONCAT',\n       CONCAT_WS(', ', CompanyName, Region)  AS 'Using CONCAT_WS'\nFROM Customers\nWHERE Country = 'Germany';")}
 <p><code>||</code> gives NULL as soon as one value is missing. <code>CONCAT</code> treats the missing value as empty, leaving a stray comma. <code>CONCAT_WS</code> skips it, separator and all.</p>
@@ -682,7 +700,7 @@ ${TIP('<strong>The rule:</strong> every column in <code>SELECT</code> should be 
 ${C("SELECT Country, COUNT(*) AS 'Customers'\nFROM Customers\nGROUP BY Country\nORDER BY COUNT(*) DESC;")}
 <p>Rows are filtered by <code>WHERE</code> before they're grouped, so this counts only discontinued products in each category:</p>
 ${C("SELECT CategoryID, COUNT(*) AS 'Discontinued'\nFROM Products\nWHERE Discontinued = 1\nGROUP BY CategoryID;")}
-<h3>Joining a group's values into a list</h3>
+${HD(['sqlite'],'Joining a group\'s values into a list','Different in each dialect')}
 <p>Instead of counting a group's rows, you can join their values into one piece of text, separated by commas. Here, every product in each category:</p>
 ${C("SELECT CategoryID, group_concat(ProductName, ', ') AS 'Products'\nFROM Products\nGROUP BY CategoryID;")}
 ${DIFF({title:'Joining a group\'s values in each dialect', sqlite:"group_concat(ProductName, ', ')\nstring_agg(ProductName, ', ')", mysql:"GROUP_CONCAT(ProductName SEPARATOR ', ')", tsql:"STRING_AGG(ProductName, ', ')   -- SQL Server 2017+", note:'This is one of the most different features between dialects: each has its own function name, and MySQL writes the separator with the word <code>SEPARATOR</code>.'})}
@@ -727,8 +745,7 @@ ${C('SELECT CompanyName, Region\nFROM Customers\nWHERE Region IS NULL;')}
 ${C('SELECT CompanyName, Region\nFROM Customers\nWHERE Region IS NOT NULL;')}
 <p>Run this one and notice it returns nothing, even though many regions are missing:</p>
 ${C('SELECT CompanyName\nFROM Customers\nWHERE Region = NULL;')}
-<h3>Replacing NULLs</h3>
-<p><code>COALESCE</code> returns the first value that isn't NULL, so it's a neat way to show a placeholder. <code>IFNULL(x, y)</code> does the same with two values.</p>
+<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">🪶 🐬 🪟</span> Replacing NULLs with COALESCE <span class="h-tag">All three</span></h3>\n<p><code>COALESCE</code> returns the first value that isn\'t NULL, so it\'s a neat way to show a placeholder. It works in all three. For just two values there\'s also a shortcut: <code>IFNULL(x, y)</code> in SQLite and MySQL, and <code>ISNULL(x, y)</code> in T-SQL.</p>
 ${C("SELECT CompanyName, COALESCE(Fax, 'No fax') AS 'Fax'\nFROM Customers;")}
 ${DIFF({title:'Replacing NULLs in each dialect', common:"COALESCE(Fax, Phone, 'No number')", otherTitle:'Two-value shortcuts', sqlite:"IFNULL(Fax, 'No fax')", mysql:"IFNULL(Fax, 'No fax')", tsql:"ISNULL(Fax, 'No fax')", note:'<code>COALESCE()</code> works the same in all three and takes any number of values, so it\'s the one to learn.'})}`,
     ex:[
@@ -777,7 +794,7 @@ ${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\
 ${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nRIGHT JOIN course ON student.course = course.id;")}
 <p>Now swap the tables and use a <code>LEFT JOIN</code>. It's exactly the same result:</p>
 ${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM course\nLEFT JOIN student ON student.course = course.id;")}
-<h3>FULL OUTER JOIN: everything from both</h3>
+${HD(['sqlite','tsql'],'FULL OUTER JOIN: everything from both')}
 <div class="venn-inline">${VENN(['a','ab','b'],'FULL OUTER JOIN')}<p>Keeps every row from both tables, matched where possible. Nicole and Data both appear, each with a NULL on the other side: <strong>6 rows</strong>.</p></div>
 ${C(FAKE + "SELECT student.name AS student, course.name AS course\nFROM student\nFULL OUTER JOIN course ON student.course = course.id;")}
 <h3>Finding rows with no match</h3>
@@ -993,7 +1010,8 @@ ${DIFF({title:'Two-way choices in each dialect', common:"CASE WHEN UnitPrice < 1
 
   datesstrings:{title:'Date and string functions', summary:'Pull apart, change and format dates and text.', cmds:['date()','strftime()','julianday()','substr()','instr()','length()','upper()'],
     learn:`
-<p>SQLite stores dates as text in the form <code>'YYYY-MM-DD'</code>, so dates sort and compare in the right order. A handful of functions work with them:</p>
+${HD(['sqlite'],'Dates in SQLite')}
+<p>Dates are where the dialects differ most, so this section shows SQLite's functions and the notes after it show MySQL's and T-SQL's. SQLite stores dates as text in the form <code>'YYYY-MM-DD'</code>, so dates sort and compare in the right order. A handful of functions work with them:</p>
 <table class="mini"><tr><th>Task</th><th>SQLite</th><th>Example result</th></tr>
 <tr><td>Today</td><td><code>date('now')</code>, <code>datetime('now')</code></td><td><code>'2026-10-12'</code></td></tr>
 <tr><td>Part of a date</td><td><code>strftime('%Y', d)</code>, <code>strftime('%m', d)</code>, <code>strftime('%d', d)</code></td><td><code>'1997'</code>, <code>'03'</code>, <code>'15'</code></td></tr>
@@ -1003,7 +1021,7 @@ ${DIFF({title:'Two-way choices in each dialect', common:"CASE WHEN UnitPrice < 1
 ${TIP('<code>strftime</code> returns text, so compare it with text: <code>WHERE strftime(\'%Y\', OrderDate) = \'1997\'</code>.')}
 ${C("SELECT OrderDate,\n       date(OrderDate, '+5 days')                    AS 'Due Date',\n       julianday(ShippedDate) - julianday(OrderDate) AS 'Ship Days',\n       strftime('%d/%m/%Y', OrderDate)               AS 'UK Format'\nFROM Orders;")}
 ${DIFF({title:'The same date jobs in each dialect', common:'CURRENT_TIMESTAMP   -- the date and time now', otherTitle:'Where they differ', sqlite:"strftime('%Y', OrderDate)\njulianday(ShippedDate) - julianday(OrderDate)\ndate(OrderDate, '+5 days')\nstrftime('%d/%m/%Y', OrderDate)", mysql:"YEAR(OrderDate)\nDATEDIFF(ShippedDate, OrderDate)\nDATE_ADD(OrderDate, INTERVAL 5 DAY)\nDATE_FORMAT(OrderDate, '%d/%m/%Y')", tsql:"YEAR(OrderDate)\nDATEDIFF(day, OrderDate, ShippedDate)\nDATEADD(day, 5, OrderDate)\nFORMAT(OrderDate, 'dd/MM/yyyy')", note:'Dates are where the dialects differ most, so check the notes for your database. Watch the order of the dates: MySQL\'s <code>DATEDIFF</code> takes the end date first, T-SQL\'s takes the start date first. (In SQLite, <code>CURRENT_TIMESTAMP</code> is in UTC.)'})}
-<h3>Text</h3>
+${HD('all','Text functions','Mostly all three: see the notes')}
 <table class="mini"><tr><th>Task</th><th>SQLite</th></tr>
 <tr><td>Length</td><td><code>length(s)</code></td></tr>
 <tr><td>Find text</td><td><code>instr(s, ' ')</code>: the position of the first space, or 0</td></tr>
@@ -1025,22 +1043,22 @@ ${C("SELECT PostalCode,\n       SUBSTRING(PostalCode, 1, instr(PostalCode, ' ') 
 <p>An <strong>index</strong> works like the index at the back of a book. To find "Paris" in a book with no index, you'd read every page. With one, you look up "Paris" and go straight to the right pages.</p>
 <p>A database is the same. Without an index, finding the customers in London means reading <em>every</em> row of Customers. With an index on <code>City</code>, the database looks up "London" and jumps straight to those rows. On a table of a few hundred rows you won't notice, but on millions of rows it's the difference between a blink and a long wait.</p>
 ${TIP('In this lesson, every run is undone straight afterwards, so the indexes you create don\'t stay. That way each example starts from Northwind as it was.')}
-<h3>Creating an index</h3>
+${HD('all','Creating an index')}
 <p>Give the index a name, then say which table and column it's for. A common naming pattern is <code>idx_table_column</code>:</p>
 ${C("CREATE INDEX idx_customers_city ON Customers(City);\n\nSELECT CompanyName, City FROM Customers WHERE City = 'London';")}
 <p>The query looks exactly the same: you never mention the index in a <code>SELECT</code>. The database decides for itself when to use it.</p>
-<h3>Is it being used?</h3>
-<p><code>EXPLAIN QUERY PLAN</code> shows how SQLite will find the rows. This script asks before and after creating the index:</p>
+${HD(['sqlite'],'Is it being used?')}
+<p><code>EXPLAIN QUERY PLAN</code> shows how SQLite will find the rows (MySQL uses <code>EXPLAIN</code>, and SQL Server shows an execution plan). This script asks before and after creating the index:</p>
 ${C("EXPLAIN QUERY PLAN SELECT * FROM Customers WHERE City = 'London';\n\nCREATE INDEX idx_customers_city ON Customers(City);\n\nEXPLAIN QUERY PLAN SELECT * FROM Customers WHERE City = 'London';")}
 <p>Before the index, the plan says <code>SCAN Customers</code>: it reads every row. After, it says <code>SEARCH Customers USING INDEX idx_customers_city</code>: it jumps straight to London. <a href="#/lesson/performance">Performance tuning</a> in Unit 7 goes into plans in more detail.</p>
-<h3>Unique indexes</h3>
+${HD('all','Unique indexes')}
 <p>A <strong>unique index</strong> also stops two rows having the same value, as a primary key does. No two shippers should share a phone number:</p>
 ${CERR("CREATE UNIQUE INDEX idx_shippers_phone ON Shippers(Phone);\n\nINSERT INTO Shippers (CompanyName, Phone)\nVALUES ('Copycat Couriers', '(503) 555-9831');")}
 ${TIP('Every primary key gets a unique index automatically, which is why looking a row up by its ID is always fast.')}
-<h3>Indexes on more than one column</h3>
+${HD('all','Indexes on more than one column')}
 <p>An index can cover several columns, for searches that use them together. The order matters: this index helps searches on <code>CustomerID</code>, or on <code>CustomerID</code> and <code>OrderDate</code>, but not on <code>OrderDate</code> alone, just as a phone book sorted by surname then first name can't find everyone called "Ann".</p>
 ${C("CREATE INDEX idx_orders_customer_date ON Orders(CustomerID, OrderDate);\n\nEXPLAIN QUERY PLAN\nSELECT * FROM Orders WHERE CustomerID = 'ALFKI' AND OrderDate > '1998-01-01';")}
-<h3>Seeing and removing indexes</h3>
+${HD(['sqlite'],'Seeing and removing indexes')}
 ${C("CREATE INDEX idx_customers_city ON Customers(City);\n\nPRAGMA index_list('Customers');")}
 <p>Names starting <code>sqlite_autoindex</code> are the automatic ones for primary keys. To remove an index you no longer need:</p>
 ${C("CREATE INDEX idx_customers_city ON Customers(City);\nDROP INDEX idx_customers_city;\n\nPRAGMA index_list('Customers');")}
@@ -1074,8 +1092,8 @@ ${TIP('Views you create here last until you reload the page. A view\'s close cou
     learn:`
 <p>A <strong>stored procedure</strong> is a named, reusable block of SQL saved in the database. Instead of writing the same statements every time, you call the procedure by name and pass in values, called <strong>parameters</strong>.</p>
 <ul class="plain"><li><strong>No duplication:</strong> every application and user calls the same logic instead of rewriting it.</li><li><strong>Consistency:</strong> a change to the logic is made in one place.</li><li><strong>Security:</strong> people can be allowed to run a procedure without being given direct access to its tables.</li></ul>
-${TIP('<strong>SQLite has no stored procedures.</strong> It runs inside your application, so the application\'s own code does this job. The examples below are MySQL and T-SQL: read them here, and run them in MySQL Workbench or SQL Server Management Studio.')}
-<h3>Creating a procedure</h3>
+${TIP('<strong>SQLite has no stored procedures.</strong> It runs inside your application, so the application\'s own code does this job. The examples below are MySQL and T-SQL, so try them in MySQL Workbench or SQL Server Management Studio.')}
+${HD(['mysql','tsql'],'Creating a procedure')}
 <p>This procedure updates a customer's phone number. It takes two parameters: the customer's ID and the new number.</p>
 ${C("DELIMITER //\n\nCREATE PROCEDURE UpdateCustomerPhone(\n    IN p_CustomerID CHAR(5),\n    IN p_NewPhone   VARCHAR(24)\n)\nBEGIN\n    UPDATE Customers\n    SET Phone = p_NewPhone\n    WHERE CustomerID = p_CustomerID;\nEND //\n\nDELIMITER ;", false, READ_ONLY('mysql','MySQL Workbench'))}
 <table class="mini"><tr><th>Part</th><th>What it does</th></tr>
@@ -1086,9 +1104,9 @@ ${C("DELIMITER //\n\nCREATE PROCEDURE UpdateCustomerPhone(\n    IN p_CustomerID 
 <tr><td><code>DELIMITER ;</code></td><td>Puts the normal semicolon back</td></tr></table>
 <p>The T-SQL version is similar. Parameters start with <code>@</code>, and there's no <code>DELIMITER</code>:</p>
 ${C("CREATE PROCEDURE UpdateCustomerPhone\n    @CustomerID CHAR(5),\n    @NewPhone   VARCHAR(24)\nAS\nBEGIN\n    UPDATE Customers\n    SET    Phone = @NewPhone\n    WHERE  CustomerID = @CustomerID;\nEND;", false, READ_ONLY('tsql','SQL Server Management Studio'))}
-<h3>Running a procedure</h3>
+${HD(['mysql','tsql'],'Running a procedure')}
 ${DIFF({title:'Calling a procedure in each dialect', mysql:"CALL UpdateCustomerPhone('ALFKI', '0121-555-5555');", tsql:"EXEC UpdateCustomerPhone\n    @CustomerID = 'ALFKI',\n    @NewPhone   = '0121-555-5555';", sqlite:'~No stored procedures: use a view for saved queries, and your application for the rest.'})}
-<h3>A procedure that returns rows</h3>
+${HD(['mysql','tsql'],'A procedure that returns rows')}
 <p>A procedure can also run a <code>SELECT</code> and hand back its result, such as a customer's contact name:</p>
 ${C("DELIMITER //\n\nCREATE PROCEDURE GetCustomerContactName(\n    IN p_CustomerID CHAR(5)\n)\nBEGIN\n    SELECT ContactName\n    FROM Customers\n    WHERE CustomerID = p_CustomerID;\nEND //\n\nDELIMITER ;\n\nCALL GetCustomerContactName('ALFKI');", false, READ_ONLY('mysql','MySQL Workbench'))}
 ${C("CREATE PROCEDURE GetCustomerContactName\n    @CustomerID CHAR(5)\nAS\nBEGIN\n    SELECT ContactName\n    FROM Customers\n    WHERE CustomerID = @CustomerID;\nEND;\n\nEXEC GetCustomerContactName @CustomerID = 'ALFKI';", false, READ_ONLY('tsql','SQL Server Management Studio'))}
@@ -1122,7 +1140,7 @@ ${C("SELECT ProductName, UnitPrice,\n       COUNT(*) OVER ()       AS 'Total Cou
 <p>The result is a number like any other, so you can do maths with it:</p>
 ${C("SELECT ProductName, CategoryID, UnitPrice,\n       UnitPrice - AVG(UnitPrice) OVER (PARTITION BY CategoryID) AS 'Difference from Category Average'\nFROM Products;")}
 ${TIP('Window functions run last, after <code>WHERE</code>, <code>GROUP BY</code> and <code>HAVING</code>, just before <code>ORDER BY</code>.')}
-${DIFF({title:'Window functions in each dialect', common:'COUNT(*) OVER (PARTITION BY EmployeeID)', otherTitle:'Versions that have them', sqlite:'~SQLite 3.25 (2018) and later. This lab has them.', mysql:'~MySQL 8.0 and later', tsql:'~SQL Server 2012 and later', note:'The <code>OVER (PARTITION BY …)</code> syntax is the same in all three.'})}`,
+${DIFF({title:'Window functions in each dialect', common:'COUNT(*) OVER (PARTITION BY EmployeeID)', otherTitle:'Versions that have them', sqlite:'~SQLite 3.25 (2018) and later. This lab has them.', mysql:'~MySQL 8.0 and later', tsql:'~SQL Server 2005 for the ranking functions; 2012 for LAG, LEAD and frames', note:'The <code>OVER (PARTITION BY …)</code> syntax is the same in all three.'})}`,
     ex:[
       {p:'Using an INNER JOIN (no window function), show OrderID, CustomerID, EmployeeID, the employee\'s total order count as Employee Order Count, and OrderDate.', hint:'Join Orders to a subquery that counts orders per EmployeeID.', sol:"SELECT o.OrderID, o.CustomerID, o.EmployeeID,\n       c.EOCount AS 'Employee Order Count', o.OrderDate\nFROM Orders o\nINNER JOIN (\n    SELECT EmployeeID, COUNT(*) AS EOCount\n    FROM Orders\n    GROUP BY EmployeeID\n) c ON o.EmployeeID = c.EmployeeID;"},
       {p:'Show each product\'s ProductID, ProductName, CategoryName, and how many other products are in the same category.', hint:'COUNT(*) OVER (PARTITION BY p.CategoryID) counts the product itself too, so subtract 1.', sol:"SELECT p.ProductID AS 'Product ID',\n       p.ProductName AS 'Product Name',\n       c.CategoryName AS 'Category Name',\n       COUNT(*) OVER (PARTITION BY p.CategoryID) - 1 AS 'Other Products in Category'\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nORDER BY p.ProductID;"},
@@ -1185,7 +1203,7 @@ ${TIP('Another way: use <code>FIRST_VALUE</code> and reverse the <code>ORDER BY<
 ${C("SELECT OrderID, OrderDate, Freight,\n       AVG(Freight) OVER (ORDER BY OrderID\n           ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS '3pt Moving Avg'\nFROM Orders;")}
 <p><code>UNBOUNDED PRECEDING</code> to the current row gives a running total:</p>
 ${C("SELECT OrderID, Freight,\n       SUM(Freight) OVER (ORDER BY OrderID\n           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS 'Running Total'\nFROM Orders;")}
-<h3>RANGE over dates</h3>
+${HD(['sqlite','mysql'],'RANGE over dates')}
 <p>To average over <em>days</em> rather than rows, so two orders on the same day both count, use <code>RANGE</code>. Order by the date as a day number with <code>julianday()</code>, then give the range in days. Look at 1996-07-08, which has two orders:</p>
 ${C("SELECT OrderID, OrderDate, Freight,\n       AVG(Freight) OVER (ORDER BY julianday(OrderDate)\n           RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS '3 day moving average'\nFROM Orders;")}
 ${DIFF({title:'Moving averages in each dialect', common:'AVG(Freight) OVER (ORDER BY OrderID\n    ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)', otherTitle:'Averaging over days instead of rows', sqlite:'AVG(Freight) OVER (ORDER BY julianday(OrderDate)\n    RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING)', mysql:'AVG(Freight) OVER (ORDER BY OrderDate\n    RANGE BETWEEN INTERVAL 1 DAY PRECEDING\n              AND INTERVAL 1 DAY FOLLOWING)', tsql:'~RANGE only allows UNBOUNDED and CURRENT ROW, so use ROWS, or join the table to itself on a date range.'})}`,
@@ -1204,10 +1222,10 @@ ${DIFF({title:'Moving averages in each dialect', common:'AVG(Freight) OVER (ORDE
 <tr><td><code>NTILE(n) OVER (ORDER BY x)</code></td><td>Splits the rows into <em>n</em> roughly equal bands, numbered 1 to <em>n</em></td></tr></table>
 ${C("SELECT ProductName, UnitPrice,\n       CUME_DIST()    OVER (ORDER BY UnitPrice) AS 'Cume Dist',\n       PERCENT_RANK() OVER (ORDER BY UnitPrice) AS 'Percent Rank',\n       NTILE(4)       OVER (ORDER BY UnitPrice) AS 'Quartile'\nFROM Products;")}
 ${TIP('Look at how each one treats ties: tied prices get the same <code>CUME_DIST</code> and <code>PERCENT_RANK</code>, but <code>NTILE</code> can put them in different bands.')}
-<h3>Finding the median</h3>
-<p>SQLite has no median function, but <code>CUME_DIST</code> gets you there: the median is the smallest value whose <code>CUME_DIST</code> reaches 0.5.</p>
+${HD('all','Finding the median')}
+<p>Standard SQLite and MySQL have no median function (this site's SQLite happens to include <code>median()</code>, but don't rely on it elsewhere). <code>CUME_DIST</code> works in all three and gets you there: the median is the smallest value whose <code>CUME_DIST</code> reaches 0.5.</p>
 ${C("SELECT MIN(UnitPrice) AS 'Median (existing value)'\nFROM (SELECT UnitPrice, CUME_DIST() OVER (ORDER BY UnitPrice) AS cd FROM Products) t\nWHERE cd >= 0.5;")}
-${DIFF({title:'Distributions in each dialect', common:'CUME_DIST()   PERCENT_RANK()   NTILE(4)', otherTitle:'Percentiles', sqlite:'~None: use CUME_DIST(), as above', mysql:'~None: use CUME_DIST()', tsql:'PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY UnitPrice) OVER ()\nPERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY UnitPrice) OVER ()', note:'<code>PERCENTILE_CONT</code> works out a value in between if it has to; <code>PERCENTILE_DISC</code> always returns a value that exists in the data.'})}`,
+${DIFF({title:'Distributions in each dialect', common:'CUME_DIST()   PERCENT_RANK()   NTILE(4)', otherTitle:'Percentiles', sqlite:'~Not built into standard SQLite: use CUME_DIST(), as above', mysql:'~None: use CUME_DIST()', tsql:'PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY UnitPrice) OVER ()\nPERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY UnitPrice) OVER ()', note:'<code>PERCENTILE_CONT</code> works out a value in between if it has to; <code>PERCENTILE_DISC</code> always returns a value that exists in the data.'})}`,
     ex:[
       {p:'Show each product\'s ProductName, UnitPrice and its PERCENT_RANK by price (cheapest is 0).', hint:'PERCENT_RANK() OVER (ORDER BY UnitPrice)', sol:"SELECT ProductName, UnitPrice,\n       PERCENT_RANK() OVER (ORDER BY UnitPrice) AS 'Percent Rank'\nFROM Products;"},
       {p:'Split products into 4 price bands with NTILE, cheapest first. Show ProductID, ProductName, UnitPrice and the band. Use ProductID to break ties.', hint:'NTILE(4) OVER (ORDER BY UnitPrice, ProductID)', sol:"SELECT ProductID, ProductName, UnitPrice,\n       NTILE(4) OVER (ORDER BY UnitPrice, ProductID) AS 'Price Band'\nFROM Products;"},
@@ -1234,7 +1252,8 @@ ${DIFF({title:'WITH in each dialect', common:'WITH name AS (…)', otherTitle:'R
   temptables:{title:'Temporary tables', summary:'Store a result to use in later queries.', cmds:['CREATE TEMP TABLE','DROP TABLE IF EXISTS'],
     learn:`
 <p>A CTE vanishes when its query ends. If you want to keep a result for <em>several</em> queries, store it in a temporary table. Only your connection can see it, and it's dropped automatically when you disconnect. In this lab, that's when you reload the page.</p>
-<p>Create one from a query with <code>CREATE TEMP TABLE … AS SELECT</code>. The first statement stores the table, the second uses it:</p>
+${HD(['sqlite','mysql'],'CREATE TEMPORARY TABLE')}
+<p>SQLite and MySQL both have <code>CREATE TEMPORARY TABLE</code>; SQL Server names temporary tables with a <code>#</code> instead (see the notes below). Create one from a query with <code>CREATE TEMP TABLE … AS SELECT</code> (<code>TEMP</code> is SQLite's short form). The first statement stores the table, the second uses it:</p>
 ${C("DROP TABLE IF EXISTS MeanAbove30;\n\nCREATE TEMP TABLE MeanAbove30 AS\nSELECT CategoryID\nFROM Products\nGROUP BY CategoryID HAVING AVG(UnitPrice) > 30;\n\nSELECT ProductName\nFROM Products p\nINNER JOIN MeanAbove30 m ON p.CategoryID = m.CategoryID;")}
 <p>Now it exists, you can query it on its own:</p>
 ${C("SELECT * FROM MeanAbove30;")}
@@ -1269,7 +1288,7 @@ ${DIFF({title:'Pivoting in each dialect', common:"MAX(CASE WHEN Subject = 'Engli
 <p>Tuning is less about tricks and more about a process. Like diagnosing a slow car, you find the cause before swapping parts:</p>
 <ol class="order"><li>Identify the slow queries</li><li>Understand what the database is doing</li><li>Fix the root cause, often with an index</li><li>Check it's actually faster</li></ol>
 <p>You met indexes in <a href="#/lesson/indexes">Indexes</a> (Unit 6). This lesson is about step 2: reading what the database is doing, so you know which index will help.</p>
-<h3>Reading a query plan</h3>
+${HD(['sqlite'],'Reading a query plan')}
 <p>Put <code>EXPLAIN QUERY PLAN</code> in front of a query to see how SQLite will find the rows, without running it:</p>
 <table class="mini"><tr><th>The plan says</th><th>Meaning</th><th>Good?</th></tr>
 <tr><td><code>SCAN Orders</code></td><td>Reads every row of the table</td><td>Fine for small tables; bad for big ones</td></tr>
@@ -1281,10 +1300,10 @@ ${DIFF({title:'Pivoting in each dialect', common:"MAX(CASE WHEN Subject = 'Engli
 ${C("EXPLAIN QUERY PLAN SELECT * FROM Customers WHERE City = 'London';")}
 <p>It scans the whole table. Add an index on <code>City</code>, then look at the plan again:</p>
 ${C("CREATE INDEX IF NOT EXISTS idx_customer_city ON Customers(City);\n\nEXPLAIN QUERY PLAN SELECT * FROM Customers WHERE City = 'London';")}
-<h3>Covering indexes</h3>
+${HD(['sqlite'],'Covering indexes in a SQLite plan')}
 <p>If an index holds every column a query needs, SQLite never has to visit the table at all. Ask for just the indexed column and the plan changes to a <strong>covering index</strong>:</p>
 ${C("CREATE INDEX IF NOT EXISTS idx_customer_city ON Customers(City);\n\nEXPLAIN QUERY PLAN SELECT City FROM Customers WHERE City = 'London';")}
-<h3>Sorting and grouping</h3>
+${HD(['sqlite'],'Sorting and grouping in a SQLite plan')}
 <p>Sorting or grouping by a column with no index makes the database build a temporary structure first. Watch for <code>USE TEMP B-TREE</code>:</p>
 ${C("EXPLAIN QUERY PLAN\nSELECT CategoryID, AVG(UnitPrice)\nFROM Products\nGROUP BY CategoryID\nORDER BY AVG(UnitPrice);")}
 <p>List the indexes on a table with <code>PRAGMA index_list</code>, or every index in the database from <code>sqlite_master</code>:</p>
