@@ -31,7 +31,7 @@ tablets and phones.
 | **Meet Northwind** | The full Northwind ERD. Select a table to see its columns, its keys, what it links to and its first five rows. |
 | **Lessons** (39) | A **Learn** tab with a short explanation and worked examples, each with a **Run this** button, then one tab per exercise. The editor and results sit alongside. |
 | **Checkpoints** | The last lesson in units 2–5 and 7. No new teaching: mixed exercises on the whole unit. |
-| **Quizzes** | An **end-of-unit quiz** for units 1 to 7 (8 to 12 questions each: multiple choice, plus 3 queries to write from unit 2 on), and two final quizzes: the **Query quiz** (28 query-writing tasks covering units 2 to 7, including the advanced topics) and the **Multiple-choice quiz** (40 questions on ERDs, how queries run, filtering, grouping, joins, subqueries, advanced topics and MySQL vs T-SQL). Nothing is marked until you submit. Optional timer, a score for each unit and a full review. |
+| **Quizzes** | An **end-of-unit quiz** for units 1 to 7 (8 to 12 questions each: multiple choice, plus 3 queries to write from unit 2 on), and two final quizzes: the **Query quiz** (28 query-writing tasks covering units 2 to 7, including the advanced topics) and the **Multiple-choice quiz** (40 questions on ERDs, how queries run, filtering, grouping, joins, subqueries, advanced topics and MySQL vs T-SQL). Learners choose to be marked at the end or straight away, after each answer. Optional timer, a score for each unit and a full review. |
 | **Free practice** | Run any query against Northwind. Nothing is marked. |
 
 ### The learning path
@@ -88,7 +88,8 @@ columns are fine, and row order only matters when the exercise asks for it (for 
 1. Choose a quiz on the **Quizzes** page, and whether to be marked **at the end** (like a real test) or **straight
    away** (each answer is marked as soon as you answer it, then locks) (or the **Unit N quiz** button under each unit on the learning path), then a time limit.
 2. Press **Start the quiz**. Questions are shown one at a time; the numbered buttons at the top jump between them and fill in once a question has an answer.
-3. Answer each question. In the Query quiz you can **Run** your query as often as you like to see its results, but you **won't be told whether it's right** until you submit.
+3. Answer each question. You can **Run** a query as often as you like to see its results. Marked **at the end**, you aren't told
+   whether it's right until you submit; marked **straight away**, **Check answer** marks it there and then.
 4. Every question has a **Northwind ERD** button. It opens the diagram over the question, so you can check table and column names without leaving the quiz (the timer keeps running). Press **Esc** or **Close** to go back.
 5. Press **Submit answers**. If time runs out, the quiz is submitted automatically. A countdown sits in the bar at the bottom and turns pink in the last five minutes.
 6. You get your score and whether you passed (the pass mark is **65%**), the time taken and a **score for each unit**, with a link to revise each one.

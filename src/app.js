@@ -730,6 +730,7 @@ function openLesson(id){
   // The Northwind table buttons and ERD only appear once Northwind has been introduced (Meet Northwind, Unit 2)
   const beforeNorthwind = PATH.findIndex(x=>x.id===id) < PATH.findIndex(x=>x.id==='map');
   $('#lStrip').hidden = L.db==='mydb' || beforeNorthwind; $('#lMyDb').hidden = L.db!=='mydb';
+  const mw=$('[data-mydb-when]'); if (mw) mw.textContent = PATH.findIndex(x=>x.id===id) < PATH.findIndex(x=>x.id==='build') ? "you'll build in" : 'from';
   
   renderLessonTabs(); renderLessonBody();
 }

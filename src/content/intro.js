@@ -71,16 +71,16 @@ const SITE_INTRO = `
 <div class="intro-cards">
   <a class="intro-card" href="#/path" data-testid="intro-card-path"><b>Learning path</b><span>Eight units, from what a database is to window functions and performance tuning, finishing with a capstone project. Work through them in order, or jump to any lesson.</span></a>
   <a class="intro-card" href="#/dialects" data-testid="intro-card-dialects"><b>SQL dialects</b><span>How MySQL, T-SQL and SQLite write the same things, side by side.</span></a>
-  <a class="intro-card" href="#/quiz" data-testid="intro-card-quizzes"><b>Quizzes</b><span>A short quiz for each unit, plus two final quizzes. Nothing is marked until you submit.</span></a>
+  <a class="intro-card" href="#/quiz" data-testid="intro-card-quizzes"><b>Quizzes</b><span>A short quiz for each unit, plus two final quizzes. Choose to be marked at the end, like a real test, or straight away, after each answer.</span></a>
   <a class="intro-card" href="#/free" data-testid="intro-card-free"><b>Free practice</b><span>Run any query you like against the Northwind database. Nothing is marked.</span></a>
 </div>
 
 <h2 class="dot">Inside a lesson</h2>
 <ol class="steps-list">
-  <li><b>The title, what it's for, and the commands it uses.</b> Every lesson starts with these, so you can see at a glance what it covers.</li>
+  <li><b>The title and what it's for.</b> Every lesson starts with these, so you can see at a glance what it covers. The bar above them takes you to the previous lesson, home, or the next lesson.</li>
   <li><b>Learn.</b> A short explanation with worked examples. Press <strong>Run this</strong> on any example to load it into the editor and run it, then change it and run it again.</li>
   <li><b>Exercises.</b> A task to solve with a query. Press <strong>Run</strong> (or <kbd>Ctrl</kbd> + <kbd>Enter</kbd>) and your result is checked at once. If it isn't right yet, you're told what's different. <strong>Show a hint</strong> and <strong>Show the answer</strong> are there if you're stuck.</li>
-  <li><b>Lesson complete.</b> Solve every exercise, and the lesson is ticked off on the learning path. The footer always links to the next lesson.</li>
+  <li><b>Lesson complete.</b> Solve every exercise (or, in a few lessons, answer the check questions) and the lesson is ticked off on the learning path. You can also tick a lesson off yourself with <strong>Mark lesson as complete</strong> at the bottom, for example if you've covered it in class.</li>
 </ol>
 <p>Answers are marked on what your query <em>returns</em>, not how it's written. Column names and aliases don't matter, extra columns are fine, and the order of rows only matters when the task asks for it.</p>
 

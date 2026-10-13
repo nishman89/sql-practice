@@ -137,7 +137,8 @@ ${TABS([
 <tr><td>Dates and times</td><td><code>DATE</code>, <code>DATETIME</code>, <code>TEXT</code></td><td><code>TEXT</code>, as <code>'YYYY-MM-DD'</code></td></tr>
 <tr><td>True or false</td><td><code>BOOLEAN</code>, <code>BIT</code>, <code>INTEGER</code></td><td><code>INTEGER</code>: <code>1</code> or <code>0</code></td></tr>
 <tr><td>Files and images</td><td><code>BLOB</code></td><td><code>BLOB</code></td></tr></table></div>
-<p class="small">SQLite doesn't enforce lengths: a <code>VARCHAR(10)</code> column will happily store 20 characters. MySQL and SQL Server won't.</p>`},
+<p class="small">SQLite doesn't enforce lengths: a <code>VARCHAR(10)</code> column will happily store 20 characters. MySQL and SQL Server won't.</p>
+<p class="small"><strong>Money in SQLite:</strong> SQLite has no exact decimal type, so even a <code>DECIMAL(10,2)</code> column stores 21.35 as a <code>REAL</code>. That's why Northwind's prices are <code>REAL</code> on this site. In MySQL and SQL Server, use <code>DECIMAL</code> for money, as the table above says.</p>`},
  {label:'🐬 MySQL', html:`<div class="tbl-wrap"><table class="mini"><tr><th>Kind of data</th><th>MySQL types</th><th>Notes</th></tr>
 <tr><td>Text</td><td><code>VARCHAR(n)</code>, <code>CHAR(n)</code></td><td><code>CHAR</code> holds up to 255 characters</td></tr>
 <tr><td>Long text</td><td><code>TEXT</code>, <code>MEDIUMTEXT</code>, <code>LONGTEXT</code></td><td>For anything longer, such as comments</td></tr>
@@ -511,7 +512,7 @@ ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> 
 <div class="tbl-wrap"><table class="mini dialect-matrix"><tr><th>Pattern</th><th>Means</th><th>🪶 SQLite</th><th>🐬 MySQL</th><th>🪟 T-SQL</th></tr>
 <tr><td><code>LIKE 'Ch%'</code></td><td><code>%</code>: any number of characters</td><td>✓</td><td>✓</td><td>✓</td></tr>
 <tr><td><code>LIKE '_A'</code></td><td><code>_</code>: exactly one character</td><td>✓</td><td>✓</td><td>✓</td></tr>
-<tr><td><code>LIKE '[BS]%'</code></td><td>One character from a set</td><td>✗ (matched literally)</td><td>✗</td><td>✓</td></tr>
+<tr><td><code>LIKE '[BS]%'</code></td><td>One character from a set</td><td>✗ (SQLite matches the brackets literally; this site shows a hint to use <code>GLOB</code>)</td><td>✗</td><td>✓</td></tr>
 <tr><td><code>GLOB '[BS]*'</code></td><td>Sets, with <code>*</code> and <code>?</code></td><td>✓</td><td>✗</td><td>✗</td></tr>
 <tr><td><code>REGEXP '^[BS]'</code></td><td>Regular expressions</td><td>✗</td><td>✓</td><td>✗</td></tr></table></div>
 

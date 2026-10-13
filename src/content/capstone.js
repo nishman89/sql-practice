@@ -38,7 +38,7 @@ ${CAP_Q('1.3', 'A real academy has many trainers and many courses, each course r
 </ol>
 
 <h2 class="dot">Exercise 2: Northwind queries</h2>
-<p class="cap-when">Do this after <strong>Unit 6: Going further</strong>.</p>
+<p class="cap-when">Do this after <strong>Unit 6: Going further</strong>. Question 2.10 needs <strong>Performance tuning</strong> from Unit 7.</p>
 <ol class="cap-list">
 ${CAP_Q('2.1', 'List all customers in either Paris or London. Include the customer ID, company name and address fields (address, city, postal code and country).', '<strong>8 rows</strong>, from AROUT (Around the Horn, London) to SPECD (Spécialités du monde, Paris).', `${REV('operators','Operators')} (IN)`)}
 ${CAP_Q('2.2', 'List all products stored in bottles.', '<strong>12 rows</strong>, starting with Chang (24 - 12 oz bottles) and Aniseed Syrup (12 - 550 ml bottles). Look closely at Chartreuse verte: "750 cc per bottle".', REV('wildcards','Wildcards'))}

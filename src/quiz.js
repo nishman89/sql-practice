@@ -34,7 +34,7 @@ function quizCard(q){
 function renderQuizList(){
   const v=$('#v-quizzes'); v.innerHTML='';
   v.append(h('h1',{class:'dot',id:'h-quizzes','data-testid':'quizzes-title'},'Quizzes'),
-    h('p',{class:'lede'},`Test yourself without the hints. You won't see whether your answers are right until you submit. The pass mark is ${QUIZ_SETTINGS.passMark}%.`));
+    h('p',{class:'lede'},`Test yourself without the hints. When you start a quiz, choose whether to be marked at the end, like a real test, or straight away, after each answer. The pass mark is ${QUIZ_SETTINGS.passMark}%.`));
   v.append(h('h2',{class:'dot quiz-group-h'},'End-of-unit quizzes'), h('p',{class:'muted'},'A short quiz for each unit of the learning path: multiple-choice questions plus, from unit 2, a few queries to write.'));
   v.append(h('div',{class:'quiz-cards unit-cards','data-testid':'unit-quizzes'}, QUIZZES.filter(q=>q.unitQuiz).map(quizCard)));
   v.append(h('h2',{class:'dot quiz-group-h'},'Final quizzes'), h('p',{class:'muted'},'Two longer quizzes across the whole path.'));
