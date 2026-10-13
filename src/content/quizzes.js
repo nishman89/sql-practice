@@ -173,12 +173,13 @@ const QUIZZES = [
     ]},
 
   { id:'unit-6', unitQuiz:6, type:'mixed', title:'Unit 6 quiz: Going further', timeLimits:[20, 30, 0], defaultLimit:20,
-    blurb:'CASE statements, date and string functions, views and stored procedures.',
+    blurb:'CASE statements, date and string functions, indexes, views and stored procedures.',
     questions:[
       {unit:6, q:'A CASE expression has no ELSE, and none of its WHEN conditions are true. What does it return?', options:['0','An empty string','An error','NULL'], answer:3, why:'Without ELSE, CASE returns NULL when nothing matches.'},
       {unit:6, q:'What does strftime(\'%Y\', \'1997-03-15\') return?', options:['1997','03','15','1997-03'], answer:0, why:'%Y is the four-digit year, returned as text. %m gives the month and %d the day.'},
       {unit:6, q:'What does SUBSTRING(\'London\', 1, 3) return?', options:['don','Lon','L','London'], answer:1, why:'SUBSTRING(text, start, length) starts at character 1 and takes 3. It works in all three dialects (SQLite also calls it substr).'},
       {unit:6, q:'Can you INSERT rows through a view that uses GROUP BY?', options:['Yes, always','Only for temporary views','No: views with joins or aggregates are read-only','Only if the view has a WHERE clause'], answer:2, why:'A grouped row doesn\'t map back to one row in a table, so the database can\'t write through it.'},
+      {unit:6, q:'Why not put an index on every column?', options:['Indexes only work on primary keys','Each index takes space and slows down INSERT, UPDATE and DELETE','A table can only have one index','Indexes make SELECT queries slower'], answer:1, why:'Indexes speed up searches, but every change to the table has to update them too. Index the columns you search, join and sort on.'},
       {unit:6, q:'Which of these can a stored procedure do, but a view can\'t?', options:['Return rows','Be saved in the database','Take parameters and update data','Be queried with SELECT *'], answer:2, why:'Both are saved in the database and can return rows. Only a procedure takes parameters and can INSERT, UPDATE or DELETE. You run it with CALL (MySQL) or EXEC (T-SQL); SQLite doesn\'t have them.'},
       {unit:6, q:'What does julianday(\'1997-01-10\') - julianday(\'1997-01-01\') return?', options:['-9','10','1','9'], answer:3, why:'julianday turns a date into a day number, so subtracting two gives the number of days between them.'},
       {lesson:'case', p:'Show each customer\'s CompanyName and a Market column: Home for customers in the UK, otherwise Export.', sol:"SELECT CompanyName,\n       CASE WHEN Country = 'UK' THEN 'Home' ELSE 'Export' END AS 'Market'\nFROM Customers;", why:'One WHEN and an ELSE covers every customer.'},

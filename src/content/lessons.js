@@ -92,7 +92,7 @@ const UNITS = [
   {id:'u3', title:'Summarising data', blurb:'Turn hundreds of rows into totals, averages and counts, and deal with missing values.', lessons:['aggregates','groupby','having','nulls','cp2']},
   {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['joinsintro','innerjoin','leftjoin','multijoin','cp3']},
   {id:'u5', title:'Subqueries', blurb:'Feed the result of one query into another.', lessons:['subintro','subwhere','subfrom','exists','cp4']},
-  {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, and saving SQL in the database as views and stored procedures.', lessons:['case','datesstrings','views','procedures']},
+  {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, indexes for faster searches, and saving SQL in the database as views and stored procedures.', lessons:['case','datesstrings','indexes','views','procedures']},
   {id:'u7', title:'Advanced topics', blurb:'Window functions, statistics, WITH, temporary tables, pivoting and making queries fast.', lessons:['windows','ranking','leadlag','frames','stats','cte','temptables','pivot','performance','cp5']},
   {id:'u8', title:'Capstone project', blurb:'Put it all together on your own SQL Server, MySQL or SQLite: build a database of Spartans and courses, then answer questions about Northwind.', lessons:['capstone']}
 ];
@@ -1008,6 +1008,43 @@ ${C("SELECT PostalCode,\n       SUBSTRING(PostalCode, 1, instr(PostalCode, ' ') 
       {p:'Show each customer\'s CompanyName in capital letters, with the length of the name.', hint:'upper(CompanyName) and length(CompanyName).', sol:"SELECT upper(CompanyName) AS 'Company', length(CompanyName) AS 'Length'\nFROM Customers;"}
     ]},
 
+  indexes:{title:'Indexes', summary:'Make searches faster by letting the database jump straight to the rows it needs.', cmds:['CREATE INDEX','CREATE UNIQUE INDEX','DROP INDEX'], rollback:true,
+    learn:`
+<p>An <strong>index</strong> works like the index at the back of a book. To find "Paris" in a book with no index, you'd read every page. With one, you look up "Paris" and go straight to the right pages.</p>
+<p>A database is the same. Without an index, finding the customers in London means reading <em>every</em> row of Customers. With an index on <code>City</code>, the database looks up "London" and jumps straight to those rows. On a table of a few hundred rows you won't notice, but on millions of rows it's the difference between a blink and a long wait.</p>
+${TIP('In this lesson, every run is undone straight afterwards, so the indexes you create don\'t stay. That way each example starts from Northwind as it was.')}
+<h3>Creating an index</h3>
+<p>Give the index a name, then say which table and column it's for. A common naming pattern is <code>idx_table_column</code>:</p>
+${C("CREATE INDEX idx_customers_city ON Customers(City);\n\nSELECT CompanyName, City FROM Customers WHERE City = 'London';")}
+<p>The query looks exactly the same: you never mention the index in a <code>SELECT</code>. The database decides for itself when to use it.</p>
+<h3>Is it being used?</h3>
+<p><code>EXPLAIN QUERY PLAN</code> shows how SQLite will find the rows. This script asks before and after creating the index:</p>
+${C("EXPLAIN QUERY PLAN SELECT * FROM Customers WHERE City = 'London';\n\nCREATE INDEX idx_customers_city ON Customers(City);\n\nEXPLAIN QUERY PLAN SELECT * FROM Customers WHERE City = 'London';")}
+<p>Before the index, the plan says <code>SCAN Customers</code>: it reads every row. After, it says <code>SEARCH Customers USING INDEX idx_customers_city</code>: it jumps straight to London. <a href="#/lesson/performance">Performance tuning</a> in Unit 7 goes into plans in more detail.</p>
+<h3>Unique indexes</h3>
+<p>A <strong>unique index</strong> also stops two rows having the same value, as a primary key does. No two shippers should share a phone number:</p>
+${CERR("CREATE UNIQUE INDEX idx_shippers_phone ON Shippers(Phone);\n\nINSERT INTO Shippers (CompanyName, Phone)\nVALUES ('Copycat Couriers', '(503) 555-9831');")}
+${TIP('Every primary key gets a unique index automatically, which is why looking a row up by its ID is always fast.')}
+<h3>Indexes on more than one column</h3>
+<p>An index can cover several columns, for searches that use them together. The order matters: this index helps searches on <code>CustomerID</code>, or on <code>CustomerID</code> and <code>OrderDate</code>, but not on <code>OrderDate</code> alone, just as a phone book sorted by surname then first name can't find everyone called "Ann".</p>
+${C("CREATE INDEX idx_orders_customer_date ON Orders(CustomerID, OrderDate);\n\nEXPLAIN QUERY PLAN\nSELECT * FROM Orders WHERE CustomerID = 'ALFKI' AND OrderDate > '1998-01-01';")}
+<h3>Seeing and removing indexes</h3>
+${C("CREATE INDEX idx_customers_city ON Customers(City);\n\nPRAGMA index_list('Customers');")}
+<p>Names starting <code>sqlite_autoindex</code> are the automatic ones for primary keys. To remove an index you no longer need:</p>
+${C("CREATE INDEX idx_customers_city ON Customers(City);\nDROP INDEX idx_customers_city;\n\nPRAGMA index_list('Customers');")}
+<h3>When to add an index</h3>
+<p>Indexes aren't free. Each one takes space, and every <code>INSERT</code>, <code>UPDATE</code> and <code>DELETE</code> has to keep it up to date, which slows changes down. So don't index everything:</p>
+<table class="mini"><tr><th>Index…</th><th>Don't bother indexing…</th></tr>
+<tr><td>Columns you often search with <code>WHERE</code></td><td>Small tables: reading every row is already quick</td></tr>
+<tr><td>Columns you join on (foreign keys)</td><td>Columns you rarely search on</td></tr>
+<tr><td>Columns you often sort with <code>ORDER BY</code></td><td>Columns with only a few different values, such as true/false</td></tr></table>
+${DIFF({title:'Indexes in each dialect', common:'CREATE INDEX idx_customers_city ON Customers(City);\nCREATE UNIQUE INDEX idx_shippers_phone ON Shippers(Phone);', otherTitle:'Removing and listing indexes', sqlite:"DROP INDEX idx_customers_city;\nPRAGMA index_list('Customers');", mysql:'DROP INDEX idx_customers_city ON Customers;\nSHOW INDEX FROM Customers;', tsql:"DROP INDEX idx_customers_city ON Customers;\nEXEC sp_helpindex 'Customers';", note:'Creating an index is written the same in all three. MySQL and SQL Server need the table name when you drop one.'})}`,
+    ex:[
+      {p:'Create an index called idx_products_supplier on the SupplierID column of Products, then list the indexes on Products.', hint:"CREATE INDEX idx_products_supplier ON Products(SupplierID); then PRAGMA index_list('Products');", sol:"CREATE INDEX idx_products_supplier ON Products(SupplierID);\nPRAGMA index_list('Products');"},
+      {p:'Create a unique index called idx_categories_name on CategoryName in Categories. Then show the query plan for SELECT * FROM Categories WHERE CategoryName = \'Seafood\', and check it uses your index.', hint:"CREATE UNIQUE INDEX … ON Categories(CategoryName); then EXPLAIN QUERY PLAN SELECT * FROM Categories WHERE CategoryName = 'Seafood';", sol:"CREATE UNIQUE INDEX idx_categories_name ON Categories(CategoryName);\nEXPLAIN QUERY PLAN SELECT * FROM Categories WHERE CategoryName = 'Seafood';"},
+      {p:'Orders are often searched by ShipCountry. Create an index called idx_orders_shipcountry for that, then show the query plan for SELECT * FROM Orders WHERE ShipCountry = \'France\'.', hint:"CREATE INDEX idx_orders_shipcountry ON Orders(ShipCountry); then EXPLAIN QUERY PLAN …", sol:"CREATE INDEX idx_orders_shipcountry ON Orders(ShipCountry);\nEXPLAIN QUERY PLAN SELECT * FROM Orders WHERE ShipCountry = 'France';"}
+    ]},
+
   views:{title:'Views', summary:'Save a query under a name and use it like a table.', cmds:['CREATE VIEW','DROP VIEW'],
     learn:`
 <p>A view is a saved query. It stores no data of its own: each time you select from it, the query behind it runs.</p>
@@ -1215,19 +1252,11 @@ ${DIFF({title:'Pivoting in each dialect', common:"MAX(CASE WHEN Subject = 'Engli
       {p:'For each CategoryName, show how many products are active and how many are discontinued, as two columns.', hint:'Join Products to Categories, group by CategoryName, and use SUM(CASE WHEN Discontinued = … THEN 1 ELSE 0 END) twice.', sol:"SELECT c.CategoryName,\n       SUM(CASE WHEN p.Discontinued = 0 THEN 1 ELSE 0 END) AS 'Active',\n       SUM(CASE WHEN p.Discontinued = 1 THEN 1 ELSE 0 END) AS 'Discontinued'\nFROM Products p\nINNER JOIN Categories c ON p.CategoryID = c.CategoryID\nGROUP BY c.CategoryName;"}
     ]},
 
-  performance:{title:'Performance tuning', summary:'Find out why a query is slow, and use an index to fix it.', cmds:['CREATE INDEX','EXPLAIN QUERY PLAN','PRAGMA index_list'],
+  performance:{title:'Performance tuning', summary:'Find out why a query is slow by reading its query plan, and fix it.', cmds:['EXPLAIN QUERY PLAN','CREATE INDEX','PRAGMA index_list'],
     learn:`
 <p>Tuning is less about tricks and more about a process. Like diagnosing a slow car, you find the cause before swapping parts:</p>
-<ol class="order"><li>Identify the slow queries</li><li>Understand what the database is doing</li><li>Fix the root cause</li><li>Check it's actually faster</li></ol>
-<h3>Indexes</h3>
-<p>An index is like the index at the back of a book: instead of reading every page, the database jumps to the right one.</p>
-<table class="mini"><tr><th>Index</th><th>What it is</th></tr>
-<tr><td>The table itself</td><td>A SQLite table is stored in order of its rowid, which is the <code>INTEGER PRIMARY KEY</code> if it has one. Looking a row up by that key is already fast.</td></tr>
-<tr><td>Index</td><td>A separate structure holding the indexed values in order, each with a pointer to its row. A table can have many: <code>CREATE INDEX name ON table(column)</code></td></tr>
-<tr><td>Unique index</td><td>Also stops duplicate values: <code>CREATE UNIQUE INDEX …</code></td></tr>
-<tr><td>Composite index</td><td>Covers several columns, such as <code>(CustomerID, OrderDate)</code>. It helps queries that filter on the first (leftmost) column(s).</td></tr>
-<tr><td>Covering index</td><td>Contains every column a query needs, so SQLite never has to read the table.</td></tr></table>
-<p>Indexes speed up reads but slow down inserts and updates, because every index must be kept up to date. Index the columns you filter, join and sort on, not everything.</p>
+<ol class="order"><li>Identify the slow queries</li><li>Understand what the database is doing</li><li>Fix the root cause, often with an index</li><li>Check it's actually faster</li></ol>
+<p>You met indexes in <a href="#/lesson/indexes">Indexes</a> (Unit 6). This lesson is about step 2: reading what the database is doing, so you know which index will help.</p>
 <h3>Reading a query plan</h3>
 <p>Put <code>EXPLAIN QUERY PLAN</code> in front of a query to see how SQLite will find the rows, without running it:</p>
 <table class="mini"><tr><th>The plan says</th><th>Meaning</th><th>Good?</th></tr>
@@ -1240,9 +1269,15 @@ ${DIFF({title:'Pivoting in each dialect', common:"MAX(CASE WHEN Subject = 'Engli
 ${C("EXPLAIN QUERY PLAN SELECT * FROM Customers WHERE City = 'London';")}
 <p>It scans the whole table. Add an index on <code>City</code>, then look at the plan again:</p>
 ${C("CREATE INDEX IF NOT EXISTS idx_customer_city ON Customers(City);\n\nEXPLAIN QUERY PLAN SELECT * FROM Customers WHERE City = 'London';")}
+<h3>Covering indexes</h3>
+<p>If an index holds every column a query needs, SQLite never has to visit the table at all. Ask for just the indexed column and the plan changes to a <strong>covering index</strong>:</p>
+${C("CREATE INDEX IF NOT EXISTS idx_customer_city ON Customers(City);\n\nEXPLAIN QUERY PLAN SELECT City FROM Customers WHERE City = 'London';")}
+<h3>Sorting and grouping</h3>
+<p>Sorting or grouping by a column with no index makes the database build a temporary structure first. Watch for <code>USE TEMP B-TREE</code>:</p>
+${C("EXPLAIN QUERY PLAN\nSELECT CategoryID, AVG(UnitPrice)\nFROM Products\nGROUP BY CategoryID\nORDER BY AVG(UnitPrice);")}
 <p>List the indexes on a table with <code>PRAGMA index_list</code>, or every index in the database from <code>sqlite_master</code>:</p>
-${C("PRAGMA index_list('Customers');")}
 ${C("SELECT name, tbl_name FROM sqlite_master WHERE type = 'index';")}
+${TIP('Indexes you create in this lesson last until you reload the page.')}
 ${DIFF({title:'Indexes and query plans in each dialect', common:'CREATE INDEX idx_customer_city ON Customers(City);', otherTitle:'Seeing the plan and the indexes', sqlite:"EXPLAIN QUERY PLAN SELECT …;\nPRAGMA index_list('Customers');", mysql:'EXPLAIN SELECT …;\nSHOW INDEX FROM Customers;', tsql:"-- Turn on the execution plan in SSMS, then run the query\nEXEC sp_helpindex 'Customers';", note:'In MySQL\'s <code>EXPLAIN</code>, <code>type = ALL</code> is a full table scan (SQLite\'s <code>SCAN</code>), and <code>ref</code> or <code>range</code> is an index seek (SQLite\'s <code>SEARCH</code>).'})}
 ${TIP('Indexes you create here last until you reload the page. Names starting <code>sqlite_autoindex</code> are created automatically for primary keys and <code>UNIQUE</code> columns.')}`,
     ex:[

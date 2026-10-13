@@ -43,11 +43,11 @@ tablets and phones.
 | **3. Summarising data** | Aggregate functions · GROUP BY · HAVING · Working with NULL values · *Checkpoint* |
 | **4. Combining tables** | Introduction to joins · Inner joins · Left joins · Table aliases and multiple joins · *Checkpoint* |
 | **5. Subqueries** | Introduction to subqueries · Subqueries in WHERE · Subqueries in FROM and SELECT · EXISTS and NOT EXISTS · *Checkpoint* |
-| **6. Going further** | CASE statements · Date and string functions · Views · Stored procedures |
+| **6. Going further** | CASE statements · Date and string functions · Indexes · Views · Stored procedures |
 | **7. Advanced topics** | Window functions · Ranking functions · Comparing rows · Window frames · Statistical functions · Common table expressions · Temporary tables · Pivoting · Performance tuning · *Checkpoint* |
 | **8. Capstone project** | Capstone project (in the learner's own SQL Server or MySQL) |
 
-49 lessons, 139 exercises and 147 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
+50 lessons, 142 exercises and 154 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
 exercises. **Data types**, **Types of SQL command** (DML, DDL, DCL and TCL as in the course slides, `DELETE` vs `TRUNCATE` vs `DROP`, and which groups the course covers) and
 **Inserting, updating and deleting data** build on the `Customers` and `Orders` tables from Creating tables (the same names
@@ -81,7 +81,7 @@ columns are fine, and row order only matters when the exercise asks for it (for 
 | Quiz | Questions | Time limits | You answer by |
 |---|---|---|---|
 | **Unit 1 quiz** | 13 multiple-choice | 15 min, 20 min or none | Selecting ONE option |
-| **Unit 2–7 quizzes** | 8 each (units 4, 5 and 6 have 9): multiple-choice plus 3 queries | 20 min, 30 min or none | Both |
+| **Unit 2–7 quizzes** | 8 to 10 each: multiple-choice plus 3 queries | 20 min, 30 min or none | Both |
 | **Query quiz** | 28, covering units 2 to 7 | 60 min, 75 min or none | Writing a query |
 | **Multiple-choice quiz** | 40, across all six units | 60 min, 75 min or none | Selecting ONE option |
 
@@ -136,7 +136,7 @@ showing the SQLite way:
 - **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Home** (the learning path), **Introduction**, **SQL dialects**, **Install**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
-- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 49").
+- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 50").
 - **SQL dialects** – the header tab with the MySQL / T-SQL / SQLite comparison, available from every page.
 - **Home** – the header's first link, the logo, the breadcrumb on every page and a button in every lesson's footer all go
   back to the home page (the learning path).
