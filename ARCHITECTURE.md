@@ -27,7 +27,7 @@ The site is a **single static HTML file** with a **SQL engine inside it**.
 | Decision | Why |
 |---|---|
 | **A real SQL engine in the browser** | Learners need to run real SQL and see real errors. Installing MySQL or SQL Server is the biggest barrier to practising, and a server-side sandbox would need hosting, security and money. sql.js gives a full engine with nothing to install. |
-| **SQLite only** | One dialect, taught consistently. Every lesson, exercise and quiz is plain SQLite; MySQL and T-SQL appear only in the SQL flavours lesson and the SQL dialects comparison. When learners type another dialect's syntax, they're shown the SQLite way rather than having it silently translated. |
+| **SQLite runs; all three are taught** | Every runnable example, exercise and query quiz task is plain SQLite, so it runs in the browser. Every lesson also has a 🪶 🐬 🪟 note comparing SQLite, MySQL and T-SQL, leading with the way all three share; the SQL flavours lesson and SQL dialects page compare them in full. When learners type another dialect's syntax, they're shown the SQLite way rather than having it silently translated. |
 | **The asm.js build of sql.js** | It's plain JavaScript, so it runs under strict hosting rules that block WebAssembly or extra files. It costs ~1.3 MB, which loads in a second or two. |
 | **One self-contained file** | It works from GitHub Pages, from a double-click on someone's desktop, from SharePoint or inside a learning platform, with no paths to configure. |
 | **Marking by result, not by text** | There are many correct ways to write most queries. Comparing what a query *returns* with what the model answer returns accepts all of them. |
@@ -80,7 +80,7 @@ const PATH    = UNITS.flatMap(…);                                             
 | Lesson field | Meaning |
 |---|---|
 | `title`, `summary` | Shown on the path and at the top of the lesson |
-| `cmds` | The commands the lesson uses, shown as chips under the summary |
+| `cmds` | The commands the lesson uses. Kept as data for reference; not currently shown on the page |
 | exercise `starter` | Optional text placed in the editor the first time an exercise is opened |
 | *(position)* | Lessons before Meet Northwind never show the Northwind table buttons or the Show Northwind ERD button, since learners haven't met Northwind yet |
 | `db: 'mydb'` | Run the lesson on `my`, a separate database seeded from `MYDB_SEED` (the Customers and Orders tables from Creating tables) instead of Northwind; the Northwind table buttons are hidden and a note explains |

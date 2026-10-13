@@ -31,7 +31,7 @@ tablets and phones.
 | **Meet Northwind** | The full Northwind ERD. Select a table to see its columns, its keys, what it links to and its first five rows. |
 | **Lessons** (39) | A **Learn** tab with a short explanation and worked examples, each with a **Run this** button, then one tab per exercise. The editor and results sit alongside. |
 | **Checkpoints** | The last lesson in units 2–5 and 7. No new teaching: mixed exercises on the whole unit. |
-| **Quizzes** | An **end-of-unit quiz** for each of the 7 units (8 questions each: multiple choice, plus 3 queries to write from unit 2 on), and two final quizzes: the **Query quiz** (28 query-writing tasks, one for every topic, including the advanced ones) and the **Multiple-choice quiz** (40 questions on ERDs, how queries run, filtering, grouping, joins, subqueries, advanced topics and MySQL vs T-SQL). Nothing is marked until you submit. Optional timer, a score for each unit and a full review. |
+| **Quizzes** | An **end-of-unit quiz** for units 1 to 7 (8 to 12 questions each: multiple choice, plus 3 queries to write from unit 2 on), and two final quizzes: the **Query quiz** (28 query-writing tasks covering units 2 to 7, including the advanced topics) and the **Multiple-choice quiz** (40 questions on ERDs, how queries run, filtering, grouping, joins, subqueries, advanced topics and MySQL vs T-SQL). Nothing is marked until you submit. Optional timer, a score for each unit and a full review. |
 | **Free practice** | Run any query against Northwind. Nothing is marked. |
 
 ### The learning path
@@ -47,7 +47,7 @@ tablets and phones.
 | **7. Advanced topics** | Window functions · Ranking functions · Comparing rows · Window frames · Statistical functions · Common table expressions · Temporary tables · Pivoting · Performance tuning · *Checkpoint* |
 | **8. Capstone project** | Capstone project (in the learner's own SQL Server or MySQL) |
 
-48 lessons, 135 exercises and 137 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
+48 lessons, 135 exercises and 136 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
 exercises. **Data types**, **Types of SQL command** (DML, DDL, DCL and TCL as in the course slides, `DELETE` vs `TRUNCATE` vs `DROP`, and which groups the course covers) and
 **Inserting, updating and deleting data** build on the `Customers` and `Orders` tables from Creating tables (the same names
@@ -82,7 +82,7 @@ columns are fine, and row order only matters when the exercise asks for it (for 
 |---|---|---|---|
 | **Unit 1 quiz** | 12 multiple-choice | 15 min, 20 min or none | Selecting ONE option |
 | **Unit 2–7 quizzes** | 8 each (units 4, 5 and 6 have 9): multiple-choice plus 3 queries | 20 min, 30 min or none | Both |
-| **Query quiz** | 28, one for every topic on the path | 60 min, 75 min or none | Writing a query |
+| **Query quiz** | 28, covering units 2 to 7 | 60 min, 75 min or none | Writing a query |
 | **Multiple-choice quiz** | 40, across all six units | 60 min, 75 min or none | Selecting ONE option |
 
 1. Choose a quiz on the **Quizzes** page (or the **Unit N quiz** button under each unit on the learning path), then a time limit.
@@ -340,7 +340,7 @@ select: {
 The `learn` text is HTML, so `<p>`, `<code>`, `<strong>`, `<h3>`, `<ul class="plain">` and `<table class="mini">` all
 work. A checkpoint is a lesson with `checkpoint: true` and no `learn`.
 
-Each lesson also has `cmds`: the commands it uses, shown as chips under its description on the path and the lesson
+Each lesson also has `cmds`: the commands it uses. It's kept as data for reference but isn't currently shown on the
 page. A lesson that can't have runnable exercises (such as Stored procedures) has `check` questions instead of `ex`, in
 the same `{ q, a, c, why }` shape as the Foundations questions.
 
@@ -490,7 +490,7 @@ Every important element has a stable hook:
 | **Home hero** | `hero` · `hero-start` · `hero-intro` · `hero-install` · `hero-quiz` · `hero-free` |
 | **Capstone project** | `capstone-title` · `capstone-print` · `capstone-body` · `capstone-before` · `capstone-install-link` · `capstone-q-1-1` … `capstone-q-2-9` · `capstone-checklist` · `capstone-task-setup`, `capstone-task-1-1` … `capstone-task-2-9`, `capstone-task-submit` |
 | **Install on your computer** | `install-title` · `install-intro` · `install-guides` · `install-tab-docker-sqlserver` / `-windows-sqlserver` / `-windows-mysql` / `-mac-mysql` / `-docker-mysql` / `-sqlite` · `install-panel` (with `data-guide`) · `copy-command` · `download-mysql-northwind` · `download-sqlite-northwind` · the chooser grid's option names: `choose-docker-sqlserver`, `choose-windows-sqlserver`, `choose-windows-mysql`, `choose-mac-mysql`, `choose-docker-mysql`, `choose-sqlite` (each opens that guide) |
-| **Introduction** | `intro-title` · `intro-body` · `intro-install-link` · `intro-card-path` / `-dialects` / `-quizzes` / `-free` · `intro-open-erd` · `intro-start` |
+| **How this site works** (lesson 1) | `intro-title` · `intro-body` · `intro-install-link` · `intro-card-path` / `-dialects` / `-quizzes` / `-free` · `intro-open-erd` · `intro-start` |
 | **Learning path** | `continue-card` · `overall-progress` (with `data-lessons-done` and `data-exercises-done`) · `continue` · `reset-progress` · `unit-1` … `unit-7` · `unit-quiz-1` … `unit-quiz-7` (each unit's quiz button) · `unit-quiz-N-score` · `lesson-<id>` (with `data-status`: `done`, `next`, `started` or `todo`) · `lesson-link-<id>` · `lesson-status-<id>` |
 | **Any lesson** | `breadcrumb` · `breadcrumb-home` · `breadcrumb-unit` · `lesson-position` · `lesson-footer` · `lesson-status` (with `data-done`, and `data-manual="true"` when marked complete by hand) · `mark-complete` · `unmark-complete` · `back-home` · `previous-lesson` · `next-lesson` |
 | **What's a database lesson** | `databases-title` · `databases-body` · `databases-see-table` · `databases-check` · `databases-check-question-1` … `-3` (with `data-answer`) · options `databases-check-question-N-option-a` and `…-option-a-input` · `databases-check-question-N-feedback` |
