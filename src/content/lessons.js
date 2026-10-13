@@ -178,6 +178,7 @@ ${TABS([
 <h3>Trying it out</h3>
 <p>Here's a script that creates two tables, choosing a type for every column, then adds some data. Run it and look at the log: each statement is listed as it runs. You'll build these same tables yourself, step by step, in <a href="#/lesson/build">Creating tables</a>.</p>
 ${C(MYDB_SEED.replace('CREATE TABLE Customers', 'DROP TABLE IF EXISTS Orders;\nDROP TABLE IF EXISTS Customers;\n\nCREATE TABLE Customers') + "\n\nSELECT * FROM Customers;")}
+${TIP('The <code>PRIMARY KEY</code>, <code>AUTOINCREMENT</code> and <code>FOREIGN KEY … REFERENCES</code> lines are the <strong>keys</strong> you met in <a href="#/lesson/databases">What\'s a database</a> and on the <a href="#/lesson/erd">ERD</a>. They aren\'t data types, so don\'t worry about them here: you\'ll write your own in <a href="#/lesson/build">Creating tables</a>, and <a href="#/lesson/keys">Primary and foreign keys</a> explains the rules.')}
 <p>In this lesson those tables are always there, with this data, and every run starts from a fresh copy:</p>
 ${MYDB_TABLES}
 <p>Insert a row of your own. Each value has to suit its column: text in quotes, numbers without:</p>
@@ -520,13 +521,18 @@ ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> 
 <table class="mini"><tr><th>Wildcard</th><th>Matches</th><th>Example</th></tr>
 <tr><td><code>%</code></td><td>Any number of characters, including none</td><td><code>'Ch%'</code> matches Chai, Chang, Chartreuse verte</td></tr>
 <tr><td><code>_</code></td><td>Exactly one character</td><td><code>'_A'</code> matches WA, CA, SA</td></tr></table>
+<p>Products whose name <strong>starts with</strong> Ch, followed by anything:</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName LIKE 'Ch%';")}
+<p>Customers whose region is <strong>exactly two characters, ending in A</strong>, such as WA or CA. Each <code>_</code> stands for one character:</p>
 ${C("SELECT CompanyName, Region\nFROM Customers\nWHERE Region LIKE '_A';")}
+<p>With <code>%</code> at both ends, the letters can be <strong>anywhere</strong> in the name. Products with "ale" in them:</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName LIKE '%ale%';")}
 ${DIFF({title:'LIKE in each dialect', all:true, otherTitle:'In each dialect', sqlite:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", mysql:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", tsql:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", common:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", note:'<code>LIKE</code>, <code>%</code> and <code>_</code> are standard SQL, so they work the same everywhere. Whether upper and lower case match depends on the database: SQLite\'s <code>LIKE</code> ignores case for A to Z, and MySQL and SQL Server usually ignore it too because of their default settings.'})}
 <h3>Character sets with GLOB</h3>
 <p>SQLite also has <code>GLOB</code>. It uses <code>*</code> for any characters and <code>?</code> for one character, and it understands <strong>sets</strong>: <code>[BS]</code> means B or S, and <code>[^BS]</code> means anything else.</p>
+<p>Categories whose name <strong>starts with B or S</strong>, followed by anything:</p>
 ${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName GLOB '[BS]*';")}
+<p>Products whose name <strong>starts with a vowel</strong>. <code>GLOB</code> cares about case, so this means a capital vowel:</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*';")}
 ${TIP('<code>LIKE</code> ignores upper and lower case (for A to Z), but <code>GLOB</code> doesn\'t: <code>GLOB \'c*\'</code> won\'t match Chai.')}
 ${DIFF({title:'Matching a set of characters in each dialect', sqlite:"WHERE CategoryName GLOB '[BS]*'", mysql:"WHERE CategoryName REGEXP '^[BS]'", tsql:"WHERE CategoryName LIKE '[BS]%'", note:'T-SQL lets you put a set in square brackets inside <code>LIKE</code>. MySQL and SQLite don\'t: MySQL uses <code>REGEXP</code>, and SQLite uses <code>GLOB</code>.'})}
@@ -537,8 +543,9 @@ ${DIFF({title:'Matching a set of characters in each dialect', sqlite:"WHERE Cate
 <tr><td><code>$</code></td><td>Ends with</td><td><code>'ale$'</code>: names ending in "ale"</td></tr>
 <tr><td><code>[ ]</code></td><td>Any one character in the set</td><td><code>'^[AEIOU]'</code>: starts with a vowel</td></tr>
 <tr><td><code>|</code></td><td>Or</td><td><code>'Ch|Ma'</code>: contains Ch or Ma</td></tr></table>
+<p>In MySQL, products whose name <strong>starts with a vowel</strong>: <code>^</code> means "starts with" and <code>[AEIOU]</code> means any one of those letters:</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName REGEXP '^[AEIOU]';", false, READ_ONLY('mysql','MySQL Workbench'))}
-<p>SQLite doesn't come with a regular expression engine, so try the <code>REGEXP</code> example above in MySQL Workbench. Here in SQLite, <code>GLOB</code> and <code>LIKE</code> get the same results:</p>
+<p>SQLite doesn't come with a regular expression engine, so try the <code>REGEXP</code> example above in MySQL Workbench. Here in SQLite, <code>GLOB</code> and <code>LIKE</code> get the same results. This finds products that start with a vowel, end in "ale", or contain "Ch":</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*'\n   OR ProductName LIKE '%ale'\n   OR ProductName LIKE '%Ch%';")}
 ${DIFF({title:'Regular expressions in each dialect', sqlite:'~No REGEXP built in: use GLOB or LIKE', mysql:"WHERE ProductName REGEXP '^[AEIOU]'", tsql:"~No REGEXP: use LIKE '[AEIOU]%'"})}`,
     ex:[
