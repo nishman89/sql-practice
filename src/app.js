@@ -242,7 +242,7 @@ function lessonDone(id){ return autoDone(id) || markedDone(id); }
 function nextLesson(){ return PATH.find(x=>!lessonDone(x.id)); }
 
 /* ---------- Routing ---------- */
-const VIEWS=['path','intro','install','capstone','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
+const VIEWS=['path','intro','install','capstone','erdmaker','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
 let current={view:'path',lesson:null};
 function route(){
   const parts=location.hash.replace(/^#\/?/,'').split('/');
@@ -252,6 +252,7 @@ function route(){
   else if (parts[0]==='dialects') view='dialects';
   else if (parts[0]==='intro'){ location.replace('#/lesson/intro'); return; }
   else if (parts[0]==='install') view='install';
+  else if (parts[0]==='erd-maker') view='erdmaker';
   else if (parts[0]==='quiz') view = parts[1] ? 'quiz' : 'quizzes';
   if (view!=='quiz') stopTimer();
   current={view,lesson:lid};
@@ -265,6 +266,7 @@ function route(){
   if (view==='databases') drawDatabases();
   if (view==='intro') drawIntro();
   if (view==='install') drawInstall();
+  if (view==='erdmaker') drawErdMaker();
   if (view==='capstone') drawCapstone();
   if (view==='flavours') drawFlavours();
   if (view==='dialects') renderDialectTabs($('#dialectsTabs'), 'dialects');
@@ -278,7 +280,7 @@ function route(){
   const h1=view==='path'?$('#h-path'):$('#v-'+view+' h1'); if (h1){ h1.setAttribute('tabindex','-1'); h1.focus({preventScroll:true}); }
 }
 addEventListener('hashchange', route);
-function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='install'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
+function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='install'||to==='erd-maker'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-go]'); if (b){ e.preventDefault(); goto(b.dataset.go); } });
 
 function renderChrome(){
@@ -287,7 +289,7 @@ function renderChrome(){
   const topNav=$('#lessonNav'); topNav.innerHTML=''; topNav.hidden=true;
   if (!id){
     foot.innerHTML='';
-    const PAGE={install:'Install on your computer',dialects:'SQL dialects',quizzes:'Quizzes',free:'Free practice'}[current.view];
+    const PAGE={erdmaker:'ERD maker',install:'Install on your computer',dialects:'SQL dialects',quizzes:'Quizzes',free:'Free practice'}[current.view];
     if (!PAGE){ cr.hidden=true; return; }
     cr.hidden=false; cr.innerHTML='';
     cr.append(h('a',{href:'#/path','data-testid':'breadcrumb-home'},'Home'), h('span',{class:'sep','aria-hidden':'true'},'/'), h('span',{'data-testid':'breadcrumb-page'},PAGE));
@@ -473,6 +475,109 @@ function drawCapstone(){
   });
 }
 $('#capPrint').addEventListener('click',()=>window.print());
+/* ---------- ERD maker: CREATE TABLE statements in, diagram out ---------- */
+const ERDM_EXAMPLE = `-- The films example from the Normalisation lesson.
+-- Change it, or replace it with your own tables, then press Draw ERD.
+
+CREATE TABLE Directors (
+    director_id INTEGER PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL,
+    born        INT
+);
+
+CREATE TABLE Movies (
+    movie_id    INTEGER PRIMARY KEY,
+    title       VARCHAR(200) NOT NULL,
+    year        INT,
+    director_id INT NOT NULL,
+    FOREIGN KEY (director_id) REFERENCES Directors(director_id)
+);
+
+CREATE TABLE Actors (
+    actor_id INTEGER PRIMARY KEY,
+    name     VARCHAR(100) NOT NULL,
+    born     INT
+);
+
+CREATE TABLE Roles (
+    movie_id INT NOT NULL,
+    actor_id INT NOT NULL,
+    role     VARCHAR(100),
+    PRIMARY KEY (movie_id, actor_id),
+    FOREIGN KEY (movie_id) REFERENCES Movies(movie_id),
+    FOREIGN KEY (actor_id) REFERENCES Actors(actor_id)
+);`;
+// Only the diagram matters here, so quietly drop MySQL / T-SQL extras that SQLite would refuse
+function erdPrep(sql){
+  return sql
+    .replace(/^\s*(USE\s+\S+|GO)\s*;?\s*$/gim,'')
+    .replace(/(CREATE|DROP)\s+DATABASE[^;]*;/gi,'')
+    .replace(/\bAUTO_INCREMENT(\s*=\s*\d+)?\b/gi,'')
+    .replace(/\bIDENTITY\s*(\(\s*\d+\s*,\s*\d+\s*\))?/gi,'')
+    .replace(/\bUNSIGNED\b/gi,'')
+    .replace(/\)\s*(ENGINE|DEFAULT\s+CHARSET|CHARSET|COLLATE)\s*=?[^;]*;/gi,');');
+}
+let erdmEd=null, erdmTables=[];
+function erdmDraw(){
+  const msg=$('#erdmMsg'), host=$('#erdmDiagram'); msg.className='erdm-msg'; msg.textContent='';
+  P.erdmSql=erdmEd.value; save();
+  if (/ALTER\s+TABLE\s+\S+\s+ADD\s+(CONSTRAINT\s+\S+\s+)?FOREIGN\s+KEY/i.test(erdmEd.value)){
+    msg.className='erdm-msg warn'; msg.textContent='Foreign keys added with ALTER TABLE won\'t show here. Put them inside CREATE TABLE instead.'; }
+  const db=new SQL.Database();
+  try { db.exec(erdPrep(erdmEd.value)); }
+  catch(e){ msg.className='erdm-msg err'; msg.textContent='Couldn\'t read your SQL: '+e.message+'. Check the statement it mentions, then press Draw ERD again.'; }
+  erdmTables=introspect(db); db.close();
+  if (!erdmTables.length){ host.innerHTML='<p class="erdm-empty">No tables yet. Write a CREATE TABLE statement and press Draw ERD.</p>'; return; }
+  if (!msg.textContent){ msg.className='erdm-msg ok'; msg.textContent=`Drawn: ${erdmTables.length} table${erdmTables.length===1?'':'s'}, ${erdmTables.reduce((n,t)=>n+t.fks.length,0)} relationship${erdmTables.reduce((n,t)=>n+t.fks.length,0)===1?'':'s'}.`; }
+  erdmRender();
+}
+function erdmRender(){
+  const host=$('#erdmDiagram'); P.erdmPos=P.erdmPos||{};
+  const known=Object.fromEntries(Object.entries(P.erdmPos).filter(([n])=>erdmTables.some(t=>t.name===n)));
+  renderERD(host, erdmTables, {testPrefix:'erdmaker', positions:known, label:'Your entity relationship diagram', maxScale:1});
+  const svg=$('svg',host); if (!svg) return;
+  // Drag a table to move it; the lines follow when you let go
+  $$('g.tbl',svg).forEach(g=>{
+    g.style.cursor='grab';
+    g.addEventListener('pointerdown',e=>{
+      e.preventDefault(); const name=g.dataset.t, m=svg.getScreenCTM().inverse();
+      const pt=(ev)=>{ const p=svg.createSVGPoint(); p.x=ev.clientX; p.y=ev.clientY; return p.matrixTransform(m); };
+      const start=pt(e), t0=(g.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]+([-\d.]+)\)/)||[0,0,0];
+      const ox=+t0[1], oy=+t0[2]; let nx=ox, ny=oy;
+      g.style.cursor='grabbing';
+      const move=ev=>{ const p=pt(ev); nx=Math.max(0,Math.round(ox+p.x-start.x)); ny=Math.max(0,Math.round(oy+p.y-start.y)); g.setAttribute('transform',`translate(${nx},${ny})`); };
+      const up=()=>{ window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); P.erdmPos[name]={x:nx,y:ny}; save(); erdmRender(); };
+      window.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
+    });
+  });
+}
+// Copy the computed styles into the SVG so the downloaded image looks the same as the page
+function erdmStandaloneSvg(){
+  const svg=$('#erdmDiagram svg'); if (!svg) return null;
+  const clone=svg.cloneNode(true), src=[svg,...svg.querySelectorAll('*')], dst=[clone,...clone.querySelectorAll('*')];
+  const props=['fill','stroke','stroke-width','stroke-dasharray','opacity','font-family','font-size','font-weight','text-anchor','dominant-baseline'];
+  src.forEach((el,i)=>{ const cs=getComputedStyle(el); dst[i].setAttribute('style', props.map(p=>`${p}:${cs.getPropertyValue(p)}`).join(';')); });
+  clone.querySelectorAll('title').forEach(t=>t.remove());
+  const vb=svg.viewBox.baseVal; clone.setAttribute('width',vb.width); clone.setAttribute('height',vb.height); clone.style.maxWidth=''; clone.style.minWidth='';
+  clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  const bg=document.createElementNS('http://www.w3.org/2000/svg','rect'); bg.setAttribute('x',vb.x); bg.setAttribute('y',vb.y); bg.setAttribute('width',vb.width); bg.setAttribute('height',vb.height); bg.setAttribute('fill','#ffffff'); clone.insertBefore(bg, clone.firstChild);
+  return {text:new XMLSerializer().serializeToString(clone), w:vb.width, h:vb.height};
+}
+function erdmDownload(name, blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); }
+function drawErdMaker(){
+  if (!erdmEd){
+    erdmEd=makeEditor($('#erdmEditor'),{label:'Your CREATE TABLE statements', id:'erdmaker', onRun:erdmDraw, onChange:()=>{ P.erdmSql=erdmEd.value; save(); }});
+    erdmEd.runBtn.textContent='Draw ERD';
+    erdmEd.value=P.erdmSql || ERDM_EXAMPLE;
+    $('#erdmExample').onclick=()=>{ erdmEd.value=ERDM_EXAMPLE; P.erdmPos={}; erdmDraw(); };
+    $('#erdmTidy').onclick=()=>{ P.erdmPos={}; save(); erdmRender(); };
+    $('#erdmSvg').onclick=()=>{ const s=erdmStandaloneSvg(); if (!s){ toast('Draw an ERD first.'); return; } erdmDownload('erd.svg', new Blob([s.text],{type:'image/svg+xml'})); };
+    $('#erdmPng').onclick=()=>{ const s=erdmStandaloneSvg(); if (!s){ toast('Draw an ERD first.'); return; }
+      const img=new Image(), scale=2; img.onload=()=>{ const c=document.createElement('canvas'); c.width=s.w*scale; c.height=s.h*scale; const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height); c.toBlob(b=>erdmDownload('erd.png', b),'image/png'); };
+      img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s.text); };
+  }
+  erdmDraw();
+}
 function drawIntro(){
   const b=$('#introBody'); b.innerHTML=SITE_INTRO;
   const go=$('#introStart'); go.onclick=()=>{ P.introDone=true; save(); goto('databases'); };

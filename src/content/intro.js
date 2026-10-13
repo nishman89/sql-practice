@@ -72,6 +72,7 @@ const SITE_INTRO = `
   <a class="intro-card" href="#/path" data-testid="intro-card-path"><b>Learning path</b><span>Eight units, from what a database is to window functions and performance tuning, finishing with a capstone project. Work through them in order, or jump to any lesson.</span></a>
   <a class="intro-card" href="#/dialects" data-testid="intro-card-dialects"><b>SQL dialects</b><span>How MySQL, T-SQL and SQLite write the same things, side by side.</span></a>
   <a class="intro-card" href="#/quiz" data-testid="intro-card-quizzes"><b>Quizzes</b><span>A short quiz for each unit, plus two final quizzes. Choose to be marked at the end, like a real test, or straight away, after each answer.</span></a>
+  <a class="intro-card" href="#/erd-maker" data-testid="intro-card-erd-maker"><b>ERD maker</b><span>Write <code>CREATE TABLE</code> statements and get an entity relationship diagram you can arrange and download.</span></a>
   <a class="intro-card" href="#/free" data-testid="intro-card-free"><b>Free practice</b><span>Run any query you like against the Northwind database. Nothing is marked.</span></a>
 </div>
 

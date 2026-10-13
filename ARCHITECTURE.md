@@ -47,6 +47,7 @@ after `#`, shows one section, and calls its render function.
 | `#/path` | `v-path` | `renderPath()` |
 | `#/lesson/intro` | `v-intro` | `drawIntro()`: `SITE_INTRO` from `src/content/intro.js`. It's lesson 1 (How this site works); `#/intro` redirects here, and Got it, start learning sets `P.introDone` |
 | `#/lesson/capstone` | `v-capstone` | `drawCapstone()`: `CAPSTONE_HTML` and a checklist from `CAPSTONE_TASKS`, ticks saved in `P.capstone` |
+| `#/erd-maker` | `v-erdmaker` | `drawErdMaker()`: runs the learner's SQL in a fresh in-memory database (after `erdPrep()` drops MySQL / T-SQL extras such as `AUTO_INCREMENT`, `IDENTITY` and `CREATE DATABASE`), then `introspect()` and `renderERD()`. Dragged positions and the SQL are saved in `P.erdmPos` / `P.erdmSql`; downloads copy computed styles into the SVG |
 | `#/install` | `v-install` | `drawInstall()`: `INSTALL_INTRO` and one tab per entry in `INSTALL_OPTIONS` (`src/content/install.js`); `addCopyButtons()` adds a Copy button to every `pre.cmd` |
 | `#/lesson/databases` | `v-databases` | `drawDatabases()`: lesson text and `renderCheck()` |
 | `#/lesson/flavours` | `v-flavours` | `drawFlavours()`: lesson text, `renderDialectTabs()`, `renderCheck()` |

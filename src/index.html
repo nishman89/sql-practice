@@ -71,6 +71,23 @@
     <p style="margin-top:28px"><button class="btn primary" type="button" id="introStart" data-testid="intro-start">Got it, start learning</button></p>
   </section>
 
+  <!-- ERD maker -->
+  <section class="view" id="v-erdmaker" aria-labelledby="h-erdmaker">
+    <h1 id="h-erdmaker" class="dot" data-testid="erdmaker-title">ERD maker</h1>
+    <p class="lede page-col">Write <code>CREATE TABLE</code> statements and press <strong>Draw ERD</strong> to turn them into an entity relationship diagram. Drag the tables to arrange them, then download the diagram as an image. You can paste SQLite, MySQL or T-SQL: extras such as <code>AUTO_INCREMENT</code>, <code>IDENTITY(1,1)</code> and <code>CREATE DATABASE</code> are ignored here, because only the diagram matters.</p>
+    <div class="erdm-editor" id="erdmEditor"></div>
+    <div class="erdm-tools">
+      <button class="btn small" type="button" id="erdmExample" data-testid="erdmaker-example">Load the example</button>
+      <button class="btn small" type="button" id="erdmTidy" data-testid="erdmaker-tidy">Tidy the layout</button>
+      <span class="erdm-spacer"></span>
+      <button class="btn small" type="button" id="erdmPng" data-testid="erdmaker-download-png">Download PNG</button>
+      <button class="btn small" type="button" id="erdmSvg" data-testid="erdmaker-download-svg">Download SVG</button>
+    </div>
+    <div class="erdm-msg" id="erdmMsg" data-testid="erdmaker-message" aria-live="polite"></div>
+    <div class="erd-scroll erdm-diagram" id="erdmDiagram" data-testid="erdmaker-diagram"></div>
+    <p class="small erdm-hint">Tip: drag a table by its heading. Foreign keys become the relationship lines, so write them inside <code>CREATE TABLE</code> (<code>FOREIGN KEY (col) REFERENCES OtherTable(col)</code>).</p>
+  </section>
+
   <!-- Capstone project -->
   <section class="view" id="v-capstone" aria-labelledby="h-capstone">
     <div class="cap-title"><h1 id="h-capstone" class="dot" data-testid="capstone-title">Capstone project</h1><button class="btn small" type="button" id="capPrint" data-testid="capstone-print">Print or save as PDF</button></div>
@@ -178,6 +195,7 @@
         <div class="editor-wrap" id="buildEditor"></div>
         <div class="out" id="buildOut" data-testid="build-results"></div>
         <div class="build-diff">
+          <p class="erdm-link">Want to draw a diagram of a design of your own? Use the <a href="#/erd-maker" data-testid="build-erd-maker">ERD maker</a>: write <code>CREATE TABLE</code> statements and download the ERD as an image.</p>
           <h2 class="dot">Creating tables in each dialect</h2>
           <p>This lesson uses SQLite. Creating tables is where the dialects differ most, so here's how MySQL and T-SQL write the same things. More comparisons are on the <a href="#/dialects">SQL dialects</a> page.</p>
           <div id="buildDiff" data-testid="build-dialects"></div>
@@ -233,7 +251,8 @@
   <section class="view" id="v-free" aria-labelledby="h-free">
     <h1 id="h-free" class="dot">Free practice</h1>
     <p class="lede">Write any query against Northwind. Nothing is marked here, so explore. Changes you make to the data last until you reload the page.</p>
-    <div class="ex-actions"><button class="btn small" type="button" id="freeRestore" data-testid="restore-northwind">Restore Northwind</button></div>
+    <div class="ex-actions"><button class="btn small" type="button" id="freeRestore" data-testid="restore-northwind">Restore Northwind</button>
+          <a class="btn small" href="#/erd-maker" data-testid="free-erd-maker">Make your own ERD</a></div>
     <div class="tables-strip" id="fStrip"></div>
     <div class="editor-wrap" id="fEditor"></div>
     <div class="out" id="fOut" data-testid="free-results"></div>
