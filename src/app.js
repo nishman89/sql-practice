@@ -866,7 +866,13 @@ function renderLessonBody(){
     $$('pre.ex',body).forEach((pre,n)=>{
       const sql=pre.textContent; const wrap=h('div',{class:'example','data-testid':`example-${n+1}`}); pre.replaceWith(wrap); wrap.append(pre);
       if (pre.hasAttribute('data-norun')){ wrap.classList.add('readonly'); wrap.prepend(h('span',{class:'tag'}, pre.dataset.label || 'Try this in your own database')); }
-      else { wrap.classList.add('has-run'); wrap.append(h('button',{class:'btn small run',type:'button','data-testid':`run-example-${n+1}`,onclick:()=>{ lEd.value=sql; P.drafts[draftKey()]=sql; save(); runLesson(); if (innerWidth<1020) $('#lEditor').scrollIntoView({block:'start'}); }},'Run this')); }
+      else { wrap.classList.add('has-run'); wrap.append(h('button',{class:'btn small run',type:'button','data-testid':`run-example-${n+1}`,onclick:()=>{ lEd.value=sql; P.drafts[draftKey()]=sql; save(); const rep=runLesson();
+        // On a phone, show the result right under the example instead of jumping down to the editor
+        if (PHONE.matches){ $$('.inline-result').forEach(x=>x.remove());
+          const box=h('div',{class:'inline-result','data-testid':`inline-result-${n+1}`,role:'region','aria-label':'Result'});
+          wrap.after(box); renderReport(box, rep);
+          box.append(h('p',{class:'inline-edit'}, h('button',{class:'btn small ghost',type:'button','data-testid':`edit-in-editor-${n+1}`,onclick:()=>{ $('#lEditor').scrollIntoView({block:'start'}); lEd.ta.focus({preventScroll:true}); }},'Edit this in the editor ↓')));
+        } else if (innerWidth<1020) $('#lEditor').scrollIntoView({block:'start'}); }},'Run this')); }
     });
     if (L.ex) body.append(h('p',{style:'margin-top:26px'}, h('button',{class:'btn primary',type:'button','data-testid':'start-exercises',onclick:()=>setTab(0)}, `Start the exercises (${L.ex.length})`)));
     else if (L.check){
@@ -902,11 +908,12 @@ function drawReveal(){
   if (reveal.sol) r.append(h('div',{class:'reveal','data-testid':'answer'}, h('b',{},'One possible answer'), h('pre',{},ex.sol), h('button',{class:'btn small',type:'button','data-testid':'copy-answer',onclick:()=>{ lEd.value=ex.sol; P.drafts[draftKey()]=ex.sol; save(); lEd.focus(); }},'Copy into the editor')));
 }
 function nextUnsolved(after){ const L=LESSONS[curLesson]; for (let k=1;k<=L.ex.length;k++){ const j=(after+k)%L.ex.length; if (!P.exDone[curLesson+'.'+j]) return j; } return null; }
+const PHONE = matchMedia('(max-width: 700px)');
 function runLesson(){
   // Lessons that change data (INSERT, UPDATE, DELETE) undo every run, so Northwind stays as it was
   const rep = LESSONS[curLesson].rollback ? runSafe(lEd.value, lessonDb()) : runScript(nw, lEd.value, 'nw'); const out=$('#lOut'); renderReport(out, rep);
   if (rep.ran.some(s=>/^(CREATE|DROP|ALTER)\s+TABLE\b/i.test(s))) nwModel=null;
-  if (curTab==='learn' || rep.error) return;
+  if (curTab==='learn' || rep.error) return rep;
   const L=LESSONS[curLesson], i=curTab, ex=L.ex[i];
   const last=rep.results[rep.results.length-1];
   let v;
