@@ -38,7 +38,7 @@ tablets and phones.
 
 | Unit | Lessons |
 |---|---|
-| **1. Foundations** | How this site works · What's a database · SQL flavours · Entity relationship diagrams · Data types · Types of SQL command · Creating tables · Inserting, updating and deleting data · Normalisation: 1NF to 3NF |
+| **1. Foundations** | How this site works · What's a database · SQL flavours · Entity relationship diagrams · Data types · Types of SQL command · Creating tables · Primary and foreign keys · Inserting, updating and deleting data · Normalisation: 1NF to 3NF |
 | **2. Introduction to querying** | Meet Northwind · Simple queries · Operators · Sorting data · Removing duplicates and limiting results · Wildcards · Concatenation · Arithmetic operators · *Checkpoint* |
 | **3. Summarising data** | Aggregate functions · GROUP BY · HAVING · Working with NULL values · *Checkpoint* |
 | **4. Combining tables** | Introduction to joins · Inner joins · Left joins · Table aliases and multiple joins · *Checkpoint* |
@@ -47,7 +47,7 @@ tablets and phones.
 | **7. Advanced topics** | Window functions · Ranking functions · Comparing rows · Window frames · Statistical functions · Common table expressions · Temporary tables · Pivoting · Performance tuning · *Checkpoint* |
 | **8. Capstone project** | Capstone project (in the learner's own SQL Server or MySQL) |
 
-48 lessons, 135 exercises and 136 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
+49 lessons, 139 exercises and 147 runnable examples in total. Unit 7 follows the *Advanced SQL* slides. **Stored procedures**
 can't run in SQLite, so that lesson explains them with MySQL and T-SQL examples and ends with check questions instead of
 exercises. **Data types**, **Types of SQL command** (DML, DDL, DCL and TCL as in the course slides, `DELETE` vs `TRUNCATE` vs `DROP`, and which groups the course covers) and
 **Inserting, updating and deleting data** build on the `Customers` and `Orders` tables from Creating tables (the same names
@@ -80,7 +80,7 @@ columns are fine, and row order only matters when the exercise asks for it (for 
 
 | Quiz | Questions | Time limits | You answer by |
 |---|---|---|---|
-| **Unit 1 quiz** | 12 multiple-choice | 15 min, 20 min or none | Selecting ONE option |
+| **Unit 1 quiz** | 13 multiple-choice | 15 min, 20 min or none | Selecting ONE option |
 | **Unit 2–7 quizzes** | 8 each (units 4, 5 and 6 have 9): multiple-choice plus 3 queries | 20 min, 30 min or none | Both |
 | **Query quiz** | 28, covering units 2 to 7 | 60 min, 75 min or none | Writing a query |
 | **Multiple-choice quiz** | 40, across all six units | 60 min, 75 min or none | Selecting ONE option |
@@ -134,7 +134,7 @@ showing the SQLite way:
 - **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Home** (the learning path), **Introduction**, **SQL dialects**, **Install**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
-- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 48").
+- **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 49").
 - **SQL dialects** – the header tab with the MySQL / T-SQL / SQLite comparison, available from every page.
 - **Home** – the header's first link, the logo, the breadcrumb on every page and a button in every lesson's footer all go
   back to the home page (the learning path).

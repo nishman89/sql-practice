@@ -30,7 +30,7 @@ const TIP = t => `<div class="tip">${t}</div>`;
 /* Dialect callouts, marked with the same icons as the course notes. Each value is code;
    start it with ~ to show plain text instead (for example "~Not available"). */
 const DIALECT_ICON = { sqlite:'🪶', mysql:'🐬', tsql:'🪟' };
-const DIALECT_LABEL = { sqlite:'SQLite (runs here)', mysql:'MySQL', tsql:'T-SQL' };
+const DIALECT_LABEL = { sqlite:'SQLite', mysql:'MySQL', tsql:'T-SQL' };
 const DIFF = o => {
   const val = v => v.startsWith('~') ? `<span class="ddiff-text">${esc(v.slice(1))}</span>` : /\n/.test(v) ? `<pre>${esc(v)}</pre>` : `<code>${esc(v)}</code>`;
   // common: the way that works in all three, shown first. Dialect rows that only repeat it are left out.
@@ -87,7 +87,7 @@ const BUILD_DIFF = () => [
 ].join('');
 
 const UNITS = [
-  {id:'u1', title:'Foundations', blurb:'How this site works, what a database is, the flavours of SQL, database diagrams, data types and the kinds of SQL command. Then build your own tables, add, change and remove data, and learn how to design tables well with normalisation.', lessons:['intro','databases','flavours','erd','datatypes','sqlcommands','build','changedata','normal']},
+  {id:'u1', title:'Foundations', blurb:'How this site works, what a database is, the flavours of SQL, database diagrams, data types and the kinds of SQL command. Then build your own tables, add, change and remove data, and learn how to design tables well with normalisation.', lessons:['intro','databases','flavours','erd','datatypes','sqlcommands','build','keys','changedata','normal']},
   {id:'u2', title:'Introduction to querying', blurb:'Meet Northwind, the database the rest of the course uses, then choose the columns and rows you need, and sort, trim, search and calculate.', lessons:['map','select','operators','sorting','distinct','wildcards','concat','arithmetic','cp1']},
   {id:'u3', title:'Summarising data', blurb:'Turn hundreds of rows into totals, averages and counts, and deal with missing values.', lessons:['aggregates','groupby','having','nulls','cp2']},
   {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['joinsintro','innerjoin','leftjoin','multijoin','cp3']},
@@ -182,9 +182,11 @@ ${MYDB_TABLES}
 <p>Insert a row of your own. Each value has to suit its column: text in quotes, numbers without:</p>
 ${C("INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Ana Lopez', 1.62, 0);\n\nSELECT * FROM Customers;")}
 <h3>Seeing a column's type</h3>
-<p><code>PRAGMA table_info</code> lists a table's columns and their declared types (SQL Server uses <code>sp_help</code>; MySQL uses <code>DESCRIBE</code>):</p>
+<p>Each dialect has its own way to list a table's columns and their types:</p>
+${DIFF({title:'Seeing a table\'s columns and types in each dialect', sqlite:"PRAGMA table_info('Customers');", mysql:'DESCRIBE Customers;', tsql:"EXEC sp_help 'Customers';", note:'MySQL and SQL Server can also query <code>INFORMATION_SCHEMA.COLUMNS</code>, which works in both.'})}
+<p>Here's the SQLite one:</p>
 ${C("PRAGMA table_info('Customers');")}
-<p><code>typeof()</code> shows how SQLite actually stored a value:</p>
+<p><code>typeof()</code> shows how SQLite actually stored a value. It's SQLite-only: MySQL and SQL Server enforce each column's type, so a value is always stored as its column's type and there's nothing to check.</p>
 ${C("SELECT typeof(42), typeof(1.85), typeof('Nish'), typeof(NULL);")}
 <h3>Converting with CAST</h3>
 <p><code>CAST(value AS type)</code> changes a value from one type to another. It works in all three dialects:</p>
@@ -253,6 +255,53 @@ ${DIFF({title:'DCL: giving and taking away permission', sqlite:'~Not available: 
   map:{title:'Meet Northwind', summary:'The sample database every exercise from here on uses.', cmds:[], kind:'map'},
 
   /* ===== Unit 2 ===== */
+  keys:{title:'Primary and foreign keys', summary:'The rules keys enforce, what happens when you delete a parent row, and how to name and add keys.', cmds:['PRIMARY KEY','FOREIGN KEY','REFERENCES','ON DELETE CASCADE','ON DELETE SET NULL','CONSTRAINT'], db:'mydb', rollback:true,
+    learn:`
+<p>Keys are what make a relational database hang together. You've already used them in <a href="#/lesson/build">Creating tables</a>; this lesson sets out the rules they enforce. It uses the same tables, and every run starts from a fresh copy:</p>
+${MYDB_TABLES}
+<h3>Primary keys</h3>
+<p>A <strong>primary key</strong> identifies each row. Every table should have one, and its values must be:</p>
+<ul class="plain"><li><strong>Unique:</strong> no two customers can share a <code>customer_id</code>.</li><li><strong>Never empty:</strong> a primary key can't be <code>NULL</code>.</li></ul>
+<p>Try to add a second customer with ID 1, and the database refuses:</p>
+${CERR("INSERT INTO Customers (customer_id, customer_name, height, is_happy)\nVALUES (1, 'Another Nish', 1.75, 1);")}
+<p>A key can also be made of two columns together, called a <strong>composite key</strong>: each <em>pair</em> must be unique. You'll see one in the <a href="#/lesson/normal">Normalisation</a> lesson.</p>
+<h3>Foreign keys</h3>
+<p>A <strong>foreign key</strong> is a column that holds another table's primary key. <code>Orders.customer_id</code> holds a <code>Customers.customer_id</code>, so every order points at the customer who placed it. Here's how the Orders table was created:</p>
+${C("SELECT sql FROM sqlite_master WHERE name = 'Orders';")}
+<p>A foreign key enforces three rules:</p>
+<ol class="why-steps">
+<li><strong>It must point at a row that exists</strong>, or be <code>NULL</code>. There's no customer 99:</li>
+</ol>
+${CERR("INSERT INTO Orders (order_number, customer_id)\nVALUES (1007, 99);")}
+<p>An order with no customer at all (<code>NULL</code>) is allowed, because it doesn't point at anything:</p>
+${C("INSERT INTO Orders (order_number, customer_id)\nVALUES (1007, NULL);\n\nSELECT * FROM Orders;")}
+<ol class="why-steps" start="2">
+<li><strong>Parents come first.</strong> A customer has to exist before you can give them an order, so you create and fill <code>Customers</code> before <code>Orders</code>, and drop <code>Orders</code> before <code>Customers</code>.</li>
+<li><strong>You can't delete a parent that still has children.</strong> Nish Mandal has orders, so deleting him is refused:</li>
+</ol>
+${CERR("DELETE FROM Customers\nWHERE customer_name = 'Nish Mandal';")}
+<h3>What should happen when a parent is deleted?</h3>
+<p>Refusing is the default, but you can choose what happens when the foreign key is created, with <code>ON DELETE</code>:</p>
+<table class="mini"><tr><th>Option</th><th>When a customer is deleted, their orders are…</th></tr>
+<tr><td>(nothing written)</td><td>Protected: the delete is refused while orders exist</td></tr>
+<tr><td><code>ON DELETE CASCADE</code></td><td>Deleted too</td></tr>
+<tr><td><code>ON DELETE SET NULL</code></td><td>Kept, with <code>customer_id</code> set to <code>NULL</code></td></tr></table>
+<p>This script rebuilds <code>Orders</code> with <code>ON DELETE CASCADE</code>, then deletes Nish. His orders go with him:</p>
+${C("DROP TABLE Orders;\nCREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n        ON DELETE CASCADE\n);\nINSERT INTO Orders (order_number, customer_id) VALUES\n    (1001, 1), (1002, 2), (1003, 3), (1004, 1);\n\nDELETE FROM Customers WHERE customer_name = 'Nish Mandal';\nSELECT * FROM Orders;")}
+<p>And with <code>ON DELETE SET NULL</code>, his orders stay but no longer belong to anyone:</p>
+${C("DROP TABLE Orders;\nCREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n        ON DELETE SET NULL\n);\nINSERT INTO Orders (order_number, customer_id) VALUES\n    (1001, 1), (1002, 2), (1003, 3), (1004, 1);\n\nDELETE FROM Customers WHERE customer_name = 'Nish Mandal';\nSELECT * FROM Orders;")}
+${TIP('<code>CASCADE</code> is powerful but dangerous: one <code>DELETE</code> can quietly remove rows from several tables. The default, refusing, is the safest choice unless you\'re sure.')}
+<h3>Naming a key</h3>
+<p>You can give a key a name with <code>CONSTRAINT</code>. The name appears in error messages, and you need it if you ever want to remove the key:</p>
+${C("DROP TABLE Orders;\nCREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    CONSTRAINT fk_orders_customers\n        FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);\nSELECT sql FROM sqlite_master WHERE name = 'Orders';")}
+${DIFF({title:'Keys in each dialect', common:'FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n    ON DELETE CASCADE        -- or SET NULL\nCONSTRAINT fk_orders_customers FOREIGN KEY …', otherTitle:'Adding a foreign key to an existing table', sqlite:'~Not possible: create the table again with the key included', mysql:'ALTER TABLE Orders\n    ADD CONSTRAINT fk_orders_customers\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id);', tsql:'ALTER TABLE Orders\n    ADD CONSTRAINT fk_orders_customers\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id);', note:'Writing keys in <code>CREATE TABLE</code>, including <code>ON DELETE</code> and <code>CONSTRAINT</code>, is the same in all three. SQLite only checks foreign keys once <code>PRAGMA foreign_keys = ON;</code> has been run; this site does that for you, and MySQL and SQL Server always check.'})}
+<p>Foreign keys are also the lines on an ERD, and they're what you join tables on in <a href="#/lesson/joinsintro">Unit 4</a>.</p>`,
+    ex:[
+      {p:'Add Phil Windridge as a customer (1.80 tall, happy), then give him order 1007. He\'ll be customer 4. Then show every order.', hint:'The customer has to exist first: INSERT into Customers, then INSERT INTO Orders (order_number, customer_id) VALUES (1007, 4).', sol:"INSERT INTO Customers (customer_name, height, is_happy)\nVALUES ('Phil Windridge', 1.80, 1);\nINSERT INTO Orders (order_number, customer_id)\nVALUES (1007, 4);\nSELECT * FROM Orders;"},
+      {p:'Remove Cathy French (customer 2) and her orders, in an order the foreign key allows, then show every customer.', hint:'Children before parents: DELETE her orders first, then the customer.', sol:"DELETE FROM Orders    WHERE customer_id = 2;\nDELETE FROM Customers WHERE customer_id = 2;\nSELECT * FROM Customers;"},
+      {p:'Rebuild Orders so that deleting a customer also deletes their orders. Add orders 1001 for customer 1 and 1002 for customer 2, delete customer 1, and show what\'s left in Orders.', hint:'DROP TABLE Orders; then CREATE TABLE Orders with FOREIGN KEY … REFERENCES Customers(customer_id) ON DELETE CASCADE.', sol:"DROP TABLE Orders;\nCREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id) ON DELETE CASCADE\n);\nINSERT INTO Orders (order_number, customer_id) VALUES (1001, 1), (1002, 2);\nDELETE FROM Customers WHERE customer_id = 1;\nSELECT * FROM Orders;"}
+    ]},
+
   changedata:{title:'Inserting, updating and deleting data', summary:'Add rows to the tables you created, change them and remove them, safely.', cmds:['INSERT INTO','VALUES','UPDATE','SET','DELETE FROM'], db:'mydb', rollback:true,
     learn:`
 <p>In <a href="#/lesson/build">Creating tables</a> you built two tables and added a few rows. This lesson carries on from there with the same tables and the same data:</p>
@@ -362,8 +411,16 @@ ${C('SELECT ProductName, UnitsInStock\nFROM Products\nWHERE UnitsInStock > 100;'
 ${RUN_ORDER(['SELECT','FROM'])}
 <p>You'll meet the other clauses as you go: <code>ORDER BY</code> and <code>DISTINCT</code> later in this unit, and <code>GROUP BY</code> and <code>HAVING</code> in Unit 3. This order explains a lot of SQL's rules, so the diagram will come up again.</p>
 ${TIP('<code>SELECT</code> filters <strong>columns</strong>. <code>WHERE</code> filters <strong>rows</strong>. They work independently.')}
-<p>To count the matching rows, use <code>COUNT(*)</code>. <code>AS</code> gives the result column a readable name, called an alias.</p>
+<p>To count the matching rows, use <code>COUNT(*)</code>. <code>AS</code> gives the result column a readable name, called an alias:</p>
 ${C("SELECT COUNT(*) AS 'Number of Customers'\nFROM Customers\nWHERE City = 'Paris';")}
+<h3>Column aliases</h3>
+<p>An <strong>alias</strong> renames a column in your result. It only changes the heading you see, never the table itself. Without one, a calculated column is headed with the calculation, such as <code>COUNT(*)</code>.</p>
+${C("SELECT CompanyName AS Company, City AS Town\nFROM Customers;")}
+<p>If the alias has a space, put it in quotes. <code>AS</code> itself is optional (<code>City Town</code> works too), but writing it makes the query easier to read:</p>
+${C("SELECT CompanyName AS 'Company Name',\n       City Town\nFROM Customers;")}
+<p><strong>Where can you use an alias?</strong> Look at the diagram above. <code>ORDER BY</code> runs after <code>SELECT</code>, so it can use an alias (you'll see this in <a href="#/lesson/sorting">Sorting data</a>). <code>WHERE</code> runs <em>before</em> <code>SELECT</code>, so in MySQL and SQL Server the alias doesn't exist yet and <code>WHERE</code> can't use it. SQLite is more relaxed and allows it, but don't rely on that: in <code>WHERE</code>, use the column itself.</p>
+${C("SELECT CompanyName, Country AS Nation\nFROM Customers\nWHERE Country = 'UK';")}
+${DIFF({title:'Column aliases in each dialect', common:"AS Company\nAS 'Company Name'\nAS \"Company Name\"", otherTitle:'Where they differ', sqlite:"WHERE Nation = 'UK'      -- SQLite lets WHERE use an alias", mysql:'AS `Company Name`\n-- WHERE can\'t use an alias', tsql:'AS [Company Name]\n-- WHERE can\'t use an alias', note:'To be safe in every dialect, use the column itself in <code>WHERE</code>, and save aliases for <code>SELECT</code> and <code>ORDER BY</code>.'})}
 <h3>When to use quotes</h3>
 <table class="mini"><tr><th>Column type</th><th>Quotes?</th></tr><tr><td><code>TEXT</code>, including dates (SQLite stores dates as text, <code>'YYYY-MM-DD'</code>)</td><td>Yes: <code>'London'</code>, <code>'1997-01-01'</code></td></tr><tr><td><code>INTEGER</code>, <code>REAL</code></td><td>No: <code>5</code>, <code>29.99</code>, <code>1</code></td></tr></table>
 <h3>Apostrophes inside text</h3>
@@ -375,6 +432,7 @@ ${DIFF({title:'Quotes in each dialect', common:"WHERE City = 'London'   -- singl
       {p:'Which employee holds the title of Doctor? Return at least their first and last name.', hint:'Look at the TitleOfCourtesy column. Doctor is stored as Dr. with a full stop.', sol:"SELECT FirstName, LastName\nFROM Employees\nWHERE TitleOfCourtesy = 'Dr.';"},
       {p:'How many products are discontinued?', hint:'Discontinued is an INTEGER column: 1 means yes, 0 means no. No quotes needed.', sol:'SELECT COUNT(*)\nFROM Products\nWHERE Discontinued = 1;'},
       {p:'Show the ProductID and UnitPrice of Sir Rodney\'s Marmalade.', hint:"Double the apostrophe: 'Sir Rodney''s Marmalade'", sol:"SELECT ProductID, UnitPrice\nFROM Products\nWHERE ProductName = 'Sir Rodney''s Marmalade';"}
+      ,{p:'Show the CompanyName of every customer in Germany as Company, and their ContactName as Main Contact.', hint:"CompanyName AS Company, ContactName AS 'Main Contact' (quotes because of the space). Filter on Country in WHERE.", sol:"SELECT CompanyName AS Company, ContactName AS 'Main Contact'\nFROM Customers\nWHERE Country = 'Germany';"}
     ]},
 
   operators:{title:'Operators', summary:'Compare values and combine conditions to ask more precise questions.', cmds:['=','<>','>','<','AND','OR','IN','BETWEEN','NOT'],
@@ -414,8 +472,7 @@ ${C('SELECT ProductName, UnitPrice\nFROM Products\nORDER BY UnitPrice DESC;')}
 <p>Add more columns to break ties. Here customers are sorted by country, and alphabetically within each country:</p>
 ${C('SELECT Country, CompanyName\nFROM Customers\nORDER BY Country ASC, CompanyName ASC;')}
 <h3>Why ORDER BY can use an alias</h3>
-<p>Remember the diagram from <a href="#/lesson/select">Simple queries</a>: the database runs <code>ORDER BY</code> last, after <code>SELECT</code>. By then the alias exists, so <code>ORDER BY "Stock Value"</code> works. <code>WHERE</code> runs before <code>SELECT</code>, which is why it can't use an alias.</p>
-<p>Because <code>ORDER BY</code> runs last, it can use an alias you created in <code>SELECT</code>:</p>
+<p>Remember the diagram from <a href="#/lesson/select">Simple queries</a>: the database runs <code>ORDER BY</code> last, after <code>SELECT</code>. By then the alias exists, so <code>ORDER BY</code> can use it in every dialect. (<code>WHERE</code> runs before <code>SELECT</code>, which is why MySQL and SQL Server won't let <code>WHERE</code> use an alias.)</p>
 ${C("SELECT ProductName, UnitPrice * UnitsInStock AS 'Stock Value'\nFROM Products\nORDER BY \"Stock Value\" DESC;")}
 ${TIP('You can also write <code>ORDER BY 2</code> to sort by the second column, but avoid it. If someone reorders the columns later, it silently sorts the wrong one.')}
 ${DIFF({title:'Sorting in each dialect', common:'ORDER BY Country, CompanyName DESC', sqlite:'ORDER BY Region NULLS LAST', note:'<code>ORDER BY</code>, <code>ASC</code> and <code>DESC</code> work the same in all three. One small extra: a missing value (NULL, see <a href="#/lesson/nulls">Working with NULL values</a>) sorts first in all three, and only SQLite lets you move NULLs to the end with <code>NULLS LAST</code>.'})}`,

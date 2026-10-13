@@ -635,7 +635,7 @@ function renderBuild(){
     h('div',{html: DIFF({sqlite:s.example, mysql:s.same?s.example:s.mysql, tsql:s.same?s.example:s.tsql, note:s.diffNote}) })));
   if (P.buildDone[i]){
     const nxt=i<BUILD_STEPS.length-1;
-    card.append(h('div',{class:'step-done'}, 'Step complete.', nxt?h('button',{class:'btn small primary',type:'button',onclick:()=>{ P.buildStep=i+1; save(); renderBuild(); loadStepDraft(); }},'Next step'):h('button',{class:'btn small primary',type:'button','data-go':'changedata'},'Next: Inserting, updating and deleting data')));
+    card.append(h('div',{class:'step-done'}, 'Step complete.', nxt?h('button',{class:'btn small primary',type:'button',onclick:()=>{ P.buildStep=i+1; save(); renderBuild(); loadStepDraft(); }},'Next step'):h('button',{class:'btn small primary',type:'button','data-go':'keys'},'Next: Primary and foreign keys')));
   }
 }
 function loadStepDraft(){
