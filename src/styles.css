@@ -728,7 +728,7 @@ ol.why-steps{padding-left:1.3em;display:grid;gap:6px;margin:4px 0 14px}
 .ddiff-sub{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px 14px 4px;border-top:1px solid var(--line)}
 
 /* Navigation bar at the top of each lesson */
-.lesson-nav{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;margin:4px 0 14px}
+.lesson-nav{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;margin:4px 0 14px}
 .lesson-nav[hidden]{display:none}
 .lesson-nav button{border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;display:inline-flex;align-items:center;gap:0;white-space:pre;min-width:0;max-width:100%}
 .lesson-nav button:hover{border-color:var(--pink);color:var(--pink-dark)}

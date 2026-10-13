@@ -300,7 +300,6 @@ function renderChrome(){
   const prevL=k>0?PATH[k-1].id:null, nextL=k<PATH.length-1?PATH[k+1].id:null;
   topNav.append(
     prevL ? h('button',{class:'ln-prev',type:'button','data-go':prevL,'data-testid':'top-previous-lesson',title:LESSONS[prevL].title}, h('span',{class:'arr','aria-hidden':'true'},'← '), h('span',{class:'lbl'},'Previous'), h('span',{class:'ttl'},': '+LESSONS[prevL].title)) : h('span',{class:'ln-gap'}),
-    h('button',{class:'ln-home',type:'button','data-go':'path','data-testid':'top-home'}, h('span',{'aria-hidden':'true'},'⌂ '), 'Home'),
     nextL ? h('button',{class:'ln-next',type:'button','data-go':nextL,'data-testid':'top-next-lesson',title:LESSONS[nextL].title}, h('span',{class:'lbl'},'Next'), h('span',{class:'ttl'},': '+LESSONS[nextL].title), h('span',{class:'arr','aria-hidden':'true'},' →')) : h('span',{class:'ln-gap'}));
   foot.innerHTML='';
   const done=lessonDone(id), [a,b]=lessonProg(id), auto=autoDone(id), manual=markedDone(id);
