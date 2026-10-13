@@ -19,7 +19,7 @@ const INSTALL_INTRO = `
 <tr><td><button type="button" class="linkish" data-install-tab="sqlite" data-testid="choose-sqlite">SQLite</button></td><td>🪶 SQLite</td><td class="os"><span class="os-yes" aria-label="Yes">✓</span></td><td class="os"><span class="os-yes" aria-label="Yes">✓</span></td><td>DB Browser for SQLite</td><td>Download the file</td></tr>
 </table></div>
 <div class="os-summary"><div><b>On Windows</b><span>Everything except the Mac-only MySQL guide. For T-SQL, <em>SQL Server with Docker</em> or <em>SQL Server on Windows</em>; for MySQL, <em>MySQL on Windows</em>.</span></div><div><b>On a Mac</b><span>SQL Server only runs in Docker, so for T-SQL use <em>SQL Server with Docker</em>. For MySQL, <em>MySQL on Mac</em> or <em>MySQL with Docker</em>.</span></div><div><b>Quickest of all</b><span><em>SQLite</em>: one small app and one file, on either system, using the same dialect and Northwind as this site.</span></div></div>
-${TIP('Ask your trainer which database your course uses. The SQL you learn here works in all three: the 🪶 🐬 🪟 notes in each lesson show where they differ.')}`;
+${TIP('<strong>Install the one your trainer has asked you to use</strong>: that\'s the flavour to focus on for your course and the capstone. The SQL you learn here works in all three, and the 🪶 🐬 🪟 notes in each lesson show where they differ.')}`;
 
 const INSTALL_OPTIONS = [
   { id:'docker-sqlserver', tab:'🪟 SQL Server with Docker', os:OS('Windows','Mac'), title:'SQL Server with Docker and VS Code',

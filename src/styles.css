@@ -777,3 +777,5 @@ fieldset.mark-mode input{accent-color:var(--pink);margin-top:4px}
 .erdm-empty{color:var(--muted);text-align:center;padding:40px 10px}
 .erdm-hint{margin-top:10px;max-width:68rem}
 .erdm-link{background:var(--paper);border-left:5px solid var(--pink);border-radius:0 10px 10px 0;box-shadow:var(--shadow);padding:10px 14px;margin:24px 0 8px;max-width:50rem}
+.focus-note{background:var(--paper);border-radius:12px;box-shadow:var(--shadow);border-left:6px solid var(--ink);padding:12px 16px;margin:12px 0 18px;max-width:50rem}
+.focus-note b{display:block;font-family:var(--f-head);font-size:1.05rem;margin-bottom:2px}

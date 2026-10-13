@@ -92,6 +92,7 @@ const SITE_INTRO = `
 
 <h2 class="dot">Which SQL this uses</h2>
 <p>The lessons use <strong>SQLite</strong>, which runs here in your browser. SQL comes in several flavours, and where MySQL or T-SQL write something differently, the lessons show all three, marked with these icons:</p>
+<div class="focus-note" data-testid="intro-focus"><b>Focus on your trainer's flavour.</b> This course shows you three flavours of SQL, but you don't need to learn all three. Concentrate on the one your trainer has asked you to use: it's the one you'll use on your course and for the capstone project. Where the dialects differ, read the line for yours and just skim the others.</div>
 <ul class="dialect-legend">
   <li><span class="ddiff-tag sqlite"><span aria-hidden="true">🪶</span> SQLite</span> runs here. This is the version to practise.</li>
   <li><span class="ddiff-tag mysql"><span aria-hidden="true">🐬</span> MySQL</span> for comparison: you'd run it in MySQL Workbench.</li>

@@ -64,6 +64,7 @@ const FLAVOURS_LEARN = `
   <div class="flavour tsql"><b><span class="ficon" aria-hidden="true">🪟</span> T-SQL</b><span>Transact-SQL, Microsoft's dialect for SQL Server and Azure SQL. Used with SSMS.</span></div>
   <div class="flavour sqlite"><b><span class="ficon" aria-hidden="true">🪶</span> SQLite</b><span>A small engine built into phones, apps and browsers. <strong>This course uses SQLite</strong>, and it runs right here.</span></div>
 </div>
+<div class="focus-note" data-testid="flavours-focus"><b>Focus on your trainer's flavour.</b> This course shows you three flavours of SQL, but you don't need to learn all three. Concentrate on the one your trainer has asked you to use: it's the one you'll use on your course and for the capstone project. Where the dialects differ, read the line for yours and just skim the others.</div>
 <p>There are others, too: PostgreSQL is popular for newer applications, and Oracle Database has its own dialect, PL/SQL. Once you know one flavour well, picking up another is mostly a matter of looking up the differences.</p>
 <div class="two-col">
   <div><h3>The same everywhere</h3><ul class="plain"><li><code>SELECT</code>, <code>FROM</code>, <code>WHERE</code></li><li><code>JOIN</code>, <code>GROUP BY</code>, <code>HAVING</code>, <code>ORDER BY</code></li><li><code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code></li><li>The <code>%</code> and <code>_</code> wildcards</li><li><code>CASE</code>, subqueries and <code>WITH</code></li></ul></div>
