@@ -517,6 +517,7 @@ ${TIP('<code>LIMIT</code> without <code>ORDER BY</code> gives you <em>some</em> 
 <tr><td><code>GLOB '[BS]*'</code></td><td>Sets, with <code>*</code> and <code>?</code></td><td>✓</td><td>✗</td><td>✗</td></tr>
 <tr><td><code>REGEXP '^[BS]'</code></td><td>Regular expressions</td><td>✗</td><td>✓</td><td>✗</td></tr></table></div>
 
+<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">🪶 🐬 🪟</span> LIKE with % and _ <span class="h-tag">All three</span></h3>
 <p><code>LIKE</code> compares text against a pattern. Two wildcards do the work:</p>
 <table class="mini"><tr><th>Wildcard</th><th>Matches</th><th>Example</th></tr>
 <tr><td><code>%</code></td><td>Any number of characters, including none</td><td><code>'Ch%'</code> matches Chai, Chang, Chartreuse verte</td></tr>
@@ -528,7 +529,7 @@ ${C("SELECT CompanyName, Region\nFROM Customers\nWHERE Region LIKE '_A';")}
 <p>With <code>%</code> at both ends, the letters can be <strong>anywhere</strong> in the name. Products with "ale" in them:</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName LIKE '%ale%';")}
 ${DIFF({title:'LIKE in each dialect', all:true, otherTitle:'In each dialect', sqlite:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", mysql:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", tsql:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", common:"WHERE ProductName LIKE 'Ch%'\nWHERE Region LIKE '_A'", note:'<code>LIKE</code>, <code>%</code> and <code>_</code> are standard SQL, so they work the same everywhere. Whether upper and lower case match depends on the database: SQLite\'s <code>LIKE</code> ignores case for A to Z, and MySQL and SQL Server usually ignore it too because of their default settings.'})}
-<h3>Character sets with GLOB</h3>
+<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">🪶</span> Character sets with GLOB <span class="h-tag">SQLite only</span></h3>
 <p>SQLite also has <code>GLOB</code>. It uses <code>*</code> for any characters and <code>?</code> for one character, and it understands <strong>sets</strong>: <code>[BS]</code> means B or S, and <code>[^BS]</code> means anything else.</p>
 <p>Categories whose name <strong>starts with B or S</strong>, followed by anything:</p>
 ${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName GLOB '[BS]*';")}
@@ -536,8 +537,11 @@ ${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName GLOB '[BS]*';")}
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*';")}
 ${TIP('<code>LIKE</code> ignores upper and lower case (for A to Z), but <code>GLOB</code> doesn\'t: <code>GLOB \'c*\'</code> won\'t match Chai.')}
 ${DIFF({title:'Matching a set of characters in each dialect', sqlite:"WHERE CategoryName GLOB '[BS]*'", mysql:"WHERE CategoryName REGEXP '^[BS]'", tsql:"WHERE CategoryName LIKE '[BS]%'", note:'T-SQL lets you put a set in square brackets inside <code>LIKE</code>. MySQL and SQLite don\'t: MySQL uses <code>REGEXP</code>, and SQLite uses <code>GLOB</code>.'})}
-<h3>Regular expressions with REGEXP</h3>
-<p>MySQL has <code>REGEXP</code> (also written <code>RLIKE</code>), which matches a <strong>regular expression</strong>, a more powerful kind of pattern. Unlike <code>LIKE</code>, it matches anywhere in the text unless you say otherwise:</p>
+<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">🪟</span> Character sets inside LIKE <span class="h-tag">T-SQL only</span></h3>
+<p>In T-SQL, <code>LIKE</code> itself understands sets in square brackets: <code>[BS]</code> means B or S, and <code>[^BS]</code> means anything else. Categories whose name starts with B or S:</p>
+${C("SELECT CategoryName\nFROM Categories\nWHERE CategoryName LIKE '[BS]%';", false, READ_ONLY('tsql','SQL Server Management Studio'))}
+<h3 class="h-dialect"><span class="h-icons" aria-hidden="true">🐬</span> Regular expressions with REGEXP <span class="h-tag">MySQL only</span></h3>
+<p>MySQL has <code>REGEXP</code> (also written <code>RLIKE</code>). It uses <strong>regular expressions</strong>, often shortened to <em>regex</em>: a mini-language for <strong>pattern recognition</strong> in text. Regular expressions can describe far more than <code>LIKE</code> can, such as "starts with a vowel", "ends in a number" or "contains Ch or Ma". Unlike <code>LIKE</code>, a regular expression matches anywhere in the text unless you say otherwise. The basics:</p>
 <table class="mini"><tr><th>Pattern</th><th>Means</th><th>Example</th></tr>
 <tr><td><code>^</code></td><td>Starts with</td><td><code>'^Ch'</code>: Chai, Chang</td></tr>
 <tr><td><code>$</code></td><td>Ends with</td><td><code>'ale$'</code>: names ending in "ale"</td></tr>
@@ -545,6 +549,7 @@ ${DIFF({title:'Matching a set of characters in each dialect', sqlite:"WHERE Cate
 <tr><td><code>|</code></td><td>Or</td><td><code>'Ch|Ma'</code>: contains Ch or Ma</td></tr></table>
 <p>In MySQL, products whose name <strong>starts with a vowel</strong>: <code>^</code> means "starts with" and <code>[AEIOU]</code> means any one of those letters:</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName REGEXP '^[AEIOU]';", false, READ_ONLY('mysql','MySQL Workbench'))}
+<p class="further">📖 <strong>Further reading on regular expressions</strong>, if you want to know more: <a href="https://regexone.com/" target="_blank" rel="noopener">RegexOne</a> teaches them step by step with interactive exercises, <a href="https://regex101.com/" target="_blank" rel="noopener">regex101</a> lets you test a pattern and explains each part of it, and the <a href="https://dev.mysql.com/doc/en/pattern-matching.html" target="_blank" rel="noopener">MySQL manual</a> covers <code>REGEXP</code> in MySQL itself. Regular expressions are used far beyond SQL, in programming languages, text editors and search tools, so they're well worth learning.</p>
 <p>SQLite doesn't come with a regular expression engine, so try the <code>REGEXP</code> example above in MySQL Workbench. Here in SQLite, <code>GLOB</code> and <code>LIKE</code> get the same results. This finds products that start with a vowel, end in "ale", or contain "Ch":</p>
 ${C("SELECT ProductName\nFROM Products\nWHERE ProductName GLOB '[AEIOU]*'\n   OR ProductName LIKE '%ale'\n   OR ProductName LIKE '%Ch%';")}
 ${DIFF({title:'Regular expressions in each dialect', sqlite:'~No REGEXP built in: use GLOB or LIKE', mysql:"WHERE ProductName REGEXP '^[AEIOU]'", tsql:"~No REGEXP: use LIKE '[AEIOU]%'"})}`,

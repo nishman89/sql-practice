@@ -779,3 +779,8 @@ fieldset.mark-mode input{accent-color:var(--pink);margin-top:4px}
 .erdm-link{background:var(--paper);border-left:5px solid var(--pink);border-radius:0 10px 10px 0;box-shadow:var(--shadow);padding:10px 14px;margin:24px 0 8px;max-width:50rem}
 .focus-note{background:var(--paper);border-radius:12px;box-shadow:var(--shadow);border-left:6px solid var(--ink);padding:12px 16px;margin:12px 0 18px;max-width:50rem}
 .focus-note b{display:block;font-family:var(--f-head);font-size:1.05rem;margin-bottom:2px}
+/* Headings for parts of a lesson that belong to one dialect (or all three) */
+h3.h-dialect{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+h3.h-dialect .h-icons{font-size:.95em}
+h3.h-dialect .h-tag{font-family:var(--f-body);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:var(--mist-2);color:var(--ink-2);border-radius:999px;padding:2px 10px}
+p.further{background:var(--paper);border-radius:10px;box-shadow:var(--shadow);padding:10px 14px;font-size:.93rem}
