@@ -100,7 +100,7 @@ const UNITS = [
   {id:'u4', title:'Combining tables', blurb:'Use the keys from the ERD to pull data from several tables at once.', lessons:['joinsintro','innerjoin','leftjoin','multijoin','cp3']},
   {id:'u5', title:'Subqueries', blurb:'Feed the result of one query into another.', lessons:['subintro','subwhere','subfrom','exists','cp4']},
   {id:'u6', title:'Going further', blurb:'Conditional logic, dates and text, indexes for faster searches, and saving SQL in the database as views and stored procedures.', lessons:['case','datesstrings','indexes','views','procedures']},
-  {id:'u7', title:'Advanced topics', blurb:'Window functions, statistics, WITH, temporary tables, pivoting and making queries fast.', lessons:['windows','ranking','leadlag','frames','stats','cte','temptables','pivot','performance','cp5']},
+  {id:'u7', title:'Advanced topics', audience:'For data engineers', blurb:'Window functions, statistics, WITH, temporary tables, pivoting and making queries fast. These go beyond everyday querying and are aimed at data engineers; if that isn\'t your role, they\'re optional.', lessons:['windows','ranking','leadlag','frames','stats','cte','temptables','pivot','performance','cp5']},
   {id:'u8', title:'Capstone project', blurb:'Put it all together on your own SQL Server, MySQL or SQLite: build a database of Spartans and courses, then answer questions about Northwind.', lessons:['capstone']}
 ];
 

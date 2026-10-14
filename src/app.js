@@ -356,7 +356,7 @@ function renderPath(){
         h('a',{href:'#/lesson/'+id,'data-testid':`lesson-link-${id}`}, node, h('span',{class:'t'}, L.title, h('small',{},L.summary)), h('span',{class:'s','data-testid':`lesson-status-${id}`},status))));
     });
     v.append(h('section',{class:'unit','aria-label':`Unit ${ui+1}: ${u.title}`,'data-testid':`unit-${ui+1}`},
-      h('div',{class:'unit-h'}, h('div',{class:'n'},`Unit ${ui+1}`), h('h2',{},u.title), h('p',{},u.blurb), h('div',{class:'meta'}, `${done} of ${u.lessons.length} lessons complete`),
+      h('div',{class:'unit-h'}, h('div',{class:'n'},`Unit ${ui+1}`), h('h2',{},u.title, u.audience?h('span',{class:'audience','data-testid':`unit-${ui+1}-audience`},u.audience):''), h('p',{},u.blurb), h('div',{class:'meta'}, `${done} of ${u.lessons.length} lessons complete`),
         (()=>{ const uq=QUIZZES.find(q=>q.unitQuiz===ui+1); if (!uq) return null; const rec=(P.quizzes||{})[uq.id];
           return h('div',{class:'unit-quiz'}, h('button',{class:'btn small',type:'button','data-go':'quiz/'+uq.id,'data-testid':`unit-quiz-${ui+1}`}, `Unit ${ui+1} quiz`), h('span',{class:'small','data-testid':`unit-quiz-${ui+1}-score`}, rec?`Best ${rec.best.percent}%`:`${uq.questions.length} questions`)); })()),
       ol));
@@ -834,6 +834,8 @@ function openLesson(id){
   // The Northwind table buttons and ERD only appear once Northwind has been introduced (Meet Northwind, Unit 2)
   const beforeNorthwind = PATH.findIndex(x=>x.id===id) < PATH.findIndex(x=>x.id==='map');
   $('#lStrip').hidden = L.db==='mydb' || beforeNorthwind; $('#lMyDb').hidden = L.db!=='mydb';
+  const unit=UNITS.find(u=>u.lessons.includes(id)), aud=$('#lAudience');
+  aud.hidden=!unit?.audience; if (unit?.audience) aud.innerHTML=`<b>${unit.audience}.</b> This lesson is part of <strong>${unit.title}</strong>, which goes beyond everyday querying and is aimed at data engineers. If that isn't your role, it's optional.`;
   const mw=$('[data-mydb-when]'); if (mw) mw.textContent = PATH.findIndex(x=>x.id===id) < PATH.findIndex(x=>x.id==='build') ? "you'll build in" : 'from';
   
   renderLessonTabs(); renderLessonBody();
