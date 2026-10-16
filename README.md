@@ -264,7 +264,7 @@ GitHub Actions checks, rebuilds and publishes the site in a couple of minutes (s
 | `npm` or `node` "is not recognised" | Node.js isn't installed or the terminal was open before you installed it - close and reopen VS Code |
 | `npm install` fails | Check you're in the project folder (the one containing `package.json`), then try again |
 | `Cannot find module …sql.js…` | Run `npm install` first |
-| The build stops with ✗ lines | Read the message - it names the lesson or quiz question and what's wrong (see [Editing the content](#editing-the-content)) |
+| The build stops with ✗ lines | Read the message - it names the lesson or quiz question and what's wrong (see [Editing the content](#updating-the-site)) |
 | The page says "The database engine didn't start" | The file was cut short. Run `npm run build` again |
 | Fonts look plain | You're offline. The page uses Google Fonts but falls back to system fonts and works without them |
 
@@ -302,11 +302,185 @@ accepts HTML files, or in the ISTQB study site's `public/` folder (e.g. as `publ
 
 ---
 
-## Editing the content
+## Updating the site
 
-You don't need to touch any app code to change the lessons or quiz questions.
+All the content (lessons, exercises, quiz questions, the capstone and the install guides) lives in plain text files in
+`src/content/`. You don't need to touch any app code to change it, and every change is **checked automatically**
+before it goes live, so a mistake can't break the live site.
 
-### Lessons – `src/content/lessons.js`
+### The quickest way: edit on GitHub (nothing to install)
+
+1. Go to the repository on GitHub and open the file you want to change (see [Where everything lives](#where-everything-lives)).
+2. Click the **pencil** icon (Edit this file) and make your change.
+3. Click **Commit changes…**, write a short description (for example *Fix typo in Sorting data*), and commit to `main`.
+4. Open the **Actions** tab. Within a minute or two you'll see your change being checked and published:
+   - **Green tick**: it's live. Hard refresh the site (Ctrl + Shift + R, or Cmd + Shift + R on a Mac) to see it.
+   - **Red cross**: something in the change is broken, so it **wasn't published** and the site still shows the
+     previous version. Click into the run and open **Build site** to see the message (see
+     [If the build fails](#if-the-build-fails)), fix the file, and commit again.
+
+### On your own computer
+
+```bash
+git clone https://github.com/nishman89/sql-practice.git
+cd sql-practice
+npm ci                 # once, to install the tools
+# …edit files in src/content/…
+npm run build          # checks everything, then builds dist/index.html
+```
+
+Open `dist/index.html` in your browser to try your change, then commit and push. GitHub publishes it automatically.
+
+### Where everything lives
+
+| To change… | Edit… |
+|---|---|
+| A lesson's text, examples or exercises | `LESSONS` in `src/content/lessons.js` (find the lesson by its title) |
+| The order of lessons, or a unit's name and description | `UNITS` at the top of `src/content/lessons.js` |
+| Quiz questions, pass mark and time limits | `src/content/quizzes.js` |
+| How this site works, and What's a database | `SITE_INTRO`, `DATABASES_LEARN` and `DATABASES_CHECK` in `src/content/intro.js` |
+| SQL flavours, and the SQL dialects page | `FLAVOURS_LEARN`, `FLAVOURS_CHECK` and `DIALECTS` in `src/content/dialects.js` |
+| The capstone project | `CAPSTONE_HTML` and `CAPSTONE_TASKS` in `src/content/capstone.js` |
+| The install guides | `INSTALL_INTRO` and `INSTALL_OPTIONS` in `src/content/install.js` |
+| The Creating tables steps | `BUILD_STEPS` in `src/app.js` |
+| The ERD lesson page, header, home banner and footer | `src/index.html` |
+| The ERD maker's starting example | `ERDM_EXAMPLE` in `src/app.js` |
+| The Northwind table notes and diagram layout | `NW_NOTES` and `NW_POS` in `src/app.js` |
+| Messages shown when someone types MySQL or T-SQL | `OTHER_DIALECTS` and `FN_HINTS` in `src/engine.js` |
+| Colours and fonts | The variables at the top of `src/styles.css` |
+
+### Recipes
+
+Copy a template, paste it in the right place and change the words. Each one is a single entry in a list, so remember
+the **comma** between entries.
+
+#### Change a lesson's wording
+
+Find the lesson's `learn:` text in `src/content/lessons.js` and edit the words between the HTML tags. `<p>` is a
+paragraph, `<code>` is code inside a sentence, `<strong>` is bold, and `<h3>` is a sub-heading.
+
+#### Add an example to a lesson
+
+Inside a lesson's `learn:` text:
+
+```js
+${C("SELECT CompanyName, City\nFROM Customers\nWHERE Country = 'UK';")}
+```
+
+`\n` starts a new line in the SQL. Other kinds of example and box:
+
+```js
+${CERR("DELETE FROM Customers;")}                                  // an example that's meant to fail
+${C("SELECT TOP 5 …", false, READ_ONLY('tsql', 'SQL Server Management Studio'))}   // T-SQL: no Run button
+${C("SELECT … REGEXP …", false, READ_ONLY('mysql', 'MySQL Workbench'))}            // MySQL: no Run button
+${TIP('A pink tip box. <code>Code</code> and <strong>bold</strong> work here.')}
+${HD('all', 'A heading for something that works in all three')}
+${HD(['sqlite', 'mysql'], 'A heading for something in SQLite and MySQL only')}
+${HD(['tsql'], 'A heading for something only in T-SQL')}
+```
+
+#### Add a dialect note (🪶 🐬 🪟)
+
+```js
+${DIFF({ title: 'Replacing NULLs in each dialect',
+         common: "COALESCE(Fax, 'No fax')",          // the way that works in all three (shown first, in green)
+         sqlite: "IFNULL(Fax, 'No fax')",
+         mysql:  "IFNULL(Fax, 'No fax')",
+         tsql:   "ISNULL(Fax, 'No fax')",
+         note:   'An optional sentence underneath.' })}
+```
+
+Leave out `common` if there's no shared way. Add `all: true` to show every dialect's row even when it matches the
+shared way. Start a value with `~` to show plain text instead of code (for example `mysql: '~Not supported'`).
+Where nothing differs, use `${SAME()}` instead.
+
+#### Add an exercise
+
+Add an entry to the lesson's `ex:` list:
+
+```js
+{ p:    'Show the name and price of every product that costs more than 50.',
+  hint: 'WHERE UnitPrice > 50',
+  sol:  "SELECT ProductName, UnitPrice\nFROM Products\nWHERE UnitPrice > 50;" },
+```
+
+The learner's answer is marked by **comparing its results with your `sol`**, so `sol` must run on this site (SQLite).
+If the task asks for an order, add `ordered: [1]`: the position of the sorted column, counting from 0.
+
+#### Add a whole lesson
+
+1. Add the lesson to `LESSONS`, giving it a short id:
+
+   ```js
+   mylesson: { title: 'My lesson', summary: 'One line saying what it covers.',
+     learn: `<p>…</p>`,
+     ex: [ … ] },
+   ```
+
+2. Add its id to the right unit's `lessons: [ … ]` list in `UNITS`, where you want it to appear.
+
+#### Add a multiple-choice question
+
+Add an entry to the quiz's `questions:` list in `src/content/quizzes.js`:
+
+```js
+{ unit: 3,
+  q: 'Which clause filters groups?',
+  options: ['WHERE', 'HAVING', 'ORDER BY', 'GROUP BY'],
+  answer: 1,                 // 0 = a, 1 = b, 2 = c, 3 = d
+  why: 'HAVING runs after GROUP BY, so it can filter the groups.' },
+```
+
+There must be exactly four different options. Spread the right answers across a to d: the build prints how often each
+letter is used.
+
+#### Add a query question
+
+```js
+{ lesson: 'groupby',         // the lesson it tests
+  p:   'Show how many products are in each category.',
+  sol: "SELECT CategoryID, COUNT(*)\nFROM Products\nGROUP BY CategoryID;",
+  why: 'GROUP BY makes one row per category, and COUNT(*) counts its products.' },
+```
+
+#### Change the capstone, install guides, pass mark or time limits
+
+- **Capstone:** each question is a `CAP_Q('2.3', 'The task', 'What to check', 'Lessons to revise')` line in
+  `src/content/capstone.js`, and the checklist is `CAPSTONE_TASKS` (add `true` as a third item to mark a task optional).
+- **Install guides:** one entry per guide in `INSTALL_OPTIONS`; `CMD('…')` makes a command with a Copy button.
+- **Pass mark:** `QUIZ_SETTINGS = { passMark: 65 }` at the top of `src/content/quizzes.js`.
+- **Time limits:** `timeLimits` (minutes; `0` means no limit) and `defaultLimit` on each quiz.
+
+### Rules that keep things working
+
+- **Quotes.** Most lesson text is between backticks (`` ` ``), so you can use `'` and `"` freely. Inside a `'…'`
+  string (such as a hint, a TIP or a question), write an apostrophe as `\'`: `'It\'s optional'`.
+- **New lines in SQL** are `\n` inside the quotes, not a real line break.
+- **Answers must run in SQLite**, because that's what the site runs. Show MySQL and T-SQL with `READ_ONLY` examples or
+  a `DIFF` note instead.
+- **Lead with the way all three dialects share** (for example `CONCAT` before `||`), and label anything dialect-only
+  with `HD()`.
+- **Avoid exercises whose answer is no rows**: any empty result would then be marked correct.
+
+### If the build fails
+
+The build runs every model answer and example before publishing. The message names the lesson or quiz and what's
+wrong, for example:
+
+| Message | What it means |
+|---|---|
+| `✗ sorting, exercise 2: the model answer gives an error: no such column: Price` | The `sol` has a mistake in it (here the column is `UnitPrice`) |
+| `✗ wildcards, example 3: gives an error …` | A **Run this** example doesn't run. If it's meant to fail, use `CERR` |
+| `✗ quiz unit-3, question 5: needs exactly 4 options` (or `has two identical options`) | A multiple-choice question has the wrong number of options, or two the same |
+| `✗ unit u2: lesson "mylesson" isn't defined in LESSONS` | A lesson id in `UNITS` doesn't match one in `LESSONS` |
+| `SyntaxError: Unexpected identifier` | Usually a missing comma between entries, or an apostrophe that needs `\'` |
+
+### Reference: everything a lesson can have
+
+
+The templates above cover most changes. For everything else, here's the full detail.
+
+#### Lessons – `src/content/lessons.js`
 
 The file has two parts. `UNITS` sets the order of the path:
 
@@ -366,7 +540,7 @@ every run, for lessons that change data. Add `db: 'mydb'` as well to run the les
 (`MYDB_SEED`) instead of Northwind; `${MYDB_TABLES}` shows those two tables. `C(sql, false, READ_ONLY('mysql', 'MySQL Workbench'))`
 shows a read-only MySQL or T-SQL example with its icon.
 
-### Exercises
+#### Exercises
 
 Each exercise is marked by running its `sol` and comparing results, so `sol` must be a query that runs in SQLite (see
 [Which SQL does it run?](#which-sql-does-it-run)).
@@ -378,7 +552,7 @@ Each exercise is marked by running its `sol` and comparing results, so `sol` mus
   still pass, but they can't miss one.
 - Avoid tasks whose answer is **no rows**: any query returning nothing would be marked correct. The checks warn about this.
 
-### Quiz questions – `src/content/quizzes.js`
+#### Quiz questions – `src/content/quizzes.js`
 
 ```js
 const QUIZ_SETTINGS = { passMark: 65 };
@@ -414,24 +588,6 @@ print how often each letter is used.
 **Run this** example against Northwind, and fails if one gives an error, if a lesson in `UNITS` doesn't exist, if an
 exercise is missing its task, hint or answer, if a dialect comparison **Try it** example errors, if `ordered` points at a column that isn't there, if a quiz id is
 used twice, or if a multiple-choice question doesn't have exactly four different options and a valid `answer`. It also warns when a model answer returns no rows. Run `npm run check` after editing.
-
-### Other things you might change
-
-| To change… | Edit… |
-|---|---|
-| The What's a database lesson and its questions | `DATABASES_LEARN` and `DATABASES_CHECK` in `src/content/intro.js` |
-| The SQL flavours lesson text, its questions, and the dialect comparison | `FLAVOURS_LEARN`, `FLAVOURS_CHECK` and `DIALECTS` in `src/content/dialects.js` |
-| Colours and fonts | `src/styles.css` (the variables at the top) |
-| Pass mark | `QUIZ_SETTINGS` in `src/content/quizzes.js` |
-| A quiz's time limits | `timeLimits` and `defaultLimit` on the quiz in `src/content/quizzes.js` |
-| The What's an ERD page and its questions | The `v-erd` section of `src/index.html`, and `drawLesson()` in `src/app.js` |
-| The Create tables steps | `BUILD_STEPS` in `src/app.js` |
-| The Northwind table notes and diagram layout | `NW_NOTES` and `NW_POS` in `src/app.js` |
-| The messages for MySQL / T-SQL syntax | `OTHER_DIALECTS` and `FN_HINTS` in `src/engine.js` |
-| Advice shown with error messages | `friendlyError()` in `src/engine.js` |
-| The capstone project | `CAPSTONE_HTML` and `CAPSTONE_TASKS` in `src/content/capstone.js` (`CAP_Q()` is one question with its expected result and revision links) |
-| The install guides | `INSTALL_INTRO` and `INSTALL_OPTIONS` in `src/content/install.js` (one entry per tab; `CMD()` makes a command with a Copy button) |
-| Header, home hero and footer | `src/index.html` (styles under "Header", "Home hero" and "Footer" in `src/styles.css`) |
 
 ---
 
