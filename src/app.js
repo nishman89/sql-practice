@@ -242,7 +242,7 @@ function lessonDone(id){ return autoDone(id) || markedDone(id); }
 function nextLesson(){ return PATH.find(x=>!lessonDone(x.id)); }
 
 /* ---------- Routing ---------- */
-const VIEWS=['path','intro','install','capstone','erdmaker','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
+const VIEWS=['path','intro','install','capstone','erdmaker','game','databases','flavours','dialects','erd','build','map','lesson','free','quizzes','quiz'];
 let current={view:'path',lesson:null};
 function route(){
   const parts=location.hash.replace(/^#\/?/,'').split('/');
@@ -253,11 +253,12 @@ function route(){
   else if (parts[0]==='intro'){ location.replace('#/lesson/intro'); return; }
   else if (parts[0]==='install') view='install';
   else if (parts[0]==='erd-maker') view='erdmaker';
+  else if (parts[0]==='game') view='game';
   else if (parts[0]==='quiz') view = parts[1] ? 'quiz' : 'quizzes';
   if (view!=='quiz') stopTimer();
   current={view,lesson:lid};
   VIEWS.forEach(v=>$('#v-'+v).classList.toggle('on', v===view));
-  const section = view==='free'?'free' : view==='dialects'?'dialects' : view==='intro'?'intro' : view==='install'?'install' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
+  const section = view==='free'?'free' : view==='dialects'?'dialects' : view==='intro'?'intro' : view==='install'?'install' : view==='game'?'game' : (view==='quiz'||view==='quizzes')?'quiz' : 'path';
   $$('[data-nav]').forEach(b=>{ if (b.dataset.nav===section) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   $('#pathHero').hidden = view!=='path'; $('#main').classList.toggle('on-path', view==='path');
   if (lid){ P.last=lid; save(); }
@@ -267,6 +268,7 @@ function route(){
   if (view==='intro') drawIntro();
   if (view==='install') drawInstall();
   if (view==='erdmaker') drawErdMaker();
+  if (view==='game') GAME.start(); else if (typeof GAME!=='undefined') GAME.stop();
   if (view==='capstone') drawCapstone();
   if (view==='flavours') drawFlavours();
   if (view==='dialects') renderDialectTabs($('#dialectsTabs'), 'dialects');
@@ -280,7 +282,7 @@ function route(){
   const h1=view==='path'?$('#h-path'):$('#v-'+view+' h1'); if (h1){ h1.setAttribute('tabindex','-1'); h1.focus({preventScroll:true}); }
 }
 addEventListener('hashchange', route);
-function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='install'||to==='erd-maker'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
+function goto(to){ const hs = (to==='path'||to==='free'||to==='dialects'||to==='install'||to==='erd-maker'||to==='game'||to==='quiz'||to.startsWith('quiz/')) ? '#/'+to : '#/lesson/'+to; if (location.hash===hs) route(); else location.hash=hs; }
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-go]'); if (b){ e.preventDefault(); goto(b.dataset.go); } });
 
 function renderChrome(){
@@ -289,7 +291,7 @@ function renderChrome(){
   const topNav=$('#lessonNav'); topNav.innerHTML=''; topNav.hidden=true;
   if (!id){
     foot.innerHTML='';
-    const PAGE={erdmaker:'ERD maker',install:'Install on your computer',dialects:'SQL dialects',quizzes:'Quizzes',free:'Free practice'}[current.view];
+    const PAGE={game:'Game',erdmaker:'ERD maker',install:'Install on your computer',dialects:'SQL dialects',quizzes:'Quizzes',free:'Free practice'}[current.view];
     if (!PAGE){ cr.hidden=true; return; }
     cr.hidden=false; cr.innerHTML='';
     cr.append(h('a',{href:'#/path','data-testid':'breadcrumb-home'},'Home'), h('span',{class:'sep','aria-hidden':'true'},'/'), h('span',{'data-testid':'breadcrumb-page'},PAGE));

@@ -31,6 +31,7 @@
         <li><a href="#/install" data-nav="install" data-testid="nav-install">Install</a></li>
         <li><a href="#/quiz" data-nav="quiz" data-testid="nav-quiz">Quizzes</a></li>
         <li><a href="#/free" data-nav="free" data-testid="nav-free">Free practice</a></li>
+        <li><a href="#/game" data-nav="game" data-testid="nav-game">Game</a></li>
       </ul>
     </nav>
 
@@ -45,6 +46,7 @@
           <li><a href="#/install" data-nav="install" data-testid="mobile-nav-install">Install</a></li>
           <li><a href="#/quiz" data-nav="quiz" data-testid="mobile-nav-quiz">Quizzes</a></li>
           <li><a href="#/free" data-nav="free" data-testid="mobile-nav-free">Free practice</a></li>
+          <li><a href="#/game" data-nav="game" data-testid="mobile-nav-game">Game</a></li>
         </ul>
       </nav>
     </details>
@@ -69,6 +71,22 @@
     <h1 id="h-intro" class="dot" data-testid="intro-title">How this site works</h1>
     <div class="prose intro" id="introBody" data-testid="intro-body"></div>
     <p style="margin-top:28px"><button class="btn primary" type="button" id="introStart" data-testid="intro-start">Got it, start learning</button></p>
+  </section>
+
+  <!-- Game -->
+  <section class="view" id="v-game" aria-labelledby="h-game">
+    <h1 id="h-game" class="dot" data-testid="game-title">Spartan SQL Run</h1>
+    <p class="lede page-col">A quick break from the lessons. Run through the level, jump on the bugs, hit the <strong>?</strong> blocks to collect SQL keywords, grab the 🔑 <strong>Primary Key</strong>, and reach the <strong>COMMIT</strong> flag at Sparta HQ.</p>
+    <div class="game-wrap" id="gameWrap" data-testid="game">
+      <canvas id="gameCanvas" width="384" height="216" data-testid="game-canvas" aria-label="Spartan SQL Run: a platform game. Use the arrow keys and Space, or the buttons below on a touch screen." role="img"></canvas>
+      <div class="game-pad" aria-label="Game controls">
+        <button type="button" id="gLeft" class="gp" aria-label="Move left" data-testid="game-left">◀</button>
+        <button type="button" id="gRight" class="gp" aria-label="Move right" data-testid="game-right">▶</button>
+        <span class="gp-gap"></span>
+        <button type="button" id="gJump" class="gp gp-jump" aria-label="Jump" data-testid="game-jump">JUMP</button>
+      </div>
+    </div>
+    <p class="small game-help page-col"><strong>Keyboard:</strong> ← → or A / D to move, Space, ↑ or W to jump (hold it to jump higher). <strong>Phone:</strong> use the buttons under the game; it's easiest with your phone turned sideways.</p>
   </section>
 
   <!-- ERD maker -->

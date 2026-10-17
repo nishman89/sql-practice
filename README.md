@@ -21,6 +21,7 @@ tablets and phones.
 |---|---|
 | **Learning path** (home) | Every unit and lesson as a route. Finished lessons are ticked, the next lesson is highlighted and checkpoints are shown as diamonds. The **Continue** card shows the next unfinished lesson and a trail of progress across the whole path. |
 | **Capstone project** | The last lesson on the path, from the Sparta Global SQL project brief: create Course and Spartan tables, add data, draw an ERD of an improved design, then answer ten Northwind questions (including creating an index), plus an **optional** Exercise 3 of five advanced questions (window functions, `WITH`, temporary tables, pivoting), in the learner's **own** SQL Server, MySQL or SQLite (it links to the install guides first; in SQLite, question 2.9 uses a view instead of a stored procedure). Each question shows the result to check against and the lesson to revise, with 🐬 / 🪟 reminders, a tick-off checklist that completes the lesson, and a Print or save as PDF button. Model answers stay with trainers. |
+| **Game** | *Spartan SQL Run*: an original platform level with a Sparta and SQL theme. Run right, stomp the bugs, hit **?** blocks for SQL keywords, find the 🔑 Primary Key power-up and reach the COMMIT flag at Sparta HQ. Keyboard, or on-screen buttons on touch screens. It pauses when you leave the page. Code in `src/game.js`. |
 | **ERD maker** | Write `CREATE TABLE` statements (SQLite, MySQL or T-SQL) and get an entity relationship diagram: drag tables to arrange them, then download it as a PNG or SVG. Linked from Free practice, Creating tables, How this site works and capstone question 1.3. |
 | **Install on your computer** | Step-by-step guides for practising outside the browser, linked from the home page and the Introduction: 🪟 SQL Server with Docker and VS Code (Windows and Mac, using the `kcornwall/sqlnorthwind` image), 🪟 SQL Server on Windows with SSMS, 🐬 MySQL on Windows, 🐬 MySQL on Mac, 🐬 MySQL with Docker, and 🪶 SQLite with DB Browser for SQLite (using the same Northwind file as this site). Every command has a Copy button, and both the MySQL Northwind script and the SQLite `northwind.db` are downloadable from the page. |
 | **How this site works** (lesson 1, and the header's Introduction link) | How the site works: how it's organised, what's inside a lesson, how answers are marked, the **Show Northwind ERD** button, the dialect icons and where progress is saved. |
@@ -134,7 +135,7 @@ showing the SQLite way:
 
 ### Finding your way around
 
-- **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Home** (the learning path), **Introduction**, **SQL dialects**, **Install**, **Quizzes** and **Free practice** on every page. On phones they move into a **Menu** button.
+- **Header** – the same header as the ISTQB study site: the Sparta Global logo and **Home** (the learning path), **Introduction**, **SQL dialects**, **Install**, **Quizzes**, **Free practice** and **Game** on every page. On phones they move into a **Menu** button.
 - **Back to top** – a button appears once you scroll down.
 - **Continue where you left off** – the home page's **Continue** button opens the next lesson you haven't finished.
 - **Breadcrumb** – the top of each lesson shows its unit and its position ("Lesson 17 of 50").
@@ -180,6 +181,7 @@ Each page has its own address after the `#`, so you can link straight to it:
 | How this site works | `…/#/lesson/intro` (old `…/#/intro` links still work) |
 | Install on your computer | `…/#/install` |
 | ERD maker | `…/#/erd-maker` |
+| Game | `…/#/game` |
 | SQL dialects | `…/#/dialects` |
 | A lesson | `…/#/lesson/<id>`, e.g. `#/lesson/innerjoin` (ids are in `src/content/lessons.js`) |
 | Quizzes | `…/#/quiz` |
@@ -649,6 +651,7 @@ Every important element has a stable hook:
 | **Header on phones** | `mobile-menu` · `mobile-nav-path` · `mobile-nav-intro` · `mobile-nav-dialects` · `mobile-nav-install` · `mobile-nav-quiz` · `mobile-nav-free` |
 | **Home hero** | `hero` · `hero-start` · `hero-intro` · `hero-install` · `hero-quiz` · `hero-free` |
 | **Capstone project** | `capstone-title` · `capstone-print` · `capstone-body` · `capstone-before` · `capstone-install-link` · `capstone-q-1-1` … `capstone-q-2-9` · `capstone-checklist` · `capstone-task-setup`, `capstone-task-1-1` … `capstone-task-2-9`, `capstone-task-submit` |
+| **Game** | `nav-game` · `mobile-nav-game` · `game-title` · `game` · `game-canvas` · `game-left` · `game-right` · `game-jump` (touch screens). The game is drawn on a canvas, so for tests `window.GAME_STATE()` returns `{phase, score, lives, keywords, x, big}`, and `window.GAME_WARP(column)` jumps the player ahead |
 | **ERD maker** | `erdmaker-title` · `erdmaker-editor-input` · `erdmaker-run` (Draw ERD) · `erdmaker-example` · `erdmaker-tidy` · `erdmaker-download-png` · `erdmaker-download-svg` · `erdmaker-message` · `erdmaker-diagram` · each table `erdmaker-table-<name>` · links: `free-erd-maker`, `build-erd-maker`, `capstone-erd-maker`, `intro-card-erd-maker` |
 | **Install on your computer** | `install-title` · `install-intro` · `install-guides` · `install-tab-docker-sqlserver` / `-windows-sqlserver` / `-windows-mysql` / `-mac-mysql` / `-docker-mysql` / `-sqlite` · `install-panel` (with `data-guide`) · `copy-command` · `download-mysql-northwind` · `download-sqlite-northwind` · the chooser grid's option names: `choose-docker-sqlserver`, `choose-windows-sqlserver`, `choose-windows-mysql`, `choose-mac-mysql`, `choose-docker-mysql`, `choose-sqlite` (each opens that guide) |
 | **How this site works** (lesson 1) | `intro-title` · `intro-body` · `intro-install-link` · `intro-card-path` / `-dialects` / `-quizzes` / `-free` · `intro-open-erd` · `intro-start` |
