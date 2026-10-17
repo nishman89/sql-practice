@@ -5,6 +5,8 @@
 const GAME = (() => {
   const T = 16, COLS = 16, ROWS = 11, HUD = 16, VW = COLS*T, VH = ROWS*T + HUD;
   const SAVE_KEY = 'sqlPracticeLab.quest.v1';
+  // The canvas can be bigger than the room (full screen): CW x CH, with the room drawn at (OX, RY)
+  let CW = VW, CH = VH, OX = 0, RY = HUD;
 
   /* ---------- The kingdom's database ---------- */
   const WORLD_SQL = `
@@ -235,6 +237,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
   function say(lines, after){ dq = lines.map(l=>typeof l==='string'?{text:l}:l); dafter=after||null; nextLine(); }
   function nextLine(){
     if (!dq.length){ closeDialog(); return; }
+    if (mode!=='dialog'){ keys.up=keys.down=keys.left=keys.right=false; }
     dcur = dq.shift(); dshown=0; dchoice=0; mode='dialog';
     const who = dcur.who || dcur._who || '';
     ui.dlg.hidden=false; ui.dname.textContent = who; ui.dtext.textContent=''; ui.dchoices.innerHTML='';
@@ -333,8 +336,9 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
 
   /* ---------- Puzzles ---------- */
   let curPuzzle=null, wrongRuns=0;
+  function releaseAll(){ Object.keys(keys).forEach(k=>keys[k]=false); pressedOnce.a=pressedOnce.b=pressedOnce.menu=0; document.querySelectorAll('.q-pad .gp.pressed').forEach(b=>b.classList.remove('pressed')); }
   function openPuzzle(id){
-    const p=PUZZLES[id]; curPuzzle=id; wrongRuns=0; mode='puzzle';
+    releaseAll(); const p=PUZZLES[id]; curPuzzle=id; wrongRuns=0; mode='puzzle';
     if (!worldDb){ worldDb = new SQL.Database(); worldDb.exec(WORLD_SQL); }
     ui.pz.hidden=false;
     ui.pz.querySelector('[data-p=title]').textContent=p.title;
@@ -530,7 +534,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
   }
   function drawPlayer(){
     if (R.inv && Math.floor(R.inv/4)%2) return;
-    const x=Math.round(S.x)-2, y=Math.round(S.y)-4+HUD, dir=S.dir, bob=(keys.left||keys.right||keys.up||keys.down)?Math.floor(R.walk||0)%2:0;
+    const x=Math.round(S.x)-2+OX, y=Math.round(S.y)-4+RY, dir=S.dir, bob=(keys.left||keys.right||keys.up||keys.down)?Math.floor(R.walk||0)%2:0;
     Rr(x+3,y+8+bob,10,8,P.ink); Rr(x+3,y+10+bob,10,2,P.pink);
     Rr(x+4,y+2,8,7,'#a9a4a6'); Rr(x+4,y+2,8,2,'#c7c2c4');
     if (dir==='down'){ Rr(x+5,y+5,6,3,'#f1c7a5'); Rr(x+6,y+6,1,1,P.ink); Rr(x+9,y+6,1,1,P.ink); }
@@ -540,7 +544,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
       ctx.fillStyle=P.white; ctx.save(); ctx.translate(sx,sy); ctx.rotate(Math.atan2(d[1],d[0])); ctx.fillRect(-2,-2,13,4); ctx.fillStyle=P.pink; ctx.fillRect(-4,-3,3,6); ctx.restore(); }
   }
   function drawEnemy(e){
-    const x=Math.round(e.x), y=Math.round(e.y)+HUD;
+    const x=Math.round(e.x)+OX, y=Math.round(e.y)+RY;
     if (e.hurt && Math.floor(e.hurt/3)%2) return;
     if (e.kind==='bug'){ const s=Math.floor(tick/8)%2; Rr(x+1,y+3,10,7,'#3f7d4f'); Rr(x+3,y+1,6,3,'#3f7d4f'); Rr(x+5,y+3,1,7,'#2b5937'); Rr(x+2,y+4,2,2,P.white); Rr(x+8,y+4,2,2,P.white); Rr(x+1+s,y+10,2,2,P.ink); Rr(x+9-s,y+10,2,2,P.ink); }
     else { ctx.globalAlpha = e.solid ? 0.95 : 0.25; Rr(x,y+Math.sin(e.phase/10),12,11,'#e9e3f7'); Rr(x+2,y+3,2,3,'#6c5a8a'); Rr(x+8,y+3,2,3,'#6c5a8a'); Rr(x+3,y+8,6,1,'#6c5a8a'); ctx.globalAlpha=1;
@@ -548,7 +552,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
   }
   function drawBoss(){
     const b=R.boss; if (!b || !b.alive) return;
-    const x=5*T, y=1*T+HUD, shake=b.dying?(Math.random()*4-2):0;
+    const x=5*T+OX, y=1*T+RY, shake=b.dying?(Math.random()*4-2):0;
     ctx.globalAlpha = b.dying ? Math.max(0.1, b.dying/60) : 1;
     Rr(x+16+shake,y+16,64,30,'#3a2a4a'); Rr(x+24+shake,y+22,48,14,'#52406a');
     [[0,b.left],[64,b.right]].forEach(([o,free])=>{ const hx=x+o+shake, hy=y+4+Math.sin(tick/(free?40:12))*2;
@@ -558,31 +562,40 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     ctx.globalAlpha=1;
   }
   function drawHud(){
-    Rr(0,0,VW,HUD,'#2d2a2b');
+    const hy=RY-HUD; ctx.save(); ctx.translate(OX, hy);
+    Rr(-OX,0,CW,HUD,'#2d2a2b');
     for (let i=0;i<S.maxHearts;i++){ const x=4+i*11; ctx.fillStyle = i<S.hearts ? '#ff4d7a' : '#5a5560'; ctx.beginPath(); ctx.arc(x+3,6,3,0,7); ctx.arc(x+7,6,3,0,7); ctx.fill(); ctx.beginPath(); ctx.moveTo(x,7); ctx.lineTo(x+5,13); ctx.lineTo(x+10,7); ctx.fill(); }
     ctx.textAlign='right'; ctx.font='bold 8px monospace'; ctx.fillStyle='#ffb3c8'; ctx.fillText(`◆ ${S.keywords}`, VW-4, 11);
     ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='7px monospace'; ctx.fillText(room().name, VW/2+10, 11);
+    ctx.restore();
   }
   function draw(){
-    Rr(0,0,VW,VH,'#000');
+    Rr(0,0,CW,CH,'#000');
     if (!S || mode==='title' || !R){ drawTitleScene(); return; }
-    for (let ty=0;ty<ROWS;ty++) for (let tx=0;tx<COLS;tx++) drawTile(room().map[ty][tx], tx*T, ty*T+HUD, tx, ty);
-    R.drops.forEach(d=>{ const x=d.x, y=d.y+HUD+Math.sin(tick/8)*1.5; if (d.kind==='kw'){ Rr(x+2,y,4,8,P.pink); Rr(x,y+2,8,4,P.pink); } else { ctx.fillStyle='#ff4d7a'; ctx.beginPath(); ctx.arc(x+2,y+3,2.5,0,7); ctx.arc(x+6,y+3,2.5,0,7); ctx.fill(); ctx.beginPath(); ctx.moveTo(x-1,y+4); ctx.lineTo(x+4,y+9); ctx.lineTo(x+9,y+4); ctx.fill(); } });
+    // scenery carries on beyond the room's edges, so a big screen is filled edge to edge
+    if (OX>0 || RY>HUD){ const inside=room().inside;
+      for (let ty=Math.floor(-(RY-HUD)/T)-1; ty<=ROWS+Math.ceil((CH-RY-ROWS*T)/T); ty++)
+        for (let tx=Math.floor(-OX/T)-1; tx<=COLS+Math.ceil((CW-OX-COLS*T)/T); tx++){
+          if (tx>=0 && tx<COLS && ty>=0 && ty<ROWS) continue;
+          const f = inside ? '#' : (((tx*7+ty*13)%5===0) ? 'T' : (Math.abs(tx*3+ty*5)%11===0 ? 'T' : ','));
+          drawTile(f, tx*T+OX, ty*T+RY, tx, ty); } }
+    for (let ty=0;ty<ROWS;ty++) for (let tx=0;tx<COLS;tx++) drawTile(room().map[ty][tx], tx*T+OX, ty*T+RY, tx, ty);
+    R.drops.forEach(d=>{ const x=d.x+OX, y=d.y+RY+Math.sin(tick/8)*1.5; if (d.kind==='kw'){ Rr(x+2,y,4,8,P.pink); Rr(x,y+2,8,4,P.pink); } else { ctx.fillStyle='#ff4d7a'; ctx.beginPath(); ctx.arc(x+2,y+3,2.5,0,7); ctx.arc(x+6,y+3,2.5,0,7); ctx.fill(); ctx.beginPath(); ctx.moveTo(x-1,y+4); ctx.lineTo(x+4,y+9); ctx.lineTo(x+9,y+4); ctx.fill(); } });
     drawBoss();
-    R.npcs.forEach(n=>drawPerson(n.x*T, n.y*T+HUD-2, NPC_LOOK[n.id], 'down', 0, n.id));
+    R.npcs.forEach(n=>drawPerson(n.x*T+OX, n.y*T+RY-2, NPC_LOOK[n.id], 'down', 0, n.id));
     R.enemies.forEach(e=>{ if (!e.dead) drawEnemy(e); });
-    R.fx.forEach(f=>{ ctx.strokeStyle=`rgba(255,111,154,${f.t/20})`; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(f.x, f.y+HUD, 20-f.t, 0, 7); ctx.stroke(); });
+    R.fx.forEach(f=>{ ctx.strokeStyle=`rgba(255,111,154,${f.t/20})`; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(f.x+OX, f.y+RY, 20-f.t, 0, 7); ctx.stroke(); });
     drawPlayer();
-    if (room().dark && !S.items.lantern){ ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,HUD,VW,ROWS*T); }
+    if (room().dark && !S.items.lantern){ ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,HUD,CW,CH-HUD); }
     drawHud();
-    if (msg){ ctx.font='bold 7px sans-serif'; const lines=wrap(msg.text, 46); const h=lines.length*10+8; Rr(8, VH-h-6, VW-16, h, 'rgba(45,42,43,0.92)'); ctx.fillStyle='#fff'; ctx.textAlign='center'; lines.forEach((l,i)=>ctx.fillText(l, VW/2, VH-h+5+i*10)); }
-    if (fadeT>0){ ctx.fillStyle=`rgba(0,0,0,${1-Math.abs(fadeT-10)/10})`; ctx.fillRect(0,0,VW,VH); }
+    if (msg){ ctx.font='bold 7px sans-serif'; const lines=wrap(msg.text, 46); const h=lines.length*10+8; const my = RY + ROWS*T - h - 6; Rr(OX+8, my, VW-16, h, 'rgba(45,42,43,0.92)'); ctx.fillStyle='#fff'; ctx.textAlign='center'; lines.forEach((l,i)=>ctx.fillText(l, OX+VW/2, my+11+i*10)); }
+    if (fadeT>0){ ctx.fillStyle=`rgba(0,0,0,${1-Math.abs(fadeT-10)/10})`; ctx.fillRect(0,0,CW,CH); }
   }
   function wrap(text, n){ const out=[]; let line=''; text.split(' ').forEach(w=>{ if ((line+' '+w).trim().length>n){ out.push(line.trim()); line=w; } else line+=' '+w; }); if (line.trim()) out.push(line.trim()); return out; }
   function drawTitleScene(){
-    const g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#2d2a2b'); g.addColorStop(1,'#5a2340'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
-    for (let i=0;i<30;i++){ const x=(i*53+tick*0.2)%VW, y=(i*37)%(VH-60); Rr(x,y,1,1,'rgba(255,255,255,0.6)'); }
-    Rr(0,VH-40,VW,40,'#3f7d4f'); for (let x=0;x<VW;x+=24){ ctx.fillStyle='#2f6a3e'; ctx.beginPath(); ctx.arc(x+12,VH-40,12,Math.PI,0); ctx.fill(); }
+    const g=ctx.createLinearGradient(0,0,0,CH); g.addColorStop(0,'#2d2a2b'); g.addColorStop(1,'#5a2340'); ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
+    for (let i=0;i<40;i++){ const x=(i*53+tick*0.2)%CW, y=(i*37)%(CH-60); Rr(x,y,1,1,'rgba(255,255,255,0.6)'); }
+    Rr(0,CH-40,CW,40,'#3f7d4f'); for (let x=0;x<CW;x+=24){ ctx.fillStyle='#2f6a3e'; ctx.beginPath(); ctx.arc(x+12,CH-40,12,Math.PI,0); ctx.fill(); }
   }
   function drawPortrait(face){
     const c=ui.dface, g=c.getContext('2d'); g.clearRect(0,0,32,32); g.imageSmoothingEnabled=false;
@@ -595,7 +608,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
 
   /* ---------- Menu, title and ending ---------- */
   function openMenu(){
-    mode='menu'; ui.menu.hidden=false;
+    releaseAll(); mode='menu'; ui.menu.hidden=false;
     const it=S.items, q=[];
     q.push(`<li>${S.flags.bossBeaten?'✓':'•'} <b>Restore the Royal Ledger</b>${S.flags.bossBeaten?'':`: ${!S.solved.T0?'answer the terminal in the Academy':!S.flags.metMargaret?'find Margaret in the village square':!S.flags.gateOpen?'show the Archive Pass to Odo at the east gate':'explore the Royal Archive'}`}</li>`);
     if (S.flags.rexAsked) q.push(`<li>${S.solved.R?'✓':'•'} Help Rex count the villagers with no coins</li>`);
@@ -608,6 +621,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     if (it.map){ const cells=[]; for (let y=0;y<2;y++) for (let x=0;x<4;x++){ const k=`archive:${x},${y}`; const ex=ROOMS[k]; cells.push(`<span class="${!ex?'none':S.room===k?'here':S.visited[k]?'seen':'unseen'}" title="${ex?ex.name:''}"></span>`); }
       mp.innerHTML=`<p><b>The Royal Archive</b> (pink is you)</p><div class="q-map">${cells.join('')}</div>`; } else mp.innerHTML='';
     ui.menu.querySelector('[data-m=sound]').textContent = muted ? '🔇 Sound: off' : '🔊 Sound: on';
+    ui.menu.querySelector('[data-m=exitfull]').hidden = !fullOn;
   }
   function closeMenu(){ ui.menu.hidden=true; mode='play'; }
   function showTitle(){
@@ -619,7 +633,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
   function begin(fresh){
     if (fresh){ if (loadSave() && !confirm('Start a new game? Your saved progress will be lost.')) return; S=newGame(); }
     else S=loadSave()||newGame();
-    S._t=Date.now(); ui.title.hidden=true; mode='play';
+    S._t=Date.now(); ui.title.hidden=true; releaseAll(); mode='play';
     enterRoom(S.room, S.x, S.y);
     if (fresh) setTimeout(()=>say([{text:'Your first morning at Sparta Academy. Trainer Ada is waiting for you…'}]), 300);
   }
@@ -630,7 +644,9 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
   }
 
   /* ---------- Loop and controls ---------- */
-  function frame(ts){ raf=requestAnimationFrame(frame); if (!last) last=ts; acc+=Math.min(100,ts-last); last=ts; while (acc>=1000/60){ update(); acc-=1000/60; } draw(); }
+  let stageEl=null;
+  function frame(ts){ raf=requestAnimationFrame(frame);
+    stageEl = stageEl || document.getElementById('gameStage'); if (stageEl){ stageEl.classList.toggle('ui-open', mode==='puzzle'||mode==='menu'||mode==='title'||mode==='ending'); stageEl.classList.toggle('ui-panel', mode==='puzzle'||mode==='menu'); } if (!last) last=ts; acc+=Math.min(100,ts-last); last=ts; while (acc>=1000/60){ update(); acc-=1000/60; } draw(); }
   const KEYMAP = { ArrowUp:'up', KeyW:'up', ArrowDown:'down', KeyS:'down', ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right',
     Space:'a', Enter:'a', KeyE:'a', KeyJ:'b', KeyX:'b', KeyK:'b', Escape:'menu', KeyP:'menu' };
   function onKey(e){
@@ -642,19 +658,19 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     e.preventDefault();
     if (mode==='menu'){ if (e.type==='keydown' && (k==='menu')) closeMenu(); return; }
     if (mode==='dialog' && dcur && dcur.choices && dshown>=dcur.text.length && e.type==='keydown' && (k==='up'||k==='down')){ dchoice=(dchoice+(k==='down'?1:dcur.choices.length-1))%dcur.choices.length; showChoices(); return; }
-    if (k==='menu'){ if (e.type==='keydown') pressedOnce.menu=1; return; }
+    if (k==='menu'){ if (e.type==='keydown' && mode==='play') pressedOnce.menu=1; return; }
     keys[k]= e.type==='keydown'; if (e.type==='keydown' && !e.repeat && (k==='a'||k==='b')) pressedOnce[k]=1;
   }
   function bindPad(id,k){
     const b=document.getElementById(id); if (!b) return;
     const on=e=>{ e.preventDefault(); if (k==='menu'){ if (mode==='play') pressedOnce.menu=1; else if (mode==='menu') closeMenu(); return; }
       if (mode==='dialog' && dcur && dcur.choices && dshown>=dcur.text.length && (k==='up'||k==='down')){ dchoice=(dchoice+(k==='down'?1:dcur.choices.length-1))%dcur.choices.length; showChoices(); return; }
-      keys[k]=true; if (k==='a'||k==='b') pressedOnce[k]=1; b.classList.add('down'); try{ b.setPointerCapture(e.pointerId); }catch(_){} };
-    const off=e=>{ e.preventDefault(); if (k!=='menu') keys[k]=false; b.classList.remove('down'); };
+      keys[k]=true; if (k==='a'||k==='b') pressedOnce[k]=1; b.classList.add('pressed'); try{ b.setPointerCapture(e.pointerId); }catch(_){} };
+    const off=e=>{ e.preventDefault(); if (k!=='menu') keys[k]=false; b.classList.remove('pressed'); };
     b.addEventListener('pointerdown',on); b.addEventListener('pointerup',off); b.addEventListener('pointercancel',off); b.addEventListener('lostpointercapture',off); b.addEventListener('contextmenu',e=>e.preventDefault());
   }
   function start(){
-    cv=document.getElementById('gameCanvas'); ctx=cv.getContext('2d'); cv.width=VW; cv.height=VH; ctx.imageSmoothingEnabled=false;
+    cv=document.getElementById('gameCanvas'); ctx=cv.getContext('2d'); cv.width=VW; cv.height=VH; ctx.imageSmoothingEnabled=false; fitCanvas();
     if (!bound){
       bound=true;
       ['dlg','dname','dtext','dchoices','dface','pz','menu','title','end'].forEach(k=>ui[k]=document.getElementById('q_'+k));
@@ -671,11 +687,14 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
       ui.menu.querySelector('[data-m=resume]').onclick=closeMenu;
       ui.menu.querySelector('[data-m=sound]').onclick=()=>{ muted=!muted; try{ localStorage.setItem(SAVE_KEY+'.muted', muted?'1':'0'); }catch(e){} openMenu(); };
       ui.menu.querySelector('[data-m=quit]').onclick=()=>{ save(); showTitle(); };
+      ui.menu.querySelector('[data-m=exitfull]').onclick=()=>{ exitFull(); closeMenu(); };
       ui.title.querySelector('[data-t=continue]').onclick=()=>begin(false);
       ui.title.querySelector('[data-t=new]').onclick=()=>begin(true);
       ui.end.querySelector('[data-e=title]').onclick=()=>showTitle();
       document.addEventListener('visibilitychange', ()=>{ if (document.hidden) Object.keys(keys).forEach(k=>keys[k]=false); });
       document.getElementById('gFull').addEventListener('click', enterFull);
+      addEventListener('resize', fitCanvas); if (window.visualViewport) visualViewport.addEventListener('resize', fitCanvas);
+      addEventListener('blur', ()=>Object.keys(keys).forEach(k=>keys[k]=false));
       document.getElementById('gExitFull').addEventListener('click', exitFull);
       // leaving the browser's full-screen mode (for example with Esc, or a swipe) also leaves ours
       ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev, ()=>{ if (!(document.fullscreenElement||document.webkitFullscreenElement) && fullOn && document.getElementById('gameStage').dataset.realFull==='1') exitFull();
@@ -688,12 +707,21 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
      Uses the browser's real full-screen mode where it exists (Android, desktop, iPad). iPhones don't allow it for web pages,
      so there the game simply fills the window instead. */
   let fullOn=false;
+  function fitCanvas(){
+    if (!cv) return;
+    if (fullOn){
+      const vw = (window.visualViewport ? visualViewport.width : innerWidth), vh = (window.visualViewport ? visualViewport.height : innerHeight);
+      if (vw/vh > VW/VH){ CH = VH; CW = Math.round(VH*vw/vh); } else { CW = VW; CH = Math.round(VW*vh/vw); }
+    } else { CW = VW; CH = VH; }
+    OX = Math.floor((CW-VW)/2); RY = HUD + Math.floor((CH-VH)/2);
+    if (cv.width!==CW || cv.height!==CH){ cv.width=CW; cv.height=CH; ctx.imageSmoothingEnabled=false; }
+  }
   function enterFull(){
     const st=document.getElementById('gameStage'); fullOn=true; st.classList.add('full'); document.body.classList.add('game-full');
     const req = st.requestFullscreen || st.webkitRequestFullscreen;
     if (req){ try { const p=req.call(st); if (p && p.catch) p.catch(()=>{}); } catch(e){} }
     try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); } catch(e){}
-    window.scrollTo(0,0);
+    window.scrollTo(0,0); setTimeout(fitCanvas, 60); setTimeout(fitCanvas, 400);
   }
   function exitFull(){
     if (!fullOn) return; fullOn=false;
@@ -701,6 +729,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     const fe = document.fullscreenElement || document.webkitFullscreenElement;
     if (fe){ const ex=document.exitFullscreen || document.webkitExitFullscreen; try { const p=ex.call(document); if (p && p.catch) p.catch(()=>{}); } catch(e){} }
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(e){}
+    fitCanvas();
   }
   function stop(){ exitFull(); if (S && mode==='play') save(); running=false; cancelAnimationFrame(raf); Object.keys(keys).forEach(k=>keys[k]=false); }
   // For tests
