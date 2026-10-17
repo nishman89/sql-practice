@@ -75,18 +75,85 @@
 
   <!-- Game -->
   <section class="view" id="v-game" aria-labelledby="h-game">
-    <h1 id="h-game" class="dot" data-testid="game-title">Spartan SQL Run</h1>
-    <p class="lede page-col">A quick break from the lessons. Run through the level, jump on the bugs, hit the <strong>?</strong> blocks to collect SQL keywords, grab the 🔑 <strong>Primary Key</strong>, and reach the <strong>COMMIT</strong> flag at Sparta HQ.</p>
-    <div class="game-wrap" id="gameWrap" data-testid="game">
-      <canvas id="gameCanvas" width="384" height="216" data-testid="game-canvas" aria-label="Spartan SQL Run: a platform game. Use the arrow keys and Space, or the buttons below on a touch screen." role="img"></canvas>
-      <div class="game-pad" aria-label="Game controls">
-        <button type="button" id="gLeft" class="gp" aria-label="Move left" data-testid="game-left">◀</button>
-        <button type="button" id="gRight" class="gp" aria-label="Move right" data-testid="game-right">▶</button>
-        <span class="gp-gap"></span>
-        <button type="button" id="gJump" class="gp gp-jump" aria-label="Jump" data-testid="game-jump">JUMP</button>
+    <h1 id="h-game" class="dot" data-testid="game-title">The Lost Ledger</h1>
+    <p class="lede page-col">A short SQL adventure. The kingdom's Royal Ledger is corrupted, and you're the new Spartan sent to fix it: explore, talk to the villagers, and open the Royal Archive's rune doors with real SQL queries. <strong>Chapter 1</strong> takes about 20 to 30 minutes.</p>
+    <div class="game-wrap q-game" id="gameWrap" data-testid="game">
+      <canvas id="gameCanvas" width="256" height="192" data-testid="game-canvas" role="img" aria-label="The Lost Ledger: a top-down adventure. Arrow keys to move, Space to talk, J to swing the Debugger, Esc for the menu."></canvas>
+
+      <div class="q-panel q-title" id="q_title" data-testid="game-title-screen">
+        <p class="q-kicker">A Spartan SQL adventure</p>
+        <h2>The Lost Ledger</h2>
+        <p class="q-sub">Chapter 1: The Royal Archive</p>
+        <div class="q-btns">
+          <button type="button" class="q-btn" data-t="continue" data-testid="game-continue" hidden>Continue</button>
+          <button type="button" class="q-btn primary" data-t="new" data-testid="game-new">New game</button>
+        </div>
+        <p class="q-note">Your progress is saved in this browser, on this device. Clearing your browser data, or switching device, starts you again.</p>
+      </div>
+
+      <div class="q-dialog" id="q_dlg" data-testid="game-dialog" hidden>
+        <canvas id="q_dface" width="32" height="32" class="q-face" aria-hidden="true"></canvas>
+        <div class="q-dbody"><b id="q_dname" data-testid="game-dialog-name"></b><p id="q_dtext" data-testid="game-dialog-text"></p><div id="q_dchoices" class="q-choices"></div></div>
+        <span class="q-more" aria-hidden="true">▼</span>
+      </div>
+
+      <div class="q-panel q-puzzle" id="q_pz" data-testid="game-puzzle" hidden>
+        <div class="q-pz-head"><b data-p="title"></b><button type="button" class="q-x" data-p="close" data-testid="game-puzzle-close" aria-label="Close">✕</button></div>
+        <p class="q-story" data-p="story"></p>
+        <p class="q-task" data-p="task" data-testid="game-puzzle-task"></p>
+        <details class="q-tables"><summary>Tables in the Royal Ledger</summary><ul data-p="tables"></ul></details>
+        <textarea data-testid="game-puzzle-input" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Your query" placeholder="Type your query, or tap the pieces below"></textarea>
+        <div class="q-pieces" data-p="pieces" data-testid="game-puzzle-pieces"></div>
+        <div class="q-pz-tools">
+          <button type="button" class="q-btn small" data-p="back">⌫ Undo piece</button>
+          <button type="button" class="q-btn small" data-p="clear">Clear</button>
+          <span class="q-spacer"></span>
+          <button type="button" class="q-btn small" data-p="showhint" data-testid="game-puzzle-hint">Hint</button>
+          <button type="button" class="q-btn primary" data-p="run" data-testid="game-puzzle-run">Run</button>
+        </div>
+        <p class="q-hint" data-p="hint" hidden></p>
+        <div class="q-verdict" data-p="verdict" data-testid="game-puzzle-verdict"></div>
+        <div class="q-out" data-p="out"></div>
+        <p class="q-foot"><a data-p="lesson" href="#/path">Read the lesson</a> <span data-p="solved" class="q-solved" hidden>✓ Solved</span></p>
+      </div>
+
+      <div class="q-panel q-menu" id="q_menu" data-testid="game-menu" hidden>
+        <h2>Menu</h2>
+        <p class="q-stats" data-m="stats"></p>
+        <h3>Quests</h3><ul class="q-list" data-m="quests"></ul>
+        <h3>Items</h3><ul class="q-list" data-m="items"></ul>
+        <div data-m="map"></div>
+        <div class="q-btns">
+          <button type="button" class="q-btn primary" data-m="resume" data-testid="game-resume">Resume</button>
+          <button type="button" class="q-btn" data-m="sound" data-testid="game-sound">Sound</button>
+          <button type="button" class="q-btn" data-m="quit" data-testid="game-quit">Save and quit</button>
+        </div>
+      </div>
+
+      <div class="q-panel q-end" id="q_end" data-testid="game-ending" hidden>
+        <h2>The Ledger is restored</h2>
+        <p>With both locks released, the Deadlock lets go of itself and fades away. All across the kingdom, pages knit back together: coins return, doors unseal, and Wisp finally has a job to write down.</p>
+        <p>Margaret weeps a little. Rex promises, again, to always use a <code>WHERE</code>. Trainer Ada just smiles.</p>
+        <p class="q-twist">But in the rubble of the Deadlock's chamber, you find a scrap of parchment, signed with a single letter: <b>D</b>. Someone corrupted the Ledger on purpose…</p>
+        <p class="q-tbc"><b>To be continued in Chapter 2.</b></p>
+        <p class="q-stats" data-e="stats"></p>
+        <div class="q-btns"><button type="button" class="q-btn primary" data-e="title" data-testid="game-end-title">Back to the title screen</button></div>
       </div>
     </div>
-    <p class="small game-help page-col"><strong>Keyboard:</strong> ← → or A / D to move, Space, ↑ or W to jump (hold it to jump higher). <strong>Phone:</strong> use the buttons under the game; it's easiest with your phone turned sideways.</p>
+    <div class="game-pad q-pad" aria-label="Game controls">
+      <div class="q-dpad">
+        <button type="button" id="gUp" class="gp up" aria-label="Up" data-testid="game-up">▲</button>
+        <button type="button" id="gLeft" class="gp left" aria-label="Left" data-testid="game-left">◀</button>
+        <button type="button" id="gRight" class="gp right" aria-label="Right" data-testid="game-right">▶</button>
+        <button type="button" id="gDown" class="gp down" aria-label="Down" data-testid="game-down">▼</button>
+      </div>
+      <button type="button" id="gMenu" class="gp gp-menu" aria-label="Menu" data-testid="game-menu-button">☰</button>
+      <div class="q-ab">
+        <button type="button" id="gB" class="gp gp-b" aria-label="B: swing the Debugger" data-testid="game-b">B</button>
+        <button type="button" id="gA" class="gp gp-a" aria-label="A: talk, read, open" data-testid="game-a">A</button>
+      </div>
+    </div>
+    <p class="small game-help page-col"><strong>Keyboard:</strong> arrow keys or WASD to move · <strong>Space</strong> or E to talk, open and use terminals (A) · <strong>J</strong> or X to swing the Debugger (B) · <strong>Esc</strong> for the menu. <strong>Phone:</strong> use the buttons under the game. At a terminal, type your query or tap the pieces to build it.</p>
   </section>
 
   <!-- ERD maker -->
