@@ -667,7 +667,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
       ui.pz.querySelector('[data-p=back]').onclick=()=>{ const ed=ui.pz.querySelector('textarea'); ed.value=ed.value.replace(/\s*(\S+)\s*$/,''); };
       ui.pz.querySelector('[data-p=showhint]').onclick=()=>{ ui.pz.querySelector('[data-p=hint]').hidden=false; };
       ui.pz.querySelector('textarea').addEventListener('keydown', e=>{ if ((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); runPuzzle(); } });
-      ui.pz.querySelector('[data-p=lesson]').addEventListener('click', ()=>save());
+      ui.pz.querySelector('[data-p=lesson]').addEventListener('click', ()=>{ save(); exitFull(); });
       ui.menu.querySelector('[data-m=resume]').onclick=closeMenu;
       ui.menu.querySelector('[data-m=sound]').onclick=()=>{ muted=!muted; try{ localStorage.setItem(SAVE_KEY+'.muted', muted?'1':'0'); }catch(e){} openMenu(); };
       ui.menu.querySelector('[data-m=quit]').onclick=()=>{ save(); showTitle(); };
@@ -675,11 +675,34 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
       ui.title.querySelector('[data-t=new]').onclick=()=>begin(true);
       ui.end.querySelector('[data-e=title]').onclick=()=>showTitle();
       document.addEventListener('visibilitychange', ()=>{ if (document.hidden) Object.keys(keys).forEach(k=>keys[k]=false); });
+      document.getElementById('gFull').addEventListener('click', enterFull);
+      document.getElementById('gExitFull').addEventListener('click', exitFull);
+      // leaving the browser's full-screen mode (for example with Esc, or a swipe) also leaves ours
+      ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev, ()=>{ if (!(document.fullscreenElement||document.webkitFullscreenElement) && fullOn && document.getElementById('gameStage').dataset.realFull==='1') exitFull();
+        document.getElementById('gameStage').dataset.realFull = (document.fullscreenElement||document.webkitFullscreenElement) ? '1' : '0'; }));
     }
     running=true; last=0; acc=0; cancelAnimationFrame(raf); raf=requestAnimationFrame(frame);
     if (!S || mode==='title') showTitle();
   }
-  function stop(){ if (S && mode==='play') save(); running=false; cancelAnimationFrame(raf); Object.keys(keys).forEach(k=>keys[k]=false); }
+  /* ---------- Full screen ----------
+     Uses the browser's real full-screen mode where it exists (Android, desktop, iPad). iPhones don't allow it for web pages,
+     so there the game simply fills the window instead. */
+  let fullOn=false;
+  function enterFull(){
+    const st=document.getElementById('gameStage'); fullOn=true; st.classList.add('full'); document.body.classList.add('game-full');
+    const req = st.requestFullscreen || st.webkitRequestFullscreen;
+    if (req){ try { const p=req.call(st); if (p && p.catch) p.catch(()=>{}); } catch(e){} }
+    try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); } catch(e){}
+    window.scrollTo(0,0);
+  }
+  function exitFull(){
+    if (!fullOn) return; fullOn=false;
+    const st=document.getElementById('gameStage'); st.classList.remove('full'); document.body.classList.remove('game-full');
+    const fe = document.fullscreenElement || document.webkitFullscreenElement;
+    if (fe){ const ex=document.exitFullscreen || document.webkitExitFullscreen; try { const p=ex.call(document); if (p && p.catch) p.catch(()=>{}); } catch(e){} }
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(e){}
+  }
+  function stop(){ exitFull(); if (S && mode==='play') save(); running=false; cancelAnimationFrame(raf); Object.keys(keys).forEach(k=>keys[k]=false); }
   // For tests
   const state = () => S && ({ mode, room:S.room, x:Math.round(S.x), y:Math.round(S.y), hearts:S.hearts, maxHearts:S.maxHearts, keywords:S.keywords,
     solved:Object.keys(S.solved).sort(), flags:Object.keys(S.flags).filter(k=>S.flags[k]).sort(), items:Object.keys(S.items).filter(k=>S.items[k]).sort(), enemies:R?R.enemies.filter(e=>!e.dead).length:0 });
@@ -687,7 +710,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
   const testGive = (what) => { if (what==='keywords') S.keywords+=50; else S.items[what]=true; };
   const testFace = d => { S.dir=d; };
   const testPress = k => { pressedOnce[k]=1; };
-  return { start, stop, state, testWarp, testGive, testFace, testPress };
+  return { start, stop, state, testWarp, testGive, testFace, testPress, enterFull, exitFull };
 })();
 window.GAME_STATE = () => GAME.state();                 // tests only
 window.GAME_TEST = { warp:GAME.testWarp, give:GAME.testGive, face:GAME.testFace, press:GAME.testPress };

@@ -77,6 +77,9 @@
   <section class="view" id="v-game" aria-labelledby="h-game">
     <h1 id="h-game" class="dot" data-testid="game-title">The Lost Ledger</h1>
     <p class="lede page-col">A short SQL adventure. The kingdom's Royal Ledger is corrupted, and you're the new Spartan sent to fix it: explore, talk to the villagers, and open the Royal Archive's rune doors with real SQL queries. <strong>Chapter 1</strong> takes about 20 to 30 minutes.</p>
+    <div class="game-tools"><button type="button" class="btn small" id="gFull" data-testid="game-fullscreen">⛶ Full screen</button></div>
+    <div class="game-stage" id="gameStage" data-testid="game-stage">
+    <button type="button" class="q-exit-full" id="gExitFull" data-testid="game-exit-fullscreen" aria-label="Exit full screen">✕</button>
     <div class="game-wrap q-game" id="gameWrap" data-testid="game">
       <canvas id="gameCanvas" width="256" height="192" data-testid="game-canvas" role="img" aria-label="The Lost Ledger: a top-down adventure. Arrow keys to move, Space to talk, J to swing the Debugger, Esc for the menu."></canvas>
 
@@ -152,6 +155,7 @@
         <button type="button" id="gB" class="gp gp-b" aria-label="B: swing the Debugger" data-testid="game-b">B</button>
         <button type="button" id="gA" class="gp gp-a" aria-label="A: talk, read, open" data-testid="game-a">A</button>
       </div>
+    </div>
     </div>
     <p class="small game-help page-col"><strong>Keyboard:</strong> arrow keys or WASD to move · <strong>Space</strong> or E to talk, open and use terminals (A) · <strong>J</strong> or X to swing the Debugger (B) · <strong>Esc</strong> for the menu. <strong>Phone:</strong> use the buttons under the game. At a terminal, type your query or tap the pieces to build it.</p>
   </section>

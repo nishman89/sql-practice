@@ -863,3 +863,33 @@ p.further{background:var(--paper);border-radius:10px;box-shadow:var(--shadow);pa
 .q-pad .gp.down{filter:brightness(1.3)}
 @media (pointer:coarse){ .q-pad{display:flex} }
 @media (max-width:560px){ .q-dialog .q-dbody p{font-size:.9rem} .q-face{width:36px;height:36px} }
+
+/* Game: full screen. The stage holds the game and its touch controls. */
+.game-tools{display:flex;justify-content:flex-end;max-width:52rem;margin:4px 0 6px}
+.game-stage{position:relative;max-width:52rem}
+.q-exit-full{display:none}
+.game-stage.full{position:fixed;inset:0;z-index:2000;max-width:none;margin:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);box-sizing:border-box}
+body.game-full{overflow:hidden;touch-action:none}
+body.game-full .site-header,body.game-full .to-top{visibility:hidden}
+.game-stage.full .q-exit-full{display:grid;place-items:center;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:calc(env(safe-area-inset-right,0px) + 8px);z-index:5;
+  width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:1.1rem;cursor:pointer}
+/* Upright: the game across the top, controls underneath */
+.game-stage.full .game-wrap{width:min(100vw, calc((100dvh - 190px) * 4 / 3));max-width:none;margin:0}
+.game-stage.full #gameCanvas{border-radius:0}
+.game-stage.full .q-pad{width:100%;max-width:30rem;padding:0 14px;box-sizing:border-box}
+/* Sideways: the game fills the height, with the D-pad on the left and A / B on the right */
+@media (orientation:landscape){
+  .game-stage.full .game-wrap{width:min(100vw, calc(100dvh * 4 / 3))}
+  .game-stage.full .q-pad{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);max-width:none;padding:0 calc(env(safe-area-inset-left,0px) + 14px) 0 calc(env(safe-area-inset-right,0px) + 14px);pointer-events:none;opacity:.9}
+  .game-stage.full .q-pad > *{pointer-events:auto}
+  .game-stage.full .q-pad .gp-menu{position:absolute;top:auto;left:50%;transform:translateX(-50%);bottom:-6px;opacity:.75}
+}
+@media (orientation:landscape){
+  .game-stage.full .q-dpad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)}
+  .game-stage.full .q-pad .gp-a,.game-stage.full .q-pad .gp-b{width:56px;height:56px}
+  .game-stage.full .q-pad{padding-left:calc(env(safe-area-inset-left,0px) + 8px);padding-right:calc(env(safe-area-inset-right,0px) + 8px)}
+}
+@media (orientation:landscape){
+  .game-stage.full .q-pad .gp-menu{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 8px);bottom:auto;transform:none;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.16);opacity:1}
+}
