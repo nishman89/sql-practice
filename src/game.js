@@ -354,6 +354,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     ui.pz.querySelector('[data-p=hint]').hidden=true; ui.pz.querySelector('[data-p=hint]').textContent=p.hint;
     const lk=ui.pz.querySelector('[data-p=lesson]'); lk.href=`#/lesson/${p.lesson}`; lk.textContent = `Read the lesson: ${LESSONS[p.lesson]?LESSONS[p.lesson].title:'SQL'}`;
     ui.pz.querySelector('[data-p=solved]').hidden = !S.solved[id];
+    updateDone();
     setTimeout(()=>{ if (!matchMedia('(pointer: coarse)').matches) ed.focus(); }, 50);
   }
   function runPuzzle(){
@@ -361,15 +362,24 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     S.drafts = S.drafts || {}; S.drafts[curPuzzle]=ed.value;
     worldDb.run('SAVEPOINT q');
     let rep; try { rep = runScript(worldDb, ed.value, 'game'); } finally { worldDb.run('ROLLBACK TO q'); worldDb.run('RELEASE q'); }
+    S.drafts[curPuzzle]=ed.value;
     renderReport(out, rep);
     const last = rep.results[rep.results.length-1];
     if (rep.error || !last){ v.className='q-verdict no'; v.textContent = rep.error ? 'The rune doesn\'t understand that query yet. Check the message above.' : 'Write a SELECT query, then press Run.'; return; }
     let res; try { res = compare(worldDb, {sol:p.sol}, last); } catch(e){ res={ok:false,msg:e.message}; }
     if (res.ok){ v.className='q-verdict yes'; v.innerHTML='<b>The rune glows!</b> That\'s exactly what it was asking for.'; SFX.solve();
       if (!S.solved[curPuzzle]){ S.solved[curPuzzle]=true; S.keywords+=3; save(); setTimeout(()=>solved(curPuzzle), 10); }
-      ui.pz.querySelector('[data-p=solved]').hidden=false; }
+      ui.pz.querySelector('[data-p=solved]').hidden=false; updateDone(true); }
     else { wrongRuns++; v.className='q-verdict no'; v.innerHTML=`<b>Not quite.</b> ${res.msg||''} ${res.tip||''}`;
       if (wrongRuns>=2) ui.pz.querySelector('[data-p=hint]').hidden=false; }
+  }
+  // The button at the bottom: Leave until it's solved, then Complete
+  function updateDone(justSolved){
+    const b=ui.pz.querySelector('[data-p=done]'), done=!!S.solved[curPuzzle];
+    b.textContent = done ? 'Complete ✓' : 'Leave';
+    b.classList.toggle('is-done', done);
+    b.setAttribute('aria-label', done ? 'Complete: close the terminal and carry on' : 'Leave the terminal (your query is kept)');
+    if (justSolved) setTimeout(()=>{ b.scrollIntoView({block:'nearest', behavior:'smooth'}); b.focus({preventScroll:true}); }, 60);
   }
   function closePuzzle(){ ui.pz.hidden=true; mode='play'; const id=curPuzzle; curPuzzle=null; if (S.solved[id] && pendingAfter){ const f=pendingAfter; pendingAfter=null; f(); } save(); }
   let pendingAfter=null;
@@ -685,9 +695,11 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
       cv.addEventListener('touchstart', e=>{ if (e.cancelable) e.preventDefault(); }, {passive:false});
       ui.pz.querySelector('[data-p=run]').onclick=runPuzzle;
       ui.pz.querySelector('[data-p=close]').onclick=closePuzzle;
+      ui.pz.querySelector('[data-p=done]').onclick=closePuzzle;
       ui.pz.querySelector('[data-p=clear]').onclick=()=>{ ui.pz.querySelector('textarea').value=''; };
       ui.pz.querySelector('[data-p=back]').onclick=()=>{ const ed=ui.pz.querySelector('textarea'); ed.value=ed.value.replace(/\s*(\S+)\s*$/,''); };
       ui.pz.querySelector('[data-p=showhint]').onclick=()=>{ ui.pz.querySelector('[data-p=hint]').hidden=false; };
+      ui.pz.querySelector('textarea').addEventListener('input', e=>{ if (curPuzzle){ S.drafts=S.drafts||{}; S.drafts[curPuzzle]=e.target.value; } });
       ui.pz.querySelector('textarea').addEventListener('keydown', e=>{ if ((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); runPuzzle(); } });
       ui.pz.querySelector('[data-p=lesson]').addEventListener('click', ()=>{ save(); exitFull(); });
       ui.menu.querySelector('[data-m=resume]').onclick=closeMenu;
