@@ -668,6 +668,9 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
       keys[k]=true; if (k==='a'||k==='b') pressedOnce[k]=1; b.classList.add('pressed'); try{ b.setPointerCapture(e.pointerId); }catch(_){} };
     const off=e=>{ e.preventDefault(); if (k!=='menu') keys[k]=false; b.classList.remove('pressed'); };
     b.addEventListener('pointerdown',on); b.addEventListener('pointerup',off); b.addEventListener('pointercancel',off); b.addEventListener('lostpointercapture',off); b.addEventListener('contextmenu',e=>e.preventDefault());
+    // iOS starts a text selection or a long-press menu from touch events, so stop those at the source too
+    ['touchstart','touchmove','touchend'].forEach(ev=>b.addEventListener(ev, e=>{ if (e.cancelable) e.preventDefault(); }, {passive:false}));
+    b.addEventListener('selectstart', e=>e.preventDefault());
   }
   function start(){
     cv=document.getElementById('gameCanvas'); ctx=cv.getContext('2d'); cv.width=VW; cv.height=VH; ctx.imageSmoothingEnabled=false; fitCanvas();
@@ -677,6 +680,9 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
       addEventListener('keydown',onKey); addEventListener('keyup',onKey);
       [['gUp','up'],['gDown','down'],['gLeft','left'],['gRight','right'],['gA','a'],['gB','b'],['gMenu','menu']].forEach(([id,k])=>bindPad(id,k));
       ui.dlg.addEventListener('pointerdown', e=>{ if (e.target.closest('button')) return; e.preventDefault(); advance(); });
+      // no text selection from long presses anywhere on the game itself (puzzle text and the query box are still selectable)
+      document.getElementById('gameStage').addEventListener('selectstart', e=>{ if (!e.target.closest || !e.target.closest('.q-panel')) e.preventDefault(); });
+      cv.addEventListener('touchstart', e=>{ if (e.cancelable) e.preventDefault(); }, {passive:false});
       ui.pz.querySelector('[data-p=run]').onclick=runPuzzle;
       ui.pz.querySelector('[data-p=close]').onclick=closePuzzle;
       ui.pz.querySelector('[data-p=clear]').onclick=()=>{ ui.pz.querySelector('textarea').value=''; };

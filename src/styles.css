@@ -894,3 +894,10 @@ body.game-full .site-header,body.game-full .to-top{visibility:hidden}
 .game-stage.full.ui-open .q-pad{display:none}
 @media (pointer:fine){ .game-stage.full .q-pad{display:none} }
 .game-stage.full.ui-panel .q-exit-full{display:none}
+
+/* iPhone: holding a game button must never select text or open the Copy / Look Up menu */
+.game-stage, .game-stage .q-pad, .game-stage .gp, #gameCanvas, .q-dialog, .game-tools{
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent}
+.game-stage .gp{touch-action:none}
+.game-stage .q-panel, .game-stage .q-panel *{-webkit-user-select:text; user-select:text; -webkit-touch-callout:default}
+.game-stage .q-panel button{-webkit-user-select:none; user-select:none}
