@@ -906,3 +906,7 @@ body.game-full .site-header,body.game-full .to-top{visibility:hidden}
 .q-done{flex:1;border:2px solid #fff;background:transparent;color:#fff;border-radius:999px;padding:10px 16px;font:inherit;font-weight:700;font-size:1rem;cursor:pointer}
 .q-done.is-done{background:#2f9e55;border-color:#2f9e55;box-shadow:0 0 0 4px rgba(47,158,85,.3)}
 .q-done:focus-visible{outline:3px solid #ffb3c8;outline-offset:2px}
+/* Game: the keyboard shortcut for Run, on computers only */
+.q-kbd-hint{font-size:.8rem;color:#d9cfd3;white-space:nowrap}
+.q-kbd-hint kbd{background:#4b4552;border:1px solid #6b6467;border-bottom-width:2px;border-radius:4px;padding:1px 5px;font:600 .75rem var(--f-mono);color:#fff}
+@media (pointer:coarse){ .q-kbd-hint{display:none} }

@@ -699,6 +699,10 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
       ui.pz.querySelector('[data-p=clear]').onclick=()=>{ ui.pz.querySelector('textarea').value=''; };
       ui.pz.querySelector('[data-p=back]').onclick=()=>{ const ed=ui.pz.querySelector('textarea'); ed.value=ed.value.replace(/\s*(\S+)\s*$/,''); };
       ui.pz.querySelector('[data-p=showhint]').onclick=()=>{ ui.pz.querySelector('[data-p=hint]').hidden=false; };
+      // Desktop: say how to run a query from the keyboard (⌘ on a Mac)
+      const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+      if (mac){ ui.pz.querySelector('[data-p=kbd]').innerHTML='<kbd>⌘</kbd> + <kbd>Enter</kbd> runs'; ui.pz.querySelector('[data-p=run]').title='Run your query (⌘ + Enter)'; }
+      if (matchMedia('(pointer: fine)').matches) ui.pz.querySelector('textarea').placeholder = `Type your query, then press ${mac?'⌘':'Ctrl'} + Enter or Run`;
       ui.pz.querySelector('textarea').addEventListener('input', e=>{ if (curPuzzle){ S.drafts=S.drafts||{}; S.drafts[curPuzzle]=e.target.value; } });
       ui.pz.querySelector('textarea').addEventListener('keydown', e=>{ if ((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); runPuzzle(); } });
       ui.pz.querySelector('[data-p=lesson]').addEventListener('click', ()=>{ save(); exitFull(); });
