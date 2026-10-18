@@ -910,3 +910,5 @@ body.game-full .site-header,body.game-full .to-top{visibility:hidden}
 .q-kbd-hint{font-size:.8rem;color:#d9cfd3;white-space:nowrap}
 .q-kbd-hint kbd{background:#4b4552;border:1px solid #6b6467;border-bottom-width:2px;border-radius:4px;padding:1px 5px;font:600 .75rem var(--f-mono);color:#fff}
 @media (pointer:coarse){ .q-kbd-hint{display:none} }
+.q-how{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px 12px;font-size:.88rem;max-width:30rem;margin:14px 0 0;line-height:1.5}
+.q-how b{color:#ffb3c8}

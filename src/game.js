@@ -6,7 +6,7 @@ const GAME = (() => {
   const T = 16, COLS = 16, ROWS = 11, HUD = 16, VW = COLS*T, VH = ROWS*T + HUD;
   const SAVE_KEY = 'sqlPracticeLab.quest.v1';
   // The canvas can be bigger than the room (full screen): CW x CH, with the room drawn at (OX, RY)
-  let CW = VW, CH = VH, OX = 0, RY = HUD;
+  let CW = VW, CH = VH, OX = 0, RY = HUD, SC = 3;   // SC: how many real pixels per game pixel
 
   /* ---------- The kingdom's database ---------- */
   const WORLD_SQL = `
@@ -188,6 +188,10 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     get:()=>{ beep(880,0.07); setTimeout(()=>beep(1320,0.09),70); }, solve:()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.12,'triangle',0.06),i*90)),
     door:()=>beep(110,0.3,'triangle',0.07,40), save:()=>[784,988,1175].forEach((f,i)=>setTimeout(()=>beep(f,0.1,'sine',0.05),i*80)), swing:()=>beep(500,0.05,'triangle',0.03,-200) };
 
+  /* ---------- Controls for this device ---------- */
+  const touch = () => matchMedia('(pointer: coarse)').matches;
+  const KEY = { a:()=>touch()?'A':'Space', b:()=>touch()?'B':'J', move:()=>touch()?'the D-pad':'the arrow keys (or WASD)', menu:()=>touch()?'☰':'Esc' };
+
   /* ---------- Map helpers ---------- */
   const room = () => ROOMS[S.room];
   const isOpen = (c, x, y) => {
@@ -269,8 +273,10 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
         ada('It\'s the book that records everything in the kingdom: every villager, every house, every coin. And it\'s a database.'),
         ada('Now people are forgetting their jobs, coins are vanishing, and doors that were in the records have simply sealed shut.'),
         ada('You\'re learning SQL, which makes you exactly who the kingdom needs.'),
-        ada('Try the terminal over there. Every terminal asks a question about the kingdom\'s data. Answer it with a query and things happen.')], ()=>{ F.metAda=true; save(); });
-      if (!sv.T0) return say([ada('The terminal is by the bookshelves. Walk up to it and press A.', {choices:[
+        ada('Try the terminal over there. Every terminal asks a question about the kingdom\'s data. Answer it with a query and things happen.'),
+        ada(`Move with ${KEY.move()}. Walk up to the terminal, face it and press ${KEY.a()}. That\'s also how you talk to people and open things.`),
+        ada(`And if a bug comes at you, press ${KEY.b()} to swing your Debugger. ${KEY.menu()} opens the menu, with your quests, items and the controls.`)], ()=>{ F.metAda=true; save(); });
+      if (!sv.T0) return say([ada(`The terminal is by the bookshelves. Walk up to it and press ${KEY.a()}.`, {choices:[
         {label:'How do terminals work?', go:()=>say([ada('Read the question, then write a query. You can type it, or tap the pieces to build it.'), ada('Press Run to see your result. If it matches what the rune wants, the door opens.'), ada('Stuck? There\'s a hint, and a link to the lesson that covers it.')])},
         {label:'Thanks, Ada', go:()=>{}} ]})]);
       return say([ada('The door\'s open! Head into the village and find Margaret, the Archivist. She\'ll know where the trouble started.'),
@@ -404,6 +410,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
   /* ---------- Interacting ---------- */
   function facingPoint(){ const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[S.dir]; return [S.x+6+d[0]*12, S.y+6+d[1]*12, d]; }
   function interact(){
+    S.uses = (S.uses||0) + 1;
     const [px,py,d]=facingPoint();
     let tx=Math.floor(px/T), ty=Math.floor(py/T);
     const npc = R.npcs.find(n=>n.x===tx && n.y===ty) || (tileAt(tx,ty)==='C' ? R.npcs.find(n=>n.x===tx+d[0] && n.y===ty+d[1]) : null);
@@ -433,6 +440,17 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     save();
   }
   function flash(text){ msg = { text, t: 200 }; }
+  // What pressing A would do right now (for the little prompt above the player)
+  function promptFor(){
+    const [px,py,d]=facingPoint(); const tx=Math.floor(px/T), ty=Math.floor(py/T);
+    if (R.npcs.find(n=>n.x===tx && n.y===ty) || (tileAt(tx,ty)==='C' && R.npcs.find(n=>n.x===tx+d[0] && n.y===ty+d[1]))) return 'Talk';
+    const c=tileAt(tx,ty), key=`${S.room}:${tx},${ty}`;
+    if (c==='P' && TERMINALS[key]) return S.solved[TERMINALS[key]] ? 'Use terminal' : 'Use terminal';
+    if (c==='L') return 'Save';
+    if (c==='X') return S.opened[key] ? '' : 'Open';
+    if ((c==='w' && !S.flags.crack) || (c==='K' && !S.flags.bossDoor) || (c==='d' && !isOpen(c)) || (c==='g' && !S.flags.gateOpen)) return 'Look';
+    return '';
+  }
 
   /* ---------- Update ---------- */
   function update(){
@@ -467,7 +485,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     }
     // act
     if (take('a')) interact();
-    if (take('b') && !R.swing){ R.swing=14; SFX.swing(); }
+    if (take('b') && !R.swing){ R.swing=14; SFX.swing(); S.swings=(S.swings||0)+1; }
     if (R.swing) R.swing--;
     // the Debugger's swing
     let hb=null; if (R.swing>4){ const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[S.dir]; hb=[S.x+6+d[0]*12-8, S.y+6+d[1]*12-8, 16, 16]; }
@@ -575,11 +593,12 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     const hy=RY-HUD; ctx.save(); ctx.translate(OX, hy);
     Rr(-OX,0,CW,HUD,'#2d2a2b');
     for (let i=0;i<S.maxHearts;i++){ const x=4+i*11; ctx.fillStyle = i<S.hearts ? '#ff4d7a' : '#5a5560'; ctx.beginPath(); ctx.arc(x+3,6,3,0,7); ctx.arc(x+7,6,3,0,7); ctx.fill(); ctx.beginPath(); ctx.moveTo(x,7); ctx.lineTo(x+5,13); ctx.lineTo(x+10,7); ctx.fill(); }
-    ctx.textAlign='right'; ctx.font='bold 8px monospace'; ctx.fillStyle='#ffb3c8'; ctx.fillText(`◆ ${S.keywords}`, VW-4, 11);
-    ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='7px monospace'; ctx.fillText(room().name, VW/2+10, 11);
+    ctx.textAlign='right'; ctx.font='700 8px system-ui, sans-serif'; ctx.fillStyle='#ffb3c8'; ctx.fillText(`◆ ${S.keywords}`, VW-4, 11);
+    ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='600 7.5px system-ui, sans-serif'; ctx.fillText(room().name, VW/2+10, 11);
     ctx.restore();
   }
   function draw(){
+    ctx.setTransform(SC,0,0,SC,0,0); ctx.imageSmoothingEnabled=false;
     Rr(0,0,CW,CH,'#000');
     if (!S || mode==='title' || !R){ drawTitleScene(); return; }
     // scenery carries on beyond the room's edges, so a big screen is filled edge to edge
@@ -596,9 +615,16 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     R.enemies.forEach(e=>{ if (!e.dead) drawEnemy(e); });
     R.fx.forEach(f=>{ ctx.strokeStyle=`rgba(255,111,154,${f.t/20})`; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(f.x+OX, f.y+RY, 20-f.t, 0, 7); ctx.stroke(); });
     drawPlayer();
+    if (mode==='play' && !fadeT){
+      const pr = (S.uses||0) < 8 ? promptFor() : '';
+      const bugsHere = R.enemies.some(e=>!e.dead);
+      const label = pr ? `${KEY.a()} · ${pr}` : (bugsHere && (S.swings||0) < 4 ? `${KEY.b()} · Swing your Debugger!` : '');
+      if (label){ ctx.font='700 7px system-ui, sans-serif'; const w=ctx.measureText(label).width+10, x=Math.round(S.x+OX+6-w/2), y=Math.round(S.y+RY-18);
+        Rr(x, y, w, 11, 'rgba(45,42,43,0.88)'); Rr(x+w/2-2, y+11, 4, 2, 'rgba(45,42,43,0.88)'); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(label, x+w/2, y+8); }
+    }
     if (room().dark && !S.items.lantern){ ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,HUD,CW,CH-HUD); }
     drawHud();
-    if (msg){ ctx.font='bold 7px sans-serif'; const lines=wrap(msg.text, 46); const h=lines.length*10+8; const my = RY + ROWS*T - h - 6; Rr(OX+8, my, VW-16, h, 'rgba(45,42,43,0.92)'); ctx.fillStyle='#fff'; ctx.textAlign='center'; lines.forEach((l,i)=>ctx.fillText(l, OX+VW/2, my+11+i*10)); }
+    if (msg){ ctx.font='600 8.5px system-ui, sans-serif'; const lines=wrap(msg.text, 42); const h=lines.length*11+9; const my = RY + ROWS*T - h - 6; Rr(OX+8, my, VW-16, h, 'rgba(45,42,43,0.92)'); ctx.fillStyle='#fff'; ctx.textAlign='center'; lines.forEach((l,i)=>ctx.fillText(l, OX+VW/2, my+12+i*11)); }
     if (fadeT>0){ ctx.fillStyle=`rgba(0,0,0,${1-Math.abs(fadeT-10)/10})`; ctx.fillRect(0,0,CW,CH); }
   }
   function wrap(text, n){ const out=[]; let line=''; text.split(' ').forEach(w=>{ if ((line+' '+w).trim().length>n){ out.push(line.trim()); line=w; } else line+=' '+w; }); if (line.trim()) out.push(line.trim()); return out; }
@@ -626,6 +652,9 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     const items=[['Debugger','Your trusty sword, for bugs',true],['Archive Pass','Opens the gate',it.pass],['Lantern of EXPLAIN','Shows what\'s hidden',it.lantern],['Index Map','A map of the Archive',it.map],['🔑 Primary Key','Opens the great door',it.key]].filter(x=>x[2]);
     ui.menu.querySelector('[data-m=quests]').innerHTML=q.join('');
     ui.menu.querySelector('[data-m=items]').innerHTML=items.map(([n,d])=>`<li><b>${n}</b>: ${d}</li>`).join('');
+    ui.menu.querySelector('[data-m=controls]').innerHTML = touch()
+      ? '<li><b>D-pad</b>: move</li><li><b>A</b>: talk, use terminals, open chests, save at Ledger Stones</li><li><b>B</b>: swing the Debugger</li><li><b>☰</b>: this menu</li><li><b>⛶ Full screen</b>, above the game, fills your screen</li>'
+      : '<li><b>Arrow keys</b> or <b>WASD</b>: move</li><li><b>Space</b> or <b>E</b>: talk, use terminals, open chests, save at Ledger Stones</li><li><b>J</b> or <b>X</b>: swing the Debugger</li><li><b>Esc</b> or <b>P</b>: this menu</li><li>At a terminal, <b>Ctrl + Enter</b> (⌘ + Enter on a Mac) runs your query</li>';
     ui.menu.querySelector('[data-m=stats]').textContent=`Hearts ${S.hearts}/${S.maxHearts} · Keywords ${S.keywords} · Puzzles solved ${Object.keys(S.solved).length}/9`;
     const mp=ui.menu.querySelector('[data-m=map]');
     if (it.map){ const cells=[]; for (let y=0;y<2;y++) for (let x=0;x<4;x++){ const k=`archive:${x},${y}`; const ex=ROOMS[k]; cells.push(`<span class="${!ex?'none':S.room===k?'here':S.visited[k]?'seen':'unseen'}" title="${ex?ex.name:''}"></span>`); }
@@ -634,8 +663,11 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     ui.menu.querySelector('[data-m=exitfull]').hidden = !fullOn;
   }
   function closeMenu(){ ui.menu.hidden=true; mode='play'; }
+  function howToPlay(){ return touch()
+    ? '<b>How to play:</b> move with the <b>D-pad</b> · <b>A</b> to talk, use and open · <b>B</b> to swing your Debugger · <b>☰</b> for the menu'
+    : '<b>How to play:</b> move with the <b>arrow keys</b> or <b>WASD</b> · <b>Space</b> to talk, use and open · <b>J</b> to swing your Debugger · <b>Esc</b> for the menu'; }
   function showTitle(){
-    mode='title'; ui.title.hidden=false; ui.end.hidden=true; ui.menu.hidden=true; ui.dlg.hidden=true; ui.pz.hidden=true;
+    mode='title'; ui.title.hidden=false; ui.title.querySelector('[data-t=how]').innerHTML = howToPlay(); ui.end.hidden=true; ui.menu.hidden=true; ui.dlg.hidden=true; ui.pz.hidden=true;
     const sv=loadSave(); const c=ui.title.querySelector('[data-t=continue]'); c.hidden=!sv;
     if (sv) c.textContent = `Continue (${ROOMS[sv.room]?ROOMS[sv.room].name:'saved game'})`;
     setTimeout(()=>{ (sv ? c : ui.title.querySelector('[data-t=new]')).focus({preventScroll:true}); }, 50);
@@ -683,7 +715,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
     b.addEventListener('selectstart', e=>e.preventDefault());
   }
   function start(){
-    cv=document.getElementById('gameCanvas'); ctx=cv.getContext('2d'); cv.width=VW; cv.height=VH; ctx.imageSmoothingEnabled=false; fitCanvas();
+    cv=document.getElementById('gameCanvas'); ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=false; fitCanvas(); setTimeout(fitCanvas, 50);
     if (!bound){
       bound=true;
       ['dlg','dname','dtext','dchoices','dface','pz','menu','title','end'].forEach(k=>ui[k]=document.getElementById('q_'+k));
@@ -736,7 +768,8 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
       if (vw/vh > VW/VH){ CH = VH; CW = Math.round(VH*vw/vh); } else { CW = VW; CH = Math.round(VW*vh/vw); }
     } else { CW = VW; CH = VH; }
     OX = Math.floor((CW-VW)/2); RY = HUD + Math.floor((CH-VH)/2);
-    if (cv.width!==CW || cv.height!==CH){ cv.width=CW; cv.height=CH; ctx.imageSmoothingEnabled=false; }
+    SC = Math.min(4, Math.max(2, Math.ceil((cv.getBoundingClientRect().width || CW*3) * (window.devicePixelRatio||1) / CW)));
+    if (cv.width!==CW*SC || cv.height!==CH*SC){ cv.width=CW*SC; cv.height=CH*SC; ctx.imageSmoothingEnabled=false; }
   }
   function enterFull(){
     const st=document.getElementById('gameStage'); fullOn=true; st.classList.add('full'); document.body.classList.add('game-full');
@@ -756,7 +789,7 @@ INSERT INTO Monsters VALUES (1,'Bug','Reading Room',1),(2,'Bug','Reading Room',1
   function stop(){ exitFull(); if (S && mode==='play') save(); running=false; cancelAnimationFrame(raf); Object.keys(keys).forEach(k=>keys[k]=false); }
   // For tests
   const state = () => S && ({ mode, room:S.room, x:Math.round(S.x), y:Math.round(S.y), hearts:S.hearts, maxHearts:S.maxHearts, keywords:S.keywords,
-    solved:Object.keys(S.solved).sort(), flags:Object.keys(S.flags).filter(k=>S.flags[k]).sort(), items:Object.keys(S.items).filter(k=>S.items[k]).sort(), enemies:R?R.enemies.filter(e=>!e.dead).length:0 });
+    solved:Object.keys(S.solved).sort(), flags:Object.keys(S.flags).filter(k=>S.flags[k]).sort(), items:Object.keys(S.items).filter(k=>S.items[k]).sort(), enemies:R?R.enemies.filter(e=>!e.dead).length:0, prompt: (R && mode==='play') ? promptFor() : '' });
   const testWarp = (key, tx, ty) => { enterRoom(key, tx*T+2, ty*T+2); };
   const testGive = (what) => { if (what==='keywords') S.keywords+=50; else S.items[what]=true; };
   const testFace = d => { S.dir=d; };
