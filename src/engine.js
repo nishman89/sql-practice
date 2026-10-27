@@ -144,7 +144,10 @@ function friendlyError(msg, mode){
   if (/FOREIGN KEY constraint failed/i.test(msg)) return 'The foreign key blocked this change. You referred to a row in the parent table that doesn\'t exist, or tried to delete a row that other rows still point to.';
   if (/UNIQUE constraint failed/i.test(msg)) return 'That primary key value already exists. Each row needs a unique key.';
   if (/NOT NULL constraint failed: (.+)/i.test(msg)) return `${msg.match(/NOT NULL constraint failed: (.+)/i)[1]} is NOT NULL, so you must give it a value.`;
-  if (/(table|view|index) (.+) already exists/i.test(msg)) return 'That already exists. Start your script with DROP TABLE IF EXISTS (or DROP VIEW IF EXISTS), or press Start again in the Create tables lesson.';
+  if (/(table|view|index) (.+) already exists/i.test(msg)){ const m=msg.match(/(table|view|index) (.+?) already exists/i), kind=m[1].toLowerCase(), name=m[2].replace(/^["'`\[]|["'`\]]$/g,'');
+    return `You already have a ${kind} called ${name}, probably from an earlier run. Put DROP ${kind.toUpperCase()} IF EXISTS ${name}; at the top of your script, or press Start again in the Create tab.`; }
+  if (/duplicate column name: (\S+)/i.test(msg)){ const c=msg.match(/duplicate column name: (\S+)/i)[1];
+    return `The column ${c} is already there, probably from an earlier run, so there's nothing to add. If you want to start over, press Start again in the Create tab.`; }
   if (/misuse of aggregate|aggregate functions are not allowed in the GROUP BY/i.test(msg)) return 'COUNT, SUM, AVG, MIN and MAX can\'t go in WHERE: WHERE runs before the rows are grouped, so there\'s nothing to count or average yet. Put the condition in HAVING, after GROUP BY. (The HAVING lesson shows why.)';
   if (/near "(\w+)": syntax error/i.test(msg)){ const w=msg.match(/near "(\w+)"/)[1];
     return `SQL didn't expect "${w}" there. Check the clause order (SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY) and for a missing comma or bracket.`; }

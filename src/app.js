@@ -668,10 +668,10 @@ const BUILD_STEPS=[
   { short:'Orders and FK', title:'Create Orders with a foreign key',
     why:'The FOREIGN KEY line is what draws the relationship. It tells the database that Orders.customer_id must match a customer_id that exists in Customers.',
     starter:'-- Create an Orders table with:\n--   order_id      primary key, auto-incrementing\n--   order_number  a whole number, required\n--   customer_id   a whole number that links to Customers\n\n',
-    mysql:`CREATE TABLE Orders (\n    order_id     INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\n    order_number INT NOT NULL,\n    customer_id  INT,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
-    tsql:`CREATE TABLE Orders (\n    order_id     INT NOT NULL IDENTITY(1,1) PRIMARY KEY,\n    order_number INT NOT NULL,\n    customer_id  INT,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
+    mysql:`DROP TABLE IF EXISTS Orders;\n\nCREATE TABLE Orders (\n    order_id     INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\n    order_number INT NOT NULL,\n    customer_id  INT,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
+    tsql:`DROP TABLE IF EXISTS Orders;\n\nCREATE TABLE Orders (\n    order_id     INT NOT NULL IDENTITY(1,1) PRIMARY KEY,\n    order_number INT NOT NULL,\n    customer_id  INT,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
     diffNote:'The <code>FOREIGN KEY … REFERENCES</code> line is the same in all three.',
-    example:`CREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
+    example:`DROP TABLE IF EXISTS Orders;\n\nCREATE TABLE Orders (\n    order_id     INTEGER PRIMARY KEY AUTOINCREMENT,\n    order_number INTEGER NOT NULL,\n    customer_id  INTEGER,\n    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)\n);`,
     checks:T=>{ const o=findT(T,'orders'); const fk=o&&o.fks.find(f=>f.from.toLowerCase()==='customer_id'&&f.table.toLowerCase()==='customers'); return [
       ['A table called Orders exists', !!o],
       ['order_id is the primary key', !!(findC(o,'order_id')||{}).pk],
