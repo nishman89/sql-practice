@@ -774,10 +774,13 @@ $('#resetSandbox').addEventListener('click',()=>{
 
 /* ---------- 3. Northwind map ---------- */
 const NW_POS = {
-  'Customers':{x:0,y:0}, 'Employees':{x:0,y:300},
-  'Orders':{x:300,y:96}, 'Shippers':{x:300,y:470},
-  'Categories':{x:650,y:0}, 'Order Details':{x:650,y:150}, 'Suppliers':{x:650,y:340},
-  'Products':{x:970,y:110}
+  // the customer-type and territory tables sit in their own column on the left
+  'CustomerDemographics':{x:0,y:0}, 'CustomerCustomerDemo':{x:0,y:130},
+  'EmployeeTerritories':{x:0,y:440}, 'Territories':{x:0,y:580}, 'Region':{x:0,y:740},
+  'Customers':{x:330,y:0}, 'Employees':{x:330,y:300},
+  'Orders':{x:630,y:96}, 'Shippers':{x:630,y:470},
+  'Categories':{x:980,y:0}, 'Order Details':{x:980,y:150}, 'Suppliers':{x:980,y:340},
+  'Products':{x:1300,y:110}
 };
 const NW_NOTES = {
   'Customers':'Companies that buy from Northwind. The key is a five-letter code such as ALFKI, not a number.',
@@ -787,7 +790,12 @@ const NW_NOTES = {
   'Products':'Everything Northwind sells, with its price, stock levels and whether it\'s discontinued.',
   'Categories':'Product groups such as Beverages and Seafood.',
   'Suppliers':'The companies Northwind buys its products from.',
-  'Shippers':'Delivery firms. Orders.ShipVia holds a ShipperID.'
+  'Shippers':'Delivery firms. Orders.ShipVia holds a ShipperID.',
+  'Region':'The four sales regions: Eastern, Western, Northern and Southern.',
+  'Territories':'Sales territories (53 of them, such as Boston and Seattle), each in one region.',
+  'EmployeeTerritories':'The junction table between Employees and Territories: an employee covers many territories, and a territory can have more than one employee. Its key is EmployeeID + TerritoryID.',
+  'CustomerDemographics':'Customer types. It\'s empty in the original Northwind too, so it\'s good for seeing what a LEFT JOIN does when nothing matches.',
+  'CustomerCustomerDemo':'The junction table linking customers to customer types. Empty, like CustomerDemographics.'
 };
 let nwModel=null, mapSel='Order Details';
 function drawMap(scroll){
@@ -984,7 +992,7 @@ function openFree(sql){ P.drafts.free=sql; save(); fEd.value=sql; goto('free'); 
 function runFree(){ const rep=runScript(nw, fEd.value, 'nw'); if (rep.ran.some(s=>/^(CREATE|DROP|ALTER)\s+TABLE\b/i.test(s))) nwModel=null; renderReport($('#fOut'), rep); }
 function makeStrip(host, getEd, key, tp){
   host.append(erdButton(`${tp}-open-erd`), ' Tables: ');
-  for (const t of ['Customers','Orders','Order Details','Products','Categories','Suppliers','Employees','Shippers']){
+  for (const t of ['Customers','Orders','Order Details','Products','Categories','Suppliers','Employees','Shippers','Territories','Region','EmployeeTerritories','CustomerDemographics','CustomerCustomerDemo']){
     host.append(h('button',{class:'chip',type:'button','data-testid':`${tp}-insert-table-${t.toLowerCase().replace(/\s+/g,'-')}`,title:`Insert ${t} at the cursor`,onclick:()=>{ const ed=getEd(), ta=ed.ta; const txt=/\s/.test(t)?'"'+t+'"':t; ta.focus(); ta.setRangeText(txt, ta.selectionStart, ta.selectionEnd, 'end'); ed.sync(); P.drafts[key()]=ta.value; save(); }}, t));
   }
   host.append(h('span',{style:'margin-left:auto'}, h('kbd',{},'Ctrl'),' + ',h('kbd',{},'Enter'),' runs'));

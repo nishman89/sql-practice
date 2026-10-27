@@ -604,13 +604,14 @@ nothing to host except that one file.
 
 ```
 ├── .github/workflows/deploy.yml   Checks, builds and publishes to GitHub Pages
-├── data/northwind.db              The Northwind sample database (SQLite, ~250 KB)
+├── data/northwind.db              The full Northwind sample database (SQLite, ~300 KB): all 13 tables and 16 views
 ├── public/downloads/              Files learners download, copied into the site as they are (the MySQL Northwind script,
 │                                  and northwind.db, a copy of data/northwind.db for the SQLite guide)
 ├── scripts/
 │   ├── build.mjs                  Builds dist/index.html
 │   ├── check.mjs                  Runs every model answer and example; stops the build if one fails
-│   └── build-northwind.py         How data/northwind.db was made from Microsoft's script (only needed to rebuild it)
+│   └── build-northwind.py         Builds data/northwind.db from Microsoft's instnwnd.sql: all 13 tables (photo columns kept but
+│                                  empty) and the 16 views translated into SQLite (only needed to rebuild it)
 └── src/
     ├── index.html                 The page shell: header, the static pages, and placeholders filled by the build
     ├── styles.css                 Sparta Global theme

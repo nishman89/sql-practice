@@ -1083,7 +1083,12 @@ ${C("CREATE VIEW ProductCategorySummary AS\nSELECT c.CategoryName AS 'Category N
 ${C('DROP VIEW IF EXISTS ProductCategorySummary;')}
 ${DIFF({title:'Changing a view in each dialect', common:'DROP VIEW IF EXISTS v;\nCREATE VIEW v AS SELECT …;', otherTitle:'One-step shortcuts', mysql:'CREATE OR REPLACE VIEW v AS SELECT …;', tsql:'CREATE OR ALTER VIEW v AS SELECT …;', note:'Creating, dropping and selecting from a view work the same in all three (<code>DROP … IF EXISTS</code> needs SQL Server 2016 or later).'})}
 <ul class="plain"><li>Use views for complex queries you run often, or to give people a simpler way into joined data.</li><li>Views with joins or aggregates are read-only: you can't insert or update through them.</li><li>No spaces in view names. Some teams use a <code>vw_</code> prefix.</li></ul>
-${TIP('Views you create here last until you reload the page. A view\'s close cousin is the stored procedure, which is the next lesson.')}`,
+${TIP('Views you create here last until you reload the page. A view\'s close cousin is the stored procedure, which is the next lesson.')}
+<h3>Northwind's own views</h3>
+<p>Northwind comes with 16 views already made, such as <code>"Order Subtotals"</code> (the total of each order), <code>"Products Above Average Price"</code> and <code>Invoices</code>. You use them like tables:</p>
+${C('SELECT * FROM "Order Subtotals"\nORDER BY Subtotal DESC\nLIMIT 5;')}
+<p>To list them all:</p>
+${C("SELECT name FROM sqlite_master\nWHERE type = 'view'\nORDER BY name;")}`,
     ex:[
       {p:'Create the ProductCategorySummary view from the lesson (Category Name and Number of Products), then select everything from it.', hint:'Copy the example. Start with DROP VIEW IF EXISTS if it already exists.', sol:"DROP VIEW IF EXISTS ProductCategorySummary;\nCREATE VIEW ProductCategorySummary AS\nSELECT c.CategoryName AS 'Category Name',\n       COUNT(*)       AS 'Number of Products'\nFROM Categories c\nINNER JOIN Products p ON p.CategoryID = c.CategoryID\nGROUP BY c.CategoryName;\nSELECT * FROM ProductCategorySummary;"},
       {p:'Create a view called vw_CustomerOrderCounts with each customer\'s CompanyName and number of orders (call it OrderCount). Then use the view to list the customers with more than 20 orders.', hint:'CREATE VIEW … AS SELECT … GROUP BY …; then SELECT * FROM vw_CustomerOrderCounts WHERE OrderCount > 20;', sol:"DROP VIEW IF EXISTS vw_CustomerOrderCounts;\nCREATE VIEW vw_CustomerOrderCounts AS\nSELECT c.CompanyName, COUNT(o.OrderID) AS OrderCount\nFROM Customers c\nLEFT JOIN Orders o ON o.CustomerID = c.CustomerID\nGROUP BY c.CustomerID, c.CompanyName;\nSELECT * FROM vw_CustomerOrderCounts WHERE OrderCount > 20;"}
@@ -1119,7 +1124,8 @@ ${C("CREATE PROCEDURE GetCustomerContactName\n    @CustomerID CHAR(5)\nAS\nBEGIN
 <tr><td>Changes data</td><td>No</td><td>Can</td></tr>
 <tr><td>In SQLite</td><td>Yes</td><td>No</td></tr></table>
 <p>In SQLite, the nearest thing to <code>GetCustomerContactName</code> is a view that you filter. This one does run here:</p>
-${C("DROP VIEW IF EXISTS vw_CustomerContacts;\n\nCREATE VIEW vw_CustomerContacts AS\nSELECT CustomerID, ContactName FROM Customers;\n\nSELECT ContactName\nFROM vw_CustomerContacts\nWHERE CustomerID = 'ALFKI';")}`,
+${C("DROP VIEW IF EXISTS vw_CustomerContacts;\n\nCREATE VIEW vw_CustomerContacts AS\nSELECT CustomerID, ContactName FROM Customers;\n\nSELECT ContactName\nFROM vw_CustomerContacts\nWHERE CustomerID = 'ALFKI';")}
+<p>The full Northwind that you install on your own computer comes with seven stored procedures, such as <code>CustOrderHist</code> (a customer's order history) and <code>"Ten Most Expensive Products"</code>. Try <code>EXEC CustOrderHist @CustomerID = 'ALFKI';</code> in SQL Server, or <code>CALL CustOrderHist('ALFKI');</code> in MySQL.</p>`,
     check:[
       {q:'How do you run a stored procedure called GetCustomerContactName in MySQL?', a:["CALL GetCustomerContactName('ALFKI');","EXEC GetCustomerContactName 'ALFKI';","SELECT * FROM GetCustomerContactName;"], c:0, why:'MySQL uses CALL. T-SQL uses EXEC. A procedure isn\'t a table, so you can\'t SELECT from it.'},
       {q:'What can a stored procedure do that a view can\'t?', a:['Return rows','Take parameters and change data','Be saved in the database'], c:1, why:'Both are saved in the database and both can return rows, but only a procedure takes parameters and can INSERT, UPDATE or DELETE.'},
