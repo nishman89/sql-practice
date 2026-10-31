@@ -268,7 +268,7 @@ function route(){
   if (view==='intro') drawIntro();
   if (view==='install') drawInstall();
   if (view==='erdmaker') drawErdMaker();
-  if (view==='game') GAME.start(); else if (typeof GAME!=='undefined') GAME.stop();
+  if (view==='game') gameFrameOpen(); else gameFrameClose();
   if (view==='capstone') drawCapstone();
   if (view==='flavours') drawFlavours();
   if (view==='dialects') renderDialectTabs($('#dialectsTabs'), 'dialects');
@@ -1022,3 +1022,15 @@ async function boot(){
   route();
 }
 
+/* ---------- The Lost Ledger: its own page in public/game/, shown in a frame ---------- */
+function gameFrameOpen(){ const f=document.getElementById('gameFrame'); if (f && !f.getAttribute('src')) f.setAttribute('src','game/index.html'); }
+function gameFrameClose(){ const f=document.getElementById('gameFrame'); if (f && f.getAttribute('src')){ exitGameFull(); const fresh=f.cloneNode(false); fresh.removeAttribute('src'); f.replaceWith(fresh); } }   // the game saves as it unloads
+function enterGameFull(){ const st=document.getElementById('gameStage'); st.classList.add('full'); document.body.classList.add('game-full');
+  const req=st.requestFullscreen||st.webkitRequestFullscreen; if (req){ try { const p=req.call(st); if (p&&p.catch) p.catch(()=>{}); } catch(e){} }
+  try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(()=>{}); } catch(e){}
+  setTimeout(()=>document.getElementById('gameFrame').focus(), 100); }
+function exitGameFull(){ const st=document.getElementById('gameStage'); if (!st || !st.classList.contains('full')) return; st.classList.remove('full'); document.body.classList.remove('game-full');
+  if (document.fullscreenElement||document.webkitFullscreenElement){ const ex=document.exitFullscreen||document.webkitExitFullscreen; try { const p=ex.call(document); if (p&&p.catch) p.catch(()=>{}); } catch(e){} } }
+document.getElementById('gFull').addEventListener('click', enterGameFull);
+document.getElementById('gExit').addEventListener('click', exitGameFull);
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev, ()=>{ if (!(document.fullscreenElement||document.webkitFullscreenElement)) exitGameFull(); }));
