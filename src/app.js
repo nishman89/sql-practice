@@ -1028,9 +1028,11 @@ function gameFrameClose(){ const f=document.getElementById('gameFrame'); if (f &
 function enterGameFull(){ const st=document.getElementById('gameStage'); st.classList.add('full'); document.body.classList.add('game-full');
   const req=st.requestFullscreen||st.webkitRequestFullscreen; if (req){ try { const p=req.call(st); if (p&&p.catch) p.catch(()=>{}); } catch(e){} }
   try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(()=>{}); } catch(e){}
-  setTimeout(()=>document.getElementById('gameFrame').focus(), 100); }
+  setTimeout(()=>{ const f=document.getElementById('gameFrame'); f.focus(); f.contentWindow && f.contentWindow.postMessage({ type:'ll-full', on:true }, '*'); }, 100); }
 function exitGameFull(){ const st=document.getElementById('gameStage'); if (!st || !st.classList.contains('full')) return; st.classList.remove('full'); document.body.classList.remove('game-full');
+  const f=document.getElementById('gameFrame'); f && f.contentWindow && f.contentWindow.postMessage({ type:'ll-full', on:false }, '*');
   if (document.fullscreenElement||document.webkitFullscreenElement){ const ex=document.exitFullscreen||document.webkitExitFullscreen; try { const p=ex.call(document); if (p&&p.catch) p.catch(()=>{}); } catch(e){} } }
 document.getElementById('gFull').addEventListener('click', enterGameFull);
 document.getElementById('gExit').addEventListener('click', exitGameFull);
+addEventListener('message', e=>{ if (e.data && e.data.type==='ll-exit-full') exitGameFull(); });
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev, ()=>{ if (!(document.fullscreenElement||document.webkitFullscreenElement)) exitGameFull(); }));
