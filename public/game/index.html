@@ -482,7 +482,7 @@ function animatePerson(p, moving, dt){
   u.head.rotation.x = -0.32;   // tipped back a little, so the face reads from the high camera
 }
 
-function buildPlace(key){
+function buildPlace(key, keep=null){
   world.clear(); solid=[]; people=[]; animated=[];
   place = MAPS[key]; const rows=place.rows, inside=!!place.inside;
   const dungeon=!!place.dungeon;
@@ -561,7 +561,8 @@ function buildPlace(key){
     add(box(2,0.03,0.7,mat('#8a5a32',0.9)),wx(7.5),0.015,wz(9.6)).castShadow=false;
   } else if (!inside) { houses(rows); ({ village:villageDetails, square:squareDetails, gate:gateDetails })[key]?.(rows, setSolid); }
   mergeStatic(world);
-  spawnBugs(place.bugs); spawnGhosts(place.ghosts);
+  if (keep){ enemies=keep; enemies.forEach(e=>{ if (!(e.dead && !e.g.visible)) world.add(e.g); }); }   // a redraw keeps the room's enemies as they were
+  else { spawnBugs(place.bugs); spawnGhosts(place.ghosts); }
   boss=null; bossTimer=0;
   if (key==='boss' && !G.flags.bossBeaten){ boss=makeDeadlock(); boss.g.position.set(0,0,-2.6); world.add(boss.g); for (let y=1;y<=4;y++) for (let x=4;x<=11;x++) setSolid(x,y);
     ['B1','B2'].forEach((id,i)=>{ if (G.solved[id]) setHeadFree(boss.heads[i]); }); }
@@ -1319,7 +1320,8 @@ function afterSolve(id){
   if (id==='B1' || id==='B2') bossSolved && bossSolved(id);
 }
 let bossSolved=null;
-function rebuild(){ const x=heroPos.x, z=heroPos.y, d=heroDir; buildPlace(currentKey); heroPos.set(x,z); heroDir=d; }
+// Redraw the room after solving a terminal, opening a chest or a door: defeated enemies stay defeated until you leave the room
+function rebuild(){ const x=heroPos.x, z=heroPos.y, d=heroDir, keep=enemies.slice(); buildPlace(currentKey, keep); heroPos.set(x,z); heroDir=d; }
 $('pzRun').addEventListener('click', runPuzzle); $('pzDone').addEventListener('click', closePuzzle); $('pzX').addEventListener('click', closePuzzle);
 $('pzClear').addEventListener('click', ()=>{ $('pzInput').value=''; drafts[curPz]=''; }); $('pzHint').addEventListener('click', ()=>{ $('pzHintText').hidden=false; });
 $('pzBack').addEventListener('click', ()=>{ const ed=$('pzInput'); ed.value=ed.value.replace(/\s*(\S+)\s*$/,''); drafts[curPz]=ed.value; });
@@ -1428,7 +1430,7 @@ enter('village', 7, 5, 'down');
 showTitle();
 requestAnimationFrame(t=>{ last=t; frame(t); document.getElementById('loading').classList.add('done'); });
 setTimeout(()=>{ const h=document.getElementById('help'); h.style.transition='opacity .6s'; h.style.opacity='0'; }, 9000);
-window.PROTO = { start:f=>startGame(f), menu:()=>openMenu(), ended:()=>endOpen, bossAlive:()=>!!boss, openPuzzle:id=>openPuzzle(id), G:()=>G, swing:()=>swing(), bugs:()=>enemies.map(e=>({ x:+e.x.toFixed(2), z:+e.z.toFixed(2), hp:e.hp, dead:!!e.dead })), track:()=>curTrack&&curTrack.name, wantTrack:()=>wantTrack, attack:i=>attackBug(enemies[i]), zoom:f=>{ zoomF=f; }, calls:()=>renderer.info.render.calls, hint:()=>document.getElementById('hint').classList.contains('on') ? document.getElementById('hint').textContent : '', screenOf:(tx,ty,y=0.3)=>{ const v=new THREE.Vector3(wx(tx),y,wz(ty)).project(camera); return [ (v.x+1)/2*innerWidth, (1-v.y)/2*innerHeight ]; }, go:(x,y)=>goTo(x,y,false), goThing:(x,y)=>goTo(x,y,true), routeLen:()=>route.length, warp:(k,x,y,d)=>enter(k,x,y,d), face:d=>{ heroDir=d; }, use:()=>advance(), pos:()=>({ place:currentKey, x:+heroPos.x.toFixed(2), z:+heroPos.y.toFixed(2), dir:heroDir }), talking:()=>!talkBox.hidden };
+window.PROTO = { defeat:i=>{ const e=enemies[i]; if (e && !e.dead){ e.dead=0.001; puff(e.x,e.z); } }, start:f=>startGame(f), menu:()=>openMenu(), ended:()=>endOpen, bossAlive:()=>!!boss, openPuzzle:id=>openPuzzle(id), G:()=>G, swing:()=>swing(), bugs:()=>enemies.map(e=>({ x:+e.x.toFixed(2), z:+e.z.toFixed(2), hp:e.hp, dead:!!e.dead })), track:()=>curTrack&&curTrack.name, wantTrack:()=>wantTrack, attack:i=>attackBug(enemies[i]), zoom:f=>{ zoomF=f; }, calls:()=>renderer.info.render.calls, hint:()=>document.getElementById('hint').classList.contains('on') ? document.getElementById('hint').textContent : '', screenOf:(tx,ty,y=0.3)=>{ const v=new THREE.Vector3(wx(tx),y,wz(ty)).project(camera); return [ (v.x+1)/2*innerWidth, (1-v.y)/2*innerHeight ]; }, go:(x,y)=>goTo(x,y,false), goThing:(x,y)=>goTo(x,y,true), routeLen:()=>route.length, warp:(k,x,y,d)=>enter(k,x,y,d), face:d=>{ heroDir=d; }, use:()=>advance(), pos:()=>({ place:currentKey, x:+heroPos.x.toFixed(2), z:+heroPos.y.toFixed(2), dir:heroDir }), talking:()=>!talkBox.hidden };
 })();
 </script>
 </body>
