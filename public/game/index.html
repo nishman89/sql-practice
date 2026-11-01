@@ -99,6 +99,8 @@
   .ovl button{ border:2px solid #fff; background:none; color:#fff; border-radius:999px; padding:8px 18px; font-weight:600; font-size:1rem; font-family:inherit; cursor:pointer } .ovl button.primary{ background:var(--pink); border-color:var(--pink) } .ovl button[hidden]{ display:none }
   .ovl .how{ font-size:.88rem; background:rgba(255,255,255,.1); border-radius:12px; padding:8px 12px; margin:14px 0 0 } .ovl .how b{ color:var(--pink-soft) } .ovl .note{ font-size:.8rem; color:#d9cfd3 }
   .ovl .list{ margin:0; padding-left:20px } .ovl .list li.done{ text-decoration:line-through; opacity:.7 } .ovl .stats{ color:#e7dde1; font-size:.9rem } .ovl .twist{ color:var(--pink-soft) } .ovl .tbc{ font-weight:700; font-size:1.1rem }
+  .ovl .link{ border:0; padding:0; background:none; color:var(--pink-soft); text-decoration:underline; font-size:inherit; font-weight:600 }
+  .manual{ width:min(100%,40rem) } .manual p{ margin:6px 0; line-height:1.45 } .manual table{ width:100%; border-collapse:collapse; font-size:.9rem } .manual th,.manual td{ text-align:left; padding:4px 6px; border-bottom:1px solid rgba(255,255,255,.15) } .manual td:first-child{ color:var(--pink-soft); font-weight:600 }
   .amap{ display:grid; grid-template-columns:repeat(4,34px); grid-template-rows:repeat(2,24px); gap:5px } .amap span{ background:#4a4058; border-radius:5px; display:grid; place-items:center; font-size:.7rem } .amap .seen{ background:#a9a4b4 } .amap .here{ background:var(--pink) }
   body.paused .pad, body.paused .hint{ display:none }
   .loading{ position:fixed; inset:0; display:grid; place-items:center; background:#9fd3f0; color:var(--ink); font-weight:600; font-size:1.2rem; transition:opacity .5s }
@@ -125,10 +127,35 @@
   <p class="kicker">A Spartan SQL adventure</p><h1>The Lost Ledger</h1><p class="sub">Chapter 1: The Royal Archive</p>
   <div class="btns"><button type="button" id="tContinue" hidden>Continue</button><button type="button" class="primary" id="tNew">New game</button></div>
   <p class="how"><span class="keys"><b>Click</b> or <b>arrow keys</b> to move · <b>Space</b> to talk · <b>J</b> to swing · <b>Esc</b> for the menu</span><span class="touch"><b>Tap</b> or the <b>arrows</b> to move · <b>A</b> to talk · <b>B</b> to swing · <b>☰</b> for the menu</span></p>
-  <p class="note">Your progress is saved in this browser, on this device.</p></div></div>
+  <p class="note">Your progress is saved in this browser, on this device. <button type="button" class="link" id="tHow">How to play</button></p></div></div>
+<div class="ovl" id="manual" hidden><div class="ovl-card left manual">
+  <h2>How to play</h2>
+  <p>The kingdom&rsquo;s Royal Ledger is corrupted. Explore, talk to people, and open the rune doors by answering SQL questions about the kingdom&rsquo;s data.</p>
+  <h3>Controls</h3>
+  <table><tr><th></th><th>Keyboard and mouse</th><th>Touch screen</th></tr>
+    <tr><td>Move</td><td>Arrow keys or WASD, or click where to go</td><td>The arrows, or tap where to go</td></tr>
+    <tr><td>Talk, read, use</td><td>Space (or click the person or thing)</td><td>A (or tap the person or thing)</td></tr>
+    <tr><td>Swing the Debugger</td><td>J or X (or click an enemy)</td><td>B (or tap an enemy)</td></tr>
+    <tr><td>Menu</td><td>Esc or P</td><td>☰</td></tr>
+    <tr><td>Music on or off</td><td>M</td><td>♪</td></tr></table>
+  <p>A label above things tells you what you can do, such as <b>Space &middot; Talk</b> or <b>Read</b>.</p>
+  <h3>On screen</h3>
+  <p><b>♥ Hearts</b> are your health. <b>◆ Keywords</b> are money for Bram&rsquo;s shop. Top right: full screen ✕ (when it&rsquo;s on), the menu ☰ and music ♪.</p>
+  <h3>SQL terminals</h3>
+  <p>Read the task, then type a query, or tap the pieces to build it. Press <b>Run</b> (or Ctrl + Enter) to see your results. If they match what the rune wants, it glows: press <b>Complete ✓</b>. Extra columns are fine as long as the answer&rsquo;s there. Stuck? A hint appears after two wrong tries, or straight away with a hint scroll. <b>Leave</b> keeps what you&rsquo;ve typed for next time.</p>
+  <p>The Royal Ledger has four tables: <b>Villagers</b> (villager_id, name, job, house_id, age, coins), <b>Houses</b> (house_id, street, colour), <b>Items</b> (item_id, name, owner_id) and <b>Monsters</b> (monster_id, kind, room, hp).</p>
+  <h3>Fighting</h3>
+  <p><b>Bugs</b> wander about: two hits with the Debugger defeats one. <b>NULL ghosts</b> drift towards you and flicker: you can only hit them, and they can only hurt you, while they&rsquo;re solid. Defeated enemies often drop keywords, and come back if you leave the room. If you run out of hearts, you wake up at your last Ledger Stone.</p>
+  <h3>Bram&rsquo;s shop (Village Square)</h3>
+  <ul><li><b>Lantern of EXPLAIN</b> (15): shows thin walls and hidden passages.</li><li><b>Healing tea</b> (3): refills your hearts.</li>
+    <li><b>Hint scroll</b> (5): shows a terminal&rsquo;s hint straight away.</li><li><b>Sharper Debugger</b> (25): bugs in one hit, NULL ghosts in two.</li><li><b>Heart container</b> (30): one more heart.</li></ul>
+  <h3>Saving</h3>
+  <p>The game saves itself as you go. Touching a <b>Ledger Stone</b> also saves and refills your hearts. Saves are kept in this browser on this device; on the title screen, <b>Continue</b> picks up where you left off.</p>
+  <div class="btns"><button type="button" class="primary" id="manClose">Back</button></div></div></div>
+
 <div class="ovl" id="menu" hidden><div class="ovl-card left">
   <h2>Menu</h2><p class="stats" id="mStats"></p><h3>Quests</h3><ul class="list" id="mQuests"></ul><h3>Items</h3><ul class="list" id="mItems"></ul><div id="mMap"></div>
-  <div class="btns"><button type="button" class="primary" id="mResume">Resume</button><button type="button" id="mSound">♪ Music</button><button type="button" id="mExitFull" hidden>Exit full screen</button><button type="button" id="mQuit">Save and quit</button></div></div></div>
+  <div class="btns"><button type="button" class="primary" id="mResume">Resume</button><button type="button" id="mSound">♪ Music</button><button type="button" id="mHow">How to play</button><button type="button" id="mExitFull" hidden>Exit full screen</button><button type="button" id="mQuit">Save and quit</button></div></div></div>
 <div class="ovl" id="end" hidden><div class="ovl-card">
   <h1>The Ledger is restored</h1>
   <p>With both locks released, the Deadlock lets go of itself and fades away. All across the kingdom, pages knit back together: coins return, doors unseal, and Wisp finally has a job to write down.</p>
@@ -921,6 +948,12 @@ function shop(){ const B='Bram, the shopkeeper';
       if (G.keywords<15) return talk(B, ['Fifteen keywords, friend. Bugs drop them, and so do chests and grateful villagers.']);
       G.keywords-=15; G.items.lantern=true; hud(); SFX.defeat(); talk(B, ['The Lantern of EXPLAIN. It shows what\u2019s really there: hidden passages, thin walls, that sort of thing.']); } },
     { label:'Healing tea: 3 keywords', go:()=>{ if (G.keywords<3) return talk(B, ['Three keywords for the tea, I\u2019m afraid.']); G.keywords-=3; G.hearts=G.maxHearts; hud(); talk(B, ['Drink up. Hearts full!']); } },
+    { label:`Hint scroll: 5 keywords${G.items.scrolls?` (you have ${G.items.scrolls})`:''}`, go:()=>{ if (G.keywords<5) return talk(B, ['Five keywords a scroll. Worth every one when a rune\u2019s got you stumped.']);
+      G.keywords-=5; G.items.scrolls=(G.items.scrolls||0)+1; hud(); SFX.defeat(); talk(B, ['A hint scroll! Read it at any terminal and it\u2019ll show you the hint straight away.']); } },
+    { label: G.items.sharp ? 'Sharper Debugger (sold out)' : 'Sharper Debugger: 25 keywords', go:()=>{ if (G.items.sharp) return talk(B, ['Any sharper and it\u2019d cut the Ledger in half.']);
+      if (G.keywords<25) return talk(B, ['Twenty-five keywords for the sharpening. It\u2019s fine work.']); G.keywords-=25; G.items.sharp=true; hud(); SFX.defeat(); talk(B, ['There. Bugs will fall in one hit now, and NULL ghosts in two. Mind your fingers.']); } },
+    { label: G.items.heart ? 'Heart container (sold out)' : 'Heart container: 30 keywords', go:()=>{ if (G.items.heart) return talk(B, ['That was my only one, I\u2019m afraid.']);
+      if (G.keywords<30) return talk(B, ['Thirty keywords for a heart container. They\u2019re rare, you know.']); G.keywords-=30; G.items.heart=true; G.maxHearts+=1; G.hearts=G.maxHearts; hud(); SFX.defeat(); talk(B, ['A heart container! You\u2019ll be tougher for it.']); } },
     { label:'Just looking' } ] });
 }
 
@@ -1081,7 +1114,7 @@ function makeBug(){
 function spawnGhosts(list){ (list||[]).forEach(([tx,ty])=>{ const g=makeGhost(); g.scale.setScalar(0.8); g.traverse(o=>{ if (o.isMesh && o.material.transparent){ o.material=o.material.clone(); o.material.color.set('#d9cff2'); o.material.emissive.set('#8f7fd0'); } });
   const lbl=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.2), new THREE.MeshBasicMaterial({ transparent:true, depthWrite:false, map:tex(128,(c,s)=>{ c.clearRect(0,0,s,s); c.fillStyle='#4f4068'; c.font='bold 44px Fredoka, sans-serif'; c.textAlign='center'; c.fillText('NULL',s/2,s/2+16); }) }));
   lbl.material.map.repeat.set(1,0.35); lbl.material.map.offset.set(0,0.33); lbl.position.set(0,1.62,0.1); lbl.rotation.x=-0.6; g.add(lbl);
-  g.position.set(wx(tx),0,wz(ty)); g.userData.live=true; world.add(g); enemies.push({ g, kind:'ghost', lbl, x:wx(tx), z:wz(ty), hp:2, hurt:0, kx:0, kz:0, dead:0, t:Math.random()*3, solid:true }); }); }
+  g.position.set(wx(tx),0,wz(ty)); g.userData.live=true; world.add(g); enemies.push({ g, kind:'ghost', lbl, x:wx(tx), z:wz(ty), hp:3, hurt:0, kx:0, kz:0, dead:0, t:Math.random()*3, solid:true }); }); }
 function spawnBugs(list){ enemies=(list||[]).map(([tx,ty])=>{ const g=makeBug(); g.position.set(wx(tx),0,wz(ty)); world.add(g);
   return { g, x:wx(tx), z:wz(ty), hp:2, dir:Math.random()*6.28, turn:0, pause:0, hurt:0, kx:0, kz:0, dead:0, t:Math.random()*5 }; }); }
 function bugBlocked(x,z){ const r=0.22; for (const [dx,dz] of [[-r,-r],[r,-r],[-r,r],[r,r]]){ if (tileSolid(Math.round(x+dx+7.5), Math.round(z+dz+5))) return true; } return false; }
@@ -1127,10 +1160,10 @@ function updateSwing(dt){
   if (swingT<=0){ slash.visible=false; trail.material.opacity=0; if (idle) idle.visible=true; return; }
   swingT=Math.max(0,swingT-dt); const k=1-swingT/SWING_TIME, ease=1-Math.pow(1-k,3);
   slash.visible=true; if (idle) idle.visible=false; slash.rotation.y=1.45-2.9*ease; arm.rotation.x=-1.2; arm.rotation.z=0.9-1.6*ease;
-  trail.material.opacity = k<0.85 ? 0.55*(1-k) : 0;
+  trail.material.color.set(G.items.sharp ? '#ff7aa8' : '#ffffff'); trail.material.opacity = k<0.85 ? (G.items.sharp?0.75:0.55)*(1-k) : 0;
   if (k>0.15 && k<0.85){ const [fx,fz]=DIRV[heroDir];
     enemies.forEach((e,i)=>{ if (e.dead || swingHits.has(i) || (e.kind==='ghost' && !e.solid)) return; const dx=e.x-heroPos.x, dz=e.z-heroPos.y, d=Math.hypot(dx,dz);
-      if (d<1.25 && (dx*fx+dz*fz)/(d||1) > -0.1){ swingHits.add(i); e.hp--; e.hurt=0.35; e.kx=dx/(d||1)*5; e.kz=dz/(d||1)*5; shake=0.12;
+      if (d<1.25 && (dx*fx+dz*fz)/(d||1) > -0.1){ swingHits.add(i); e.hp-=(G.items.sharp?2:1); e.hurt=0.35; e.kx=dx/(d||1)*5; e.kz=dz/(d||1)*5; shake=0.12;
         if (e.hp<=0){ e.dead=0.001; SFX.defeat(); puff(e.x,e.z); if (Math.random()<0.75){ const k=1+(Math.random()<0.3?1:0); G.keywords+=k; hud(); toast(`+${k} keyword${k>1?'s':''}`); } } else SFX.hit(); } }); }
   if (swingT<=0){ arm.rotation.z=0; }
 }
@@ -1323,7 +1356,10 @@ let bossSolved=null;
 // Redraw the room after solving a terminal, opening a chest or a door: defeated enemies stay defeated until you leave the room
 function rebuild(){ const x=heroPos.x, z=heroPos.y, d=heroDir, keep=enemies.slice(); buildPlace(currentKey, keep); heroPos.set(x,z); heroDir=d; }
 $('pzRun').addEventListener('click', runPuzzle); $('pzDone').addEventListener('click', closePuzzle); $('pzX').addEventListener('click', closePuzzle);
-$('pzClear').addEventListener('click', ()=>{ $('pzInput').value=''; drafts[curPz]=''; }); $('pzHint').addEventListener('click', ()=>{ $('pzHintText').hidden=false; });
+$('pzClear').addEventListener('click', ()=>{ $('pzInput').value=''; drafts[curPz]=''; }); $('pzHint').addEventListener('click', ()=>{ if (!$('pzHintText').hidden) return;
+  if (wrongRuns>=2 || G.solved[curPz]) { $('pzHintText').hidden=false; return; }
+  if (G.items.scrolls>0){ G.items.scrolls--; $('pzHintText').hidden=false; SFX.blip(); save(); return; }
+  const v=$('pzVerdict'); v.className='pz-verdict no'; v.textContent='The hint unlocks after two tries, or straight away with a hint scroll from Bram\u2019s shop.'; });
 $('pzBack').addEventListener('click', ()=>{ const ed=$('pzInput'); ed.value=ed.value.replace(/\s*(\S+)\s*$/,''); drafts[curPz]=ed.value; });
 $('pzInput').addEventListener('input', e=>{ drafts[curPz]=e.target.value; });
 $('pzInput').addEventListener('keydown', e=>{ if ((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); runPuzzle(); } e.stopPropagation(); });
@@ -1408,19 +1444,22 @@ function openMenu(){ if (titleOpen||endOpen||puzzleOpen) return; menuOpen=true; 
   if (F.rexAsked) q.push(`<li class="${G.solved.R?'done':''}">Help Rex count the villagers with no coins</li>`);
   if (F.wispAsked) q.push(`<li class="${G.solved.G?'done':''}">Help Wisp find out what he is</li>`);
   $('mQuests').innerHTML=q.join('');
-  const it=[['Debugger','your trusty sword',true],['Archive Pass','opens the East Gate',G.items.pass],['Lantern of EXPLAIN','shows what\u2019s hidden',G.items.lantern],['Index Map','a map of the Archive',G.items.map],['\ud83d\udd11 Primary Key','opens the great door',G.items.key]].filter(x=>x[2]);
+  const it=[['Debugger','your trusty sword',true],['Archive Pass','opens the East Gate',G.items.pass],['Lantern of EXPLAIN','shows what\u2019s hidden',G.items.lantern],['Index Map','a map of the Archive',G.items.map],['\ud83d\udd11 Primary Key','opens the great door',G.items.key],['Sharper Debugger','bugs in one hit, ghosts in two',G.items.sharp],[`Hint scroll \u00d7 ${G.items.scrolls||0}`,'shows a terminal\u2019s hint straight away',G.items.scrolls>0]].filter(x=>x[2]);
   $('mItems').innerHTML=it.map(([n,d])=>`<li><b>${n}</b>: ${d}</li>`).join('');
   $('mStats').textContent=`\u2665 ${G.hearts}/${G.maxHearts} \u00b7 \u25c6 ${G.keywords} keywords \u00b7 ${Object.keys(G.solved).length}/9 puzzles solved`;
   const MAP=[['reading',0,0],['north',1,0],['east',2,0],['vault',0,1],['archive',1,1],['ante',2,1],['boss',3,1]];
   $('mMap').innerHTML = G.items.map ? '<h3>The Royal Archive</h3><div class="amap">'+MAP.map(([k,x,y])=>`<span style="grid-column:${x+1};grid-row:${y+1}" class="${currentKey===k?'here':G.visited[k]?'seen':''}" title="${MAPS[k].name}">${currentKey===k?'\u25cf':''}</span>`).join('')+'</div>' : '';
   $('mSound').textContent = musicOn ? '\u266a Music: on' : '\u266a Music: off'; $('menu').hidden=false; }
+let manualFrom=null;
+function openManual(from){ manualFrom=from; $(from).hidden=true; $('manual').hidden=false; $('manClose').focus(); }
+function closeManual(){ $('manual').hidden=true; if (manualFrom) $(manualFrom).hidden=false; manualFrom=null; }
 function closeMenu(){ menuOpen=false; $('menu').hidden=true; document.body.classList.remove('paused'); }
 function showEnding(){ endOpen=true; document.body.classList.add('paused'); save();
   const mins=Math.max(1,Math.round((G.playS||0)/60)), side=(G.solved.R?1:0)+(G.solved.G?1:0);
   $('eStats').textContent=`Time ${mins} min \u00b7 Puzzles ${Object.keys(G.solved).length}/9 \u00b7 Side quests ${side}/2 \u00b7 Keywords ${G.keywords}`; $('end').hidden=false; }
 $('tNew').addEventListener('click', ()=>startGame(true)); $('tContinue').addEventListener('click', ()=>startGame(false));
 $('menuBtn').addEventListener('click', e=>{ e.currentTarget.blur(); menuOpen ? closeMenu() : openMenu(); });
-$('mResume').addEventListener('click', closeMenu); $('mSound').addEventListener('click', ()=>{ initAudio(); setMusic(!musicOn); $('mSound').textContent = musicOn ? '\u266a Music: on' : '\u266a Music: off'; });
+$('mResume').addEventListener('click', closeMenu); $('mHow').addEventListener('click', ()=>openManual('menu')); $('tHow').addEventListener('click', ()=>openManual('title')); $('manClose').addEventListener('click', closeManual); $('mSound').addEventListener('click', ()=>{ initAudio(); setMusic(!musicOn); $('mSound').textContent = musicOn ? '\u266a Music: on' : '\u266a Music: off'; });
 $('mQuit').addEventListener('click', ()=>{ save(); closeMenu(); showTitle(); });
 $('eTitle').addEventListener('click', ()=>{ endOpen=false; $('end').hidden=true; document.body.classList.remove('paused'); enter('village',7,5,'down'); showTitle(); });
 addEventListener('keydown', e=>{ if ((e.code==='Escape'||e.code==='KeyP') && !e.repeat && !puzzleOpen && !titleOpen && !endOpen){ e.preventDefault(); e.stopImmediatePropagation(); menuOpen ? closeMenu() : openMenu(); } }, true);

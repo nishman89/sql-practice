@@ -83,6 +83,66 @@
       <button type="button" class="game-exit" id="gExit" data-testid="game-exit-fullscreen" aria-label="Exit full screen">✕</button>
     </div>
     <p class="small game-help page-col"><strong>Keyboard:</strong> click or use the arrow keys to move · <strong>Space</strong> to talk, read and use terminals · <strong>J</strong> to swing the Debugger · <strong>Esc</strong> for the menu · <strong>M</strong> for music. <strong>Phone:</strong> tap to move or use the on-screen arrows, <strong>A</strong> to talk and <strong>B</strong> to swing. Your progress saves automatically in this browser.</p>
+    <details class="game-guide" data-testid="game-manual"><summary>How to play</summary>
+      <div class="guide-body">
+        <p>The kingdom’s Royal Ledger is corrupted. Explore, talk to people, and open the rune doors by answering SQL questions about the kingdom’s data.</p>
+        <h3>Controls</h3>
+        <div class="table-wrap"><table><thead><tr><th></th><th>Keyboard and mouse</th><th>Touch screen</th></tr></thead><tbody>
+          <tr><td>Move</td><td>Arrow keys or WASD, or click where to go</td><td>The arrows, or tap where to go</td></tr>
+          <tr><td>Talk, read, use</td><td>Space, or click the person or thing</td><td>A, or tap the person or thing</td></tr>
+          <tr><td>Swing the Debugger</td><td>J or X, or click an enemy</td><td>B, or tap an enemy</td></tr>
+          <tr><td>Menu</td><td>Esc or P</td><td>☰</td></tr>
+          <tr><td>Music on or off</td><td>M</td><td>♪</td></tr></tbody></table></div>
+        <p>A label above things says what you can do, such as <b>Space · Talk</b> or <b>Read</b>. <b>♥ Hearts</b> are your health; <b>◆ Keywords</b> are money for Bram’s shop.</p>
+        <h3>SQL terminals</h3>
+        <p>Read the task, then type a query or tap the pieces to build it, and press <b>Run</b> (or Ctrl + Enter). If your results match, the rune glows: press <b>Complete ✓</b>. Extra columns are fine as long as the answer is there. A hint appears after two wrong tries, or straight away with a hint scroll. The Royal Ledger has four tables: <b>Villagers</b> (villager_id, name, job, house_id, age, coins), <b>Houses</b> (house_id, street, colour), <b>Items</b> (item_id, name, owner_id) and <b>Monsters</b> (monster_id, kind, room, hp).</p>
+        <h3>Fighting</h3>
+        <p><b>Bugs</b> take two hits. <b>NULL ghosts</b> flicker: you can only hit them, and they can only hurt you, while they’re solid. Enemies only appear in the Royal Archive, drop keywords, and come back when you leave a room. Run out of hearts and you wake up at your last Ledger Stone.</p>
+        <h3>Bram’s shop</h3>
+        <p><b>Lantern of EXPLAIN</b> (15) reveals the thin wall to a hidden room · <b>Healing tea</b> (3) refills your hearts · <b>Hint scroll</b> (5) shows a terminal’s hint straight away · <b>Sharper Debugger</b> (25): bugs in one hit, ghosts in two · <b>Heart container</b> (30).</p>
+        <h3>Saving</h3>
+        <p>The game saves as you go, and at every <b>Ledger Stone</b> (which also refills your hearts). Saves stay in this browser on this device; <b>Continue</b> on the title screen picks up where you left off.</p>
+      </div></details>
+
+    <details class="game-guide" data-testid="game-walkthrough"><summary>Walkthrough <span class="spoil">spoilers</span></summary>
+      <div class="guide-body">
+        <p>Try each terminal yourself first. Every one has a nudge; the answers are folded away underneath.</p>
+        <h3>How the places connect</h3>
+<pre class="guide-map">The village:  Sparta Institute ── Village West ── Village Square ── East Gate
+
+The Archive:  Reading Room ──── North Hall ──── East Hall
+                   │                 │              │
+              Hidden Vault        Entrance ──── Antechamber ──── Deadlock’s Chamber
+             (cracked wall)          │        (hidden door)    (great door)
+                                     │
+                       through the East Gate’s iron gate</pre>
+        <ol class="guide-steps">
+          <li><b>Sparta Institute.</b> Talk to Trainer Ada. The front door is sealed until you answer the <b>training terminal</b> by the bookshelves on the left. <i>Nudge: two columns from one table.</i>
+            <details class="ans"><summary>Show answer</summary><code>SELECT name, job FROM Villagers;</code></details> The seven bookshelves each hold an SQL tip.</li>
+          <li><b>Village West.</b> Elin the baker gives SQL advice; read the signpost and the noticeboard. Follow the path east.</li>
+          <li><b>Village Square.</b> Margaret, outside the library, gives you the <b>Archive Pass</b>. Wisp the ghost (top right) asks for help: his terminal is bottom right. <i>Nudge: COALESCE fills in missing values.</i>
+            <details class="ans"><summary>Show answer</summary><code>SELECT name, COALESCE(job, 'Unknown') FROM Villagers;</code></details> Reward: a heart container. Bram’s stall is on the left; the Ledger Stone is in the middle of the crossroads.</li>
+          <li><b>East Gate.</b> Rex (left) asks you to count the villagers with no coins; his terminal is right of the path. <i>Nudge: COUNT with a WHERE.</i>
+            <details class="ans"><summary>Show answer</summary><code>SELECT COUNT(*) FROM Villagers WHERE coins = 0;</code></details> Reward: 10 keywords. You should now have about 19: go back and buy the <b>Lantern</b> from Bram. Then show Odo your pass and the gate opens.</li>
+          <li><b>Archive: Entrance.</b> Touch the Ledger Stone. The Guard Rune terminal opens the north door. <i>Nudge: WHERE with text in single quotes.</i>
+            <details class="ans"><summary>Show answer</summary><code>SELECT name FROM Villagers WHERE job = 'Guard';</code></details></li>
+          <li><b>North Hall.</b> Watch for NULL ghosts. The chest (bottom left) holds the <b>Index Map</b>. The Elder Rune terminal (right) opens the east door. <i>Nudge: sort, then keep one row.</i>
+            <details class="ans"><summary>Show answer</summary><code>SELECT name FROM Villagers ORDER BY age DESC LIMIT 1;</code></details></li>
+          <li><b>Reading Room</b> (west of the North Hall). A chest holds 10 keywords. The cracked wall at the bottom opens with the Lantern, leading to the <b>Hidden Vault</b>: a heart container and a note from Margaret.</li>
+          <li><b>East Hall</b> (east of the North Hall). The Hoard Rune terminal (left) unlocks the chest (right) with the <b>Primary Key</b>. <i>Nudge: GROUP BY and COUNT.</i>
+            <details class="ans"><summary>Show answer</summary><code>SELECT owner_id, COUNT(*) FROM Items GROUP BY owner_id;</code></details></li>
+          <li><b>Antechamber</b> (south of the East Hall). A hidden door opens back to the Entrance, and there’s a Ledger Stone. The Bond Rune terminal, together with the Primary Key, opens the great door (east). <i>Nudge: JOIN Items to Villagers on the owner.</i>
+            <details class="ans"><summary>Show answer</summary><code>SELECT Items.name, Villagers.name FROM Items JOIN Villagers ON Items.owner_id = Villagers.villager_id;</code></details></li>
+          <li><b>The Deadlock’s Chamber.</b> Keep moving: the Deadlock keeps sending bugs. Each terminal releases one head’s lock.
+            <br><i>Left lock nudge: two JOINs, Items → Villagers → Houses.</i>
+            <details class="ans"><summary>Show answer</summary><code>SELECT Houses.street FROM Items JOIN Villagers ON Items.owner_id = Villagers.villager_id JOIN Houses ON Villagers.house_id = Houses.house_id WHERE Items.name = 'Vault Rune';</code></details>
+            <i>Right lock nudge: GROUP BY, then HAVING.</i>
+            <details class="ans"><summary>Show answer</summary><code>SELECT room, COUNT(*) FROM Monsters GROUP BY room HAVING COUNT(*) > 2;</code></details>
+            Release both locks and the Ledger is restored.</li>
+        </ol>
+        <h3>100% checklist</h3>
+        <ul class="guide-check"><li>All 9 terminals solved</li><li>Both side quests: Rex and Wisp</li><li>All 4 chests: Index Map, 10 keywords, the vault’s heart container, the Primary Key</li><li>The Lantern, and the cracked wall opened</li><li>Up to 6 hearts: Wisp, the Hidden Vault, and Bram’s heart container</li></ul>
+      </div></details>
   </section>
 
   <!-- ERD maker -->
