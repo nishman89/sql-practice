@@ -15,6 +15,54 @@ tablets and phones.
 
 ---
 
+## Contents
+
+- [What's on the site](#whats-on-the-site)
+  - [The learning path](#the-learning-path)
+  - [How the exercises work](#how-the-exercises-work)
+  - [How the quizzes work](#how-the-quizzes-work)
+  - [The Northwind ERD while you work](#the-northwind-erd-while-you-work)
+  - [Which SQL does it run?](#which-sql-does-it-run)
+  - [Finding your way around](#finding-your-way-around)
+  - [Progress](#progress)
+- [Opening the website](#opening-the-website)
+  - [The live site](#the-live-site)
+  - [On your own computer (step by step)](#on-your-own-computer-step-by-step)
+  - [Commands](#commands)
+- [Publishing on GitHub Pages](#publishing-on-github-pages)
+  - [Other places to put it](#other-places-to-put-it)
+- [Updating the site](#updating-the-site)
+  - [The quickest way: edit on GitHub (nothing to install)](#the-quickest-way-edit-on-github-nothing-to-install)
+  - [On your own computer](#on-your-own-computer)
+  - [Where everything lives](#where-everything-lives)
+  - [Recipes](#recipes)
+  - [Rules that keep things working](#rules-that-keep-things-working)
+  - [If the build fails](#if-the-build-fails)
+  - [Reference: everything a lesson can have](#reference-everything-a-lesson-can-have)
+- [Testing](#testing)
+  - [What's tested](#whats-tested)
+  - [Setting it up](#setting-it-up)
+  - [Running the tests](#running-the-tests)
+  - [How it works](#how-it-works)
+  - [Adding a test](#adding-a-test)
+  - [On GitHub: test, then publish](#on-github-test-then-publish)
+  - [Reading the report](#reading-the-report)
+  - [Troubleshooting](#troubleshooting)
+- [How it's built](#how-its-built)
+- [Testing this site (for trainees)](#testing-this-site-for-trainees)
+  - [Hook reference](#hook-reference)
+  - [Things worth knowing when you write tests](#things-worth-knowing-when-you-write-tests)
+  - [Example: Selenium (Java)](#example-selenium-java)
+  - [Example: Playwright (TypeScript)](#example-playwright-typescript)
+- [To do: planned features](#to-do-planned-features)
+  - [1. Trainee accounts and sign-in](#1-trainee-accounts-and-sign-in)
+  - [2. History of marks](#2-history-of-marks)
+  - [3. Trainer dashboard](#3-trainer-dashboard)
+  - [Implementation notes](#implementation-notes)
+- [Credits](#credits)
+
+---
+
 ## What's on the site
 
 | Page | What it does |
