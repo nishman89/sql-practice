@@ -52,9 +52,9 @@ export async function loadGame(){
   const html = read('public/game/index.html');
   const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
   const src = scripts[scripts.length-1];
-  const parts = ['room','MAPS','LINKS','WORLD_SQL','TABLES','PUZZLES','TERMINALS','RUNE','CHESTS','normV','compareRes','SIGNS','SHELF_TIPS','ADVICE'].map(n => grab(src, n));
+  const parts = ['room','MAPS','LINKS','WORLD_SQL','TABLES','PUZZLES','TERMINALS','RUNE','CHESTS','normV','textHint','compareRes','SIGNS','SHELF_TIPS','ADVICE'].map(n => grab(src, n));
   const ctx = vm.createContext({});
-  vm.runInContext(parts.join('\n') + '\nglobalThis.X = { room, MAPS, LINKS, WORLD_SQL, TABLES, PUZZLES, TERMINALS, RUNE, CHESTS, normV, compareRes, SIGNS, SHELF_TIPS, ADVICE };', ctx, { filename:'game' });
+  vm.runInContext(parts.join('\n') + '\nglobalThis.X = { room, MAPS, LINKS, WORLD_SQL, TABLES, PUZZLES, TERMINALS, RUNE, CHESTS, normV, textHint, compareRes, SIGNS, SHELF_TIPS, ADVICE };', ctx, { filename:'game' });
   const { SQL } = await loadSite();
   const world = () => { const d = new SQL.Database(); d.exec(ctx.X.WORLD_SQL); return d; };
   const run = (db, sql) => { const r = db.exec(sql); return r.length ? r[r.length-1] : { columns:[], values:[] }; };

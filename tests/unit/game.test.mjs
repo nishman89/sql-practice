@@ -66,6 +66,14 @@ describe('marking in the game', () => {
   test('NULLs are compared as NULLs', () => assert.equal(g.compareRes(g.run(db,'SELECT job FROM Villagers'), g.run(db,"SELECT job FROM Villagers")).ok, true));
 });
 
+describe('help with text in queries', () => {
+  const sol = "SELECT name FROM Villagers WHERE job = 'Guard';";
+  test('wrong capitals and double quotes', () => assert.match(g.textHint('SELECT name FROM Villagers where job = "guard"', sol), /'Guard', not 'guard'.*single quotes/));
+  test('wrong capitals in single quotes', () => assert.match(g.textHint("SELECT name FROM Villagers WHERE job = 'GUARD'", sol), /'Guard', not 'GUARD'/));
+  test('right text in double quotes', () => assert.match(g.textHint('SELECT name FROM Villagers WHERE job = "Guard"', sol), /single quotes, like 'Guard'/));
+  test('nothing to say when the text is right', () => assert.equal(g.textHint("SELECT name FROM Villagers WHERE job = 'Guard'", sol), ''));
+});
+
 describe('words in the world', () => {
   test('every sign has something to say', () => { for (const list of Object.values(g.SIGNS)) for (const sg of list){ assert.ok(sg.lines.length); assert.ok(sg.tiles.length); } });
   test('seven bookshelf tips in the Institute and six in the Archive', () => { assert.equal(g.SHELF_TIPS.academy.length, 7); assert.equal(g.SHELF_TIPS.archive.length, 6); });

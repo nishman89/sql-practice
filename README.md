@@ -283,13 +283,13 @@ GitHub Actions checks, rebuilds and publishes the site in a couple of minutes (s
 
 ## Publishing on GitHub Pages
 
-This only needs setting up once. After that, the site republishes itself every time you push to `main`.
+This only needs setting up once. After that, every push to `main` is **tested, then published**: the new site goes live only if all the tests pass (otherwise the last version that passed stays live), and the test report is published either way at `/test-report/`. See [Testing](#testing).
 
 1. Create a new repository on GitHub and push this folder to its `main` branch.
 2. In the repository, go to **Settings → Pages**.
 3. Under **Build and deployment → Source**, choose **GitHub Actions**.
-4. Push a change, or go to the **Actions** tab and run **Deploy to GitHub Pages** manually.
-5. When the workflow shows a green tick, the site is live at the address shown on the **Settings → Pages** screen.
+4. Push a change, or go to the **Actions** tab and run **Test and deploy to GitHub Pages** manually.
+5. When the workflow shows a green tick, the site is live at the address shown on the **Settings → Pages** screen. A red cross means a test failed: open the test report to see which.
 
 The workflow is in `.github/workflows/deploy.yml`. Because every link inside the site starts with `#`, it works at any
 address, so there's no base path to set.
@@ -595,26 +595,117 @@ used twice, or if a multiple-choice question doesn't have exactly four different
 
 ## Testing
 
-Every push to `main` is tested before it's deployed: the GitHub Action builds the site, runs the unit tests, then the browser tests, and **only deploys if everything passes**. If something fails, the live site stays as it was, and the run has a **playwright-report** artifact showing what broke (with screenshots and a trace).
+The site has an automated test suite, and GitHub runs all of it on every push to `main` **before anything is published**.
+
+- **The test report:** https://nishman89.github.io/sql-practice/test-report/ (the latest run, whether it passed or failed)
+- **The unit test results:** https://nishman89.github.io/sql-practice/test-report/unit-tests.txt
+- **Every run, with its own downloadable report:** the repository's **Actions** tab
+
+### What's tested
+
+| Layer | Tool | Files | What it checks |
+|---|---|---|---|
+| **Content checks** | `scripts/check.mjs` (runs inside `npm run build`) | — | Every model answer and "Run this" example runs against Northwind; quiz questions are well formed |
+| **Unit tests** (~380) | Node's built-in test runner (`node:test`), no extra tools | `tests/unit/` | **The SQL engine:** running queries, marking answers (row order, column order, aliases and extra columns don't matter), friendly messages for 12 MySQL and T-SQL habits. **The course:** every lesson, exercise, quiz question, dialect example, install guide and the capstone is complete and its SQL runs. **The game:** its world database, all nine puzzles (including that tapping their pieces in order builds a correct answer), its marking, the hints for capitals and quotes, and that every map, terminal, chest and door link adds up. **The build:** everything's there, within size budgets, with pinned library versions. **House style:** British spellings, no leftover wording |
+| **Browser tests** (~60) | Playwright, in Chromium at desktop size | `tests/e2e/*.spec.mjs` | Navigation and saved progress; **every lesson's exercises marked correct in a real browser**; quizzes passing and failing; free practice; the Creating tables builder (including a past bug in step 2); the ERD maker; install guides; the Northwind diagram; the game end to end (title, Ada and the sealed door, terminals and their hints, the story, saving and Continue, the Game tab); every in-site link |
+| **Phone tests** | Playwright, as a Pixel 7 | `tests/e2e/mobile.spec.mjs` | The phone menu, answering an exercise, no sideways scrolling, and the game's full screen with a way back out |
+| **Accessibility** | axe (`@axe-core/playwright`) | `tests/e2e/accessibility.spec.mjs` | No serious or critical WCAG 2 A / AA problems on the main pages |
+
+### Setting it up
+
+You need **Node.js 20 or later**. Then, in the project folder:
 
 ```bash
-npm ci
-npx playwright install chromium   # once, to get the test browser
-npm run build                     # builds dist/ (and runs the content checks)
-npm test                          # unit tests, then browser tests
-npm run test:unit                 # just the unit tests (a few seconds)
-npm run test:e2e                  # just the browser tests (a few minutes)
-npx playwright test --ui          # pick and watch browser tests interactively
+npm ci                              # installs everything, including Playwright and axe (they're in devDependencies)
+npx playwright install chromium     # downloads the test browser, once (on Linux, add --with-deps)
+npm run build                       # builds dist/: the browser tests run against the built site
 ```
 
-| Tests | Where | What they check |
-|---|---|---|
-| **Unit** (Node's built-in test runner) | `tests/unit/` | The SQL engine (running queries, marking answers, friendly messages for MySQL and T-SQL habits); every lesson, exercise, quiz question, dialect example, install guide and the capstone; the game's world database, all nine puzzles (and that tapping their pieces builds a correct answer), its marking, and that every map, terminal, chest and door link adds up; the build output and its size budgets; house style (British spellings, Institute not Academy) |
-| **Browser** (Playwright, desktop) | `tests/e2e/` | Navigation and progress; every lesson's exercises marked correct in the browser; quizzes passing and failing; free practice; the Creating tables builder (including the step 2 regression); the ERD maker; install guides; the full Northwind diagram; the game (title screen, Ada and the sealed door, terminals, hints, the story, saving and Continue, the Game tab's frame, How to play and the walkthrough); every in-site link |
-| **Browser** (Playwright, phone) | `tests/e2e/mobile.spec.mjs` | The phone menu, answering an exercise, no sideways scrolling, and full screen with a way back out |
-| **Accessibility** (axe) | `tests/e2e/accessibility.spec.mjs` | No serious or critical WCAG 2 A/AA problems on the main pages |
+### Running the tests
 
-The browser tests run against `dist/` served at `/sql-practice/` by `scripts/serve.mjs`, just like GitHub Pages. They serve the game's three.js and sql.js from `node_modules`, so a CDN outage can't break them, and they load the game with `?lowfx` (fewer pixels, no shadows or blur) because 3D without a graphics card is slow. A test fails if the page throws any JavaScript error.
+| Command | What it does | Time |
+|---|---|---|
+| `npm test` | Unit tests, then browser tests | a few minutes |
+| `npm run test:unit` | Just the unit tests | a few seconds |
+| `npm run test:e2e` | Just the browser tests (it starts a local server for you) | a few minutes |
+| `npx playwright test tests/e2e/quizzes.spec.mjs` | One test file | |
+| `npx playwright test -g "Creating tables"` | Tests whose name matches | |
+| `npx playwright test --ui` | Pick tests and watch them run, step by step | |
+| `npx playwright show-report` | Open the last browser test report | |
+| `npm run serve` | Serve `dist/` at http://localhost:4173/sql-practice/ to look around yourself | |
+
+Rebuild (`npm run build`) after changing anything in `src/`, `public/` or `data/`, because the browser tests use `dist/`.
+
+### How it works
+
+- **Unit tests** load the same `src/engine.js` and `src/content/*.js` the browser uses, into a Node `vm` sandbox with SQLite (sql.js) and `data/northwind.db` (see `tests/unit/helpers.mjs`). For the game, the helper pulls its pure logic (the maps, links, puzzles, world database and marking functions) straight out of `public/game/index.html` by name, so the tests always check the real game code. Those names must stay top-level `const` or `function` definitions.
+- **Browser tests** run against `dist/`, served at `/sql-practice/` by `scripts/serve.mjs`, just like GitHub Pages. Playwright starts the server itself (`playwright.config.mjs`).
+- **The shared fixture** (`tests/e2e/fixtures.mjs`) does two things for every browser test: it **fails the test if the page throws any JavaScript error**, and it serves the game's three.js and sql.js from `node_modules`, so a CDN outage can't break the tests. Google Fonts are blocked to keep tests fast and offline-friendly.
+- **Finding things on the page:** tests use `data-testid` attributes (listed in the "Test IDs" section of this README) rather than text or styling, so wording and design changes don't break them.
+- **The game** draws with WebGL, which is slow without a graphics card. Its tests open it with **`?lowfx`** (fewer pixels, no shadows, no tilt-shift blur: the same game, much less drawing), run one at a time, and use the game's test handle, `window.PROTO`, to move around: `warp(place, x, y, facing)`, `use()`, `talking()`, `pos()`, `G()` (hearts, keywords, items, flags, solved puzzles), `openPuzzle(id)`, `defeat(i)` and `ended()`.
+- **Retries:** on GitHub, a failed browser test is retried once, to rule out a one-off slow moment. Locally there are no retries.
+
+### Adding a test
+
+A unit test (`tests/unit/something.test.mjs`):
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { loadSite } from './helpers.mjs';
+const s = await loadSite();
+
+test('every customer has a company name', () => {
+  const r = s.runScript(s.northwind(), 'SELECT COUNT(*) FROM Customers WHERE CompanyName IS NULL;', 'nw');
+  assert.equal(r.results[0].values[0][0], 0);
+});
+```
+
+A browser test (`tests/e2e/something.spec.mjs`); import `test` from the fixture, not from Playwright directly, so you get the error checks:
+
+```js
+import { test, expect, id } from './fixtures.mjs';
+
+test('free practice counts the products', async ({ page }) => {
+  await page.goto('#/free');
+  await id(page, 'free-editor-input').fill('SELECT COUNT(*) FROM Products;');
+  await id(page, 'free-run').click();
+  await expect(id(page, 'free-result-table')).toContainText('77');
+});
+```
+
+If a test needs to find something new on the page, give it a `data-testid` in the HTML, and add it to the "Test IDs" table.
+
+### On GitHub: test, then publish
+
+The workflow is `.github/workflows/deploy.yml`. On every push to `main` it:
+
+1. **Builds the site**, which runs the content checks.
+2. **Runs the unit tests**, then installs Chromium and **runs the browser tests**.
+3. **Keeps the report** with the run (download it from the run's page, under *Artifacts*, for 30 days).
+4. **Publishes**, whatever the result:
+   - **If everything passed:** the new site, with the report at `/test-report/`.
+   - **If anything failed:** the **last version that passed** (rebuilt from that commit), so nothing broken goes live, with the **new** report at `/test-report/`. The run is then marked as failed (a red ❌), so you know.
+
+Each run's summary page shows a table of the results and the report link. Pull requests are tested but never published.
+
+Changing the workflow file needs a GitHub token with the **Workflows** permission, or an edit on github.com.
+
+### Reading the report
+
+- **The browser test report** (`/test-report/`) lists every test, grouped by file, with filters for failed, flaky and passed. Click a failed test to see the error, a **screenshot** of the page at that moment, and a **trace**: a step-by-step replay you can open at https://trace.playwright.dev.
+- **The unit test results** (`/test-report/unit-tests.txt`) list every unit test and show any failure's expected and actual values.
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `Executable doesn't exist` | Run `npx playwright install chromium` |
+| `Error: browserType.launch` on Linux | Install the browser's system libraries: `npx playwright install --with-deps chromium` |
+| `port 4173 is already in use` | Stop the other server, or run with `PORT=4180` (and update `playwright.config.mjs`) |
+| A test fails only after you changed `src/` | Rebuild first: `npm run build` |
+| Game tests time out on a slow machine | Run them on their own: `npx playwright test tests/e2e/game.spec.mjs --workers=1` |
+| An accessibility test fails | The message names the rule (for example `color-contrast`) and an element; look the rule up at https://dequeuniversity.com/rules/axe |
 
 ## How it's built
 

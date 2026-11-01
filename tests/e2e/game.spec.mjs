@@ -50,6 +50,11 @@ test.describe('the game', () => {
     await page.locator('#pzHint').click(); await expect(page.locator('#pzHintText')).toBeHidden();
     await page.locator('#pzRun').click(); await page.locator('#pzHint').click(); await expect(page.locator('#pzHintText')).toBeVisible();
   });
+  test('a terminal explains wrong capitals and double quotes', async ({ page }) => {
+    await newGame(page); await P(page, "Object.assign(PROTO.G().flags,{gateOpen:true}); PROTO.G().solved.T0=true");
+    await solveAt(page, 'archive', 5, 5, 'up', 'SELECT name FROM Villagers where job = "guard"');
+    await expect(page.locator('#pzVerdict')).toContainText("'Guard', not 'guard'"); await expect(page.locator('#pzVerdict')).toContainText('single quotes');
+  });
   test('the story moves on: Margaret gives the pass, Odo opens the gate', async ({ page }) => {
     await newGame(page); await P(page, 'PROTO.G().solved.T0=true');
     await P(page, "PROTO.warp('square',6,4,'up')"); await page.waitForTimeout(300); await P(page, 'PROTO.use()'); await closeTalk(page);

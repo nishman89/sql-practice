@@ -1311,6 +1311,16 @@ async function ensureDb(){ if (worldDb) return worldDb; if (!window.initSqlJs) a
 function runQuery(db, sql){ db.run('SAVEPOINT q'); try { const r=db.exec(sql); return { res: r.length ? r[r.length-1] : { columns:[], values:[] } }; }
   catch(e){ return { error:e.message }; } finally { try { db.run('ROLLBACK TO q'); db.run('RELEASE q'); } catch(_){} } }
 const normV=v=> v===null ? '\u2205' : typeof v==='number' ? String(Math.round(v*1e6)/1e6) : String(v);
+// Spot the two commonest text mistakes, by comparing the text in your query with the text in the model answer
+function textHint(sql, sol){
+  const quoted = [...sol.matchAll(/'([^']*)'/g)].map(m=>m[1]);
+  const dbl = [...sql.matchAll(/"([^"]*)"/g)].map(m=>m[1]);
+  const single = [...sql.matchAll(/'([^']*)'/g)].map(m=>m[1]);
+  for (const t of [...dbl, ...single]){ const want = quoted.find(q => q.toLowerCase()===t.toLowerCase() && q!==t);
+    if (want) return `Text must match exactly, including capital letters: '${want}', not '${t}'.` + (dbl.includes(t) ? ' And text goes in single quotes, not double quotes.' : ''); }
+  if (dbl.length) return `In SQL, text goes in single quotes, like '${dbl[0]}'. Double quotes are for the names of tables and columns.`;
+  return '';
+}
 function compareRes(E, U){
   if (U.values.length!==E.values.length) return { ok:false, msg:`Expected ${E.values.length} row${E.values.length===1?'':'s'}, your query returned ${U.values.length}. ${U.values.length>E.values.length?'Check your filter: it\u2019s letting extra rows through.':'Check your filter: it\u2019s leaving rows out.'}` };
   const ec=E.columns.length, uc=U.columns.length; if (uc<ec) return { ok:false, msg:`The answer has ${ec} column${ec>1?'s':''}; yours has ${uc}.` };
@@ -1342,7 +1352,7 @@ function runPuzzle(){
   renderResult(got.res); const exp=runQuery(worldDb, p.sol).res, verdict=compareRes(exp, got.res);
   if (verdict.ok){ v.className='pz-verdict yes'; v.innerHTML='<b>The rune glows!</b> That\u2019s exactly what it was asking for.'; SFX.defeat();
     if (!G.solved[curPz]){ G.solved[curPz]=true; G.keywords+=3; hud(); pendingSolve=curPz; } updateDone(); setTimeout(()=>$('pzDone').scrollIntoView({block:'nearest',behavior:'smooth'}),50); }
-  else { wrongRuns++; v.className='pz-verdict no'; v.innerHTML='<b>Not quite.</b> '+verdict.msg; SFX.hurt(); if (wrongRuns>=2) $('pzHintText').hidden=false; }
+  else { wrongRuns++; v.className='pz-verdict no'; const th=textHint(sql, p.sol); v.innerHTML='<b>Not quite.</b> '+(th || verdict.msg); SFX.hurt(); if (wrongRuns>=2) $('pzHintText').hidden=false; }
 }
 let pendingSolve=null;
 function closePuzzle(){ save(); $('pz').hidden=true; puzzleOpen=false; document.body.classList.remove('puzzling'); const id=pendingSolve; pendingSolve=null; if (id) afterSolve(id); }
