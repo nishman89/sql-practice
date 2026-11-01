@@ -79,4 +79,10 @@ describe('words in the world', () => {
   test('seven bookshelf tips in the Institute and six in the Archive', () => { assert.equal(g.SHELF_TIPS.academy.length, 7); assert.equal(g.SHELF_TIPS.archive.length, 6); });
   test('Ada and Elin each have seven pieces of SQL advice', () => { assert.equal(g.ADVICE.ada.length, 7); assert.equal(g.ADVICE.elin.length, 7); });
   test('the Institute is called the Institute, never the Academy', () => assert.equal(/Sparta Academy/.test(g.html), false));
+  test('the hero is Nish the Great: named once, and used throughout', () => {
+    assert.match(g.src, /const HERO_NAME = 'Nish the Great';/);
+    assert.ok((g.src.match(/\$\{HERO_NAME\}|' \+ HERO_NAME \+ '/g)||[]).length >= 8, 'the characters should use the name');
+    assert.match(g.html, /starring <b class="star">Nish the Great<\/b>/, 'the title screen');
+    assert.match(g.html, /released by <b>Nish the Great<\/b>/, 'the ending');
+  });
 });

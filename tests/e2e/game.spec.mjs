@@ -21,14 +21,15 @@ async function solveAt(page, place, x, y, face, sql){
 test.describe('the game', () => {
   test('starts on the title screen, with How to play', async ({ page }) => {
     await page.goto(GAME); await page.evaluate(() => localStorage.clear()); await page.reload();
-    await expect(page.locator('#title h1')).toHaveText('The Lost Ledger'); await expect(page.locator('#tContinue')).toBeHidden();
+    await expect(page.locator('#title h1')).toHaveText('The Lost Ledger'); await expect(page.locator('#title .kicker')).toContainText('starring Nish the Great'); await expect(page.locator('#tContinue')).toBeHidden();
     await page.locator('#tHow').click(); await expect(page.locator('#manual h2')).toHaveText('How to play'); await page.locator('#manClose').click();
     await expect(page.locator('#title')).toBeVisible();
   });
   test('Ada sends you to the training terminal, and the door stays sealed until it\u2019s solved', async ({ page }) => {
     await newGame(page);
     await P(page, "PROTO.warp('academy',10,4,'right')"); await page.waitForTimeout(300); await P(page, 'PROTO.use()');
-    await expect(page.locator('#who')).toHaveText('Trainer Ada'); await closeTalk(page);
+    await expect(page.locator('#who')).toHaveText('Trainer Ada'); await P(page, 'PROTO.use()');
+    await expect(page.locator('#say')).toHaveText('Ah, Nish the Great! You made it. Welcome to the Sparta Institute.'); await closeTalk(page);
     expect(await P(page, 'PROTO.G().flags.metAda')).toBe(true);
     await P(page, "PROTO.warp('academy',7,9,'down')"); await page.waitForTimeout(300);
     await page.evaluate(() => dispatchEvent(new KeyboardEvent('keydown', { code:'ArrowDown' }))); await page.waitForTimeout(3000);

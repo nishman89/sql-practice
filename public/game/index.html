@@ -99,6 +99,7 @@
   .ovl button{ border:2px solid #fff; background:none; color:#fff; border-radius:999px; padding:8px 18px; font-weight:600; font-size:1rem; font-family:inherit; cursor:pointer } .ovl button.primary{ background:var(--pink); border-color:var(--pink) } .ovl button[hidden]{ display:none }
   .ovl .how{ font-size:.88rem; background:rgba(255,255,255,.1); border-radius:12px; padding:8px 12px; margin:14px 0 0 } .ovl .how b{ color:var(--pink-soft) } .ovl .note{ font-size:.8rem; color:#d9cfd3 }
   .ovl .list{ margin:0; padding-left:20px } .ovl .list li.done{ text-decoration:line-through; opacity:.7 } .ovl .stats{ color:#e7dde1; font-size:.9rem } .ovl .twist{ color:var(--pink-soft) } .ovl .tbc{ font-weight:700; font-size:1.1rem }
+  .ovl .kicker .star{ color:#fff; letter-spacing:.08em }
   .ovl .link{ border:0; padding:0; background:none; color:var(--pink-soft); text-decoration:underline; font-size:inherit; font-weight:600 }
   .manual{ width:min(100%,40rem) } .manual p{ margin:6px 0; line-height:1.45 } .manual table{ width:100%; border-collapse:collapse; font-size:.9rem } .manual th,.manual td{ text-align:left; padding:4px 6px; border-bottom:1px solid rgba(255,255,255,.15) } .manual td:first-child{ color:var(--pink-soft); font-weight:600 }
   .amap{ display:grid; grid-template-columns:repeat(4,34px); grid-template-rows:repeat(2,24px); gap:5px } .amap span{ background:#4a4058; border-radius:5px; display:grid; place-items:center; font-size:.7rem } .amap .seen{ background:#a9a4b4 } .amap .here{ background:var(--pink) }
@@ -124,13 +125,13 @@
 <button class="menu-btn" id="menuBtn" type="button" aria-label="Menu">☰</button>
 <button class="fs-btn" id="fsBtn" type="button" aria-label="Exit full screen" hidden>✕</button>
 <div class="ovl title" id="title" hidden><div class="ovl-card">
-  <p class="kicker">A Spartan SQL adventure</p><h1>The Lost Ledger</h1><p class="sub">Chapter 1: The Royal Archive</p>
+  <p class="kicker">A Spartan SQL adventure starring <b class="star">Nish the Great</b></p><h1>The Lost Ledger</h1><p class="sub">Chapter 1: The Royal Archive</p>
   <div class="btns"><button type="button" id="tContinue" hidden>Continue</button><button type="button" class="primary" id="tNew">New game</button></div>
   <p class="how"><span class="keys"><b>Click</b> or <b>arrow keys</b> to move · <b>Space</b> to talk · <b>J</b> to swing · <b>Esc</b> for the menu</span><span class="touch"><b>Tap</b> or the <b>arrows</b> to move · <b>A</b> to talk · <b>B</b> to swing · <b>☰</b> for the menu</span></p>
   <p class="note">Your progress is saved in this browser, on this device. <button type="button" class="link" id="tHow">How to play</button></p></div></div>
 <div class="ovl" id="manual" hidden><div class="ovl-card left manual">
   <h2>How to play</h2>
-  <p>The kingdom&rsquo;s Royal Ledger is corrupted. Explore, talk to people, and open the rune doors by answering SQL questions about the kingdom&rsquo;s data.</p>
+  <p>You are <b>Nish the Great</b>, a new Spartan at the Sparta Institute. The kingdom&rsquo;s Royal Ledger is corrupted. Explore, talk to people, and open the rune doors by answering SQL questions about the kingdom&rsquo;s data.</p>
   <h3>Controls</h3>
   <table><tr><th></th><th>Keyboard and mouse</th><th>Touch screen</th></tr>
     <tr><td>Move</td><td>Arrow keys or WASD, or click where to go</td><td>The arrows, or tap where to go</td></tr>
@@ -158,7 +159,7 @@
   <div class="btns"><button type="button" class="primary" id="mResume">Resume</button><button type="button" id="mSound">♪ Music</button><button type="button" id="mHow">How to play</button><button type="button" id="mExitFull" hidden>Exit full screen</button><button type="button" id="mQuit">Save and quit</button></div></div></div>
 <div class="ovl" id="end" hidden><div class="ovl-card">
   <h1>The Ledger is restored</h1>
-  <p>With both locks released, the Deadlock lets go of itself and fades away. All across the kingdom, pages knit back together: coins return, doors unseal, and Wisp finally has a job to write down.</p>
+  <p>With both locks released by <b>Nish the Great</b>, the Deadlock lets go of itself and fades away. All across the kingdom, pages knit back together: coins return, doors unseal, and Wisp finally has a job to write down.</p>
   <p>Margaret weeps a little. Rex promises, again, to always use a WHERE. Trainer Ada just smiles.</p>
   <p class="twist">But in the rubble of the Deadlock’s chamber, you find a scrap of parchment, signed with a single letter: <b>D</b>. Someone corrupted the Ledger on purpose…</p>
   <p class="tbc">To be continued in Chapter 2.</p><p class="stats" id="eStats"></p>
@@ -400,6 +401,7 @@ function mergeStatic(root, local=false){
 }
 
 /* ---------- People: little vinyl figures ---------- */
+const HERO_NAME = 'Nish the Great';   // the hero's name, used in conversations, the title screen and the ending
 const LOOKS = {
   hero: { skin:'#c48a5f', hair:'#1c171f', hair2:'#2e2633', style:'curly', top:'#22325f', lapel:'#1a2850', shirt:'#f6bcd2', legs:'#2a2a33', shoes:'#5a341a', brow:'#1c171f', nose:'#b67b52', blush:'#c9775f', buttons:true },
   ada:  { skin:'#e8b48c', hair:'#e0336b', style:'bob',   top:'#2d2a2b', lapel:'#1f1d1e', shirt:'#ffffff', legs:'#2d2a2b', shoes:'#121212', brow:'#a5244f', buttons:true },
@@ -880,7 +882,7 @@ const keys = { up:false, down:false, left:false, right:false };
 const tileSolid=(tx,ty)=> tx<0||ty<0||tx>=COLS||ty>=ROWS ? true : !!solid[ty*COLS+tx];
 function blocked(x,z){ const r=0.26; for (const [dx,dz] of [[-r,-r],[r,-r],[-r,r],[r,r]]){ const tx=Math.round(x+dx+7.5), ty=Math.round(z+dz+5); if (tileSolid(tx,ty)) return true; } return false; }
 function enter(key, tx, ty, dir='down'){ G.visited=G.visited||{}; G.visited[key]=true;
-  if (key==='boss' && !G.flags.bossBeaten && !G.flags.bossMet){ G.flags.bossMet=true; setTimeout(()=>talk('The Deadlock', ['WHO DARES\u2026 wait. Who dares. Wait. WHO DA\u2014', 'We are the Deadlock. Each of our heads holds a lock the other one needs.', 'Neither will let go first. And so nothing in your precious Ledger can ever change again!', 'Two terminals guard our locks. Answer both and we\u2026 no. You never will.']), 700); } if (key==='ante' && !G.flags.shortcut){ G.flags.shortcut=true; setTimeout(()=>toast('A hidden door slides open to the west.'),600); } route=[]; onArrive=null; puffs.length=0; heroKx=heroKz=0; buildPlace(key); playTrack(key==='archive'?'dungeon':key==='academy'?'house':'village'); heroPos.set(wx(tx), wz(ty)); heroDir=dir; currentKey=key; snapCamera=true; fadeIn(); }
+  if (key==='boss' && !G.flags.bossBeaten && !G.flags.bossMet){ G.flags.bossMet=true; setTimeout(()=>talk('The Deadlock', ['WHO DARES\u2026 wait. Who dares. Wait. WHO DA\u2014', `${HERO_NAME}? \u2018The Great\u2019? We\u2019ll see about that.`, 'We are the Deadlock. Each of our heads holds a lock the other one needs.', 'Neither will let go first. And so nothing in your precious Ledger can ever change again!', 'Two terminals guard our locks. Answer both and we\u2026 no. You never will.']), 700); } if (key==='ante' && !G.flags.shortcut){ G.flags.shortcut=true; setTimeout(()=>toast('A hidden door slides open to the west.'),600); } route=[]; onArrive=null; puffs.length=0; heroKx=heroKz=0; buildPlace(key); playTrack(key==='archive'?'dungeon':key==='academy'?'house':'village'); heroPos.set(wx(tx), wz(ty)); heroDir=dir; currentKey=key; snapCamera=true; fadeIn(); }
 let currentKey='academy', snapCamera=true;
 
 const talkBox=document.getElementById('talk'), who=document.getElementById('who'), say=document.getElementById('say');
@@ -943,7 +945,7 @@ const SHELF_TIPS = {
 function shelfTip(tx,ty){ const list=[]; place.rows.forEach((r,y)=>[...r].forEach((c,x)=>{ if (c==='B') list.push(x+','+y); })); const i=list.indexOf(tx+','+ty), tips=SHELF_TIPS[currentKey]||(place.dungeon?SHELF_TIPS.archive:SHELF_TIPS.academy); return tips[Math.max(0,i)%tips.length]; }
 const talks = {};
 function shop(){ const B='Bram, the shopkeeper';
-  talk(B, [`Welcome! I trade in keywords. You have ${G.keywords}.`], { choices:[
+  talk(B, [`Welcome, ${HERO_NAME}! I trade in keywords. You have ${G.keywords}.`], { choices:[
     { label: G.items.lantern ? 'Lantern of EXPLAIN (sold out)' : 'Lantern of EXPLAIN: 15 keywords', go:()=>{
       if (G.items.lantern) return talk(B, ['You\u2019ve already got the only one I had.']);
       if (G.keywords<15) return talk(B, ['Fifteen keywords, friend. Bugs drop them, and so do chests and grateful villagers.']);
@@ -983,14 +985,14 @@ function interact(){
     // The first chat is a greeting and a tip; after that, a new tip every time
     const n = talks[id] = (talks[id]||0) + 1, tips = ADVICE[id] || [''], tip = tips[(n-1) % tips.length];
     if (id==='ada'){ const A='Trainer Ada', press=touchMode?'A':'Space';
-      if (n===1) return talk(A, ['Ah, you made it! Welcome to the Sparta Institute.', 'I\u2019m afraid your first day won\u2019t be a quiet one. This morning the Royal Ledger, the database that records everything in the kingdom, started to fall apart.',
+      if (n===1) return talk(A, [`Ah, ${HERO_NAME}! You made it. Welcome to the Sparta Institute.`, 'I\u2019m afraid your first day won\u2019t be a quiet one. This morning the Royal Ledger, the database that records everything in the kingdom, started to fall apart.',
         'Every door in the kingdom is sealed with query runes now. Even ours: look at the front door.', `Before you go anywhere, prove you\u2019re ready. Walk up to the training terminal by the bookshelves and press ${press}. Answer it, and the door will open.`],
         { after:()=>{ G.flags.metAda=true; } });
       if (!G.solved.T0) return talk(A, [`The training terminal is on the left, by the bookshelves. Walk up to it and press ${press}.`, 'Show me every villager\u2019s name and job, and that door is yours.']);
-      if (!G.flags.metMargaret && !G.flags.toldMargaret) return talk(A, ['Well done! See, the door\u2019s open.', 'Now head east through the village to the Square, and find Margaret, the Archivist. She\u2019ll know where the trouble started.', 'And a bit of advice before you go:', tip], { after:()=>{ G.flags.toldMargaret=true; } });
+      if (!G.flags.metMargaret && !G.flags.toldMargaret) return talk(A, [`Well done, ${HERO_NAME}! See, the door\u2019s open.`, 'Now head east through the village to the Square, and find Margaret, the Archivist. She\u2019ll know where the trouble started.', 'And a bit of advice before you go:', tip], { after:()=>{ G.flags.toldMargaret=true; } });
       return talk(A, G.flags.metMargaret ? [tip] : ['Margaret\u2019s in the Village Square, east of the village.', tip]); }
     if (id==='margaret'){ const M='Margaret, the Archivist';
-      if (!G.flags.metMargaret) return talk(M, ['Ada sent you? Thank goodness. I\u2019m Margaret. I\u2019ve kept the Royal Ledger for fifty years.', 'Whole pages are corrupted. Wisp over there has forgotten his own job, and Rex\u2026 well, Rex has been Rex.',
+      if (!G.flags.metMargaret) return talk(M, [`Ada sent you? You must be ${HERO_NAME}. Thank goodness.`, 'I\u2019m Margaret. I\u2019ve kept the Royal Ledger for fifty years.', 'Whole pages are corrupted. Wisp over there has forgotten his own job, and Rex\u2026 well, Rex has been Rex.',
         'The trouble started deep in the Royal Archive, past the old gate to the east.', 'Take this Archive Pass and show it to Odo, the guard. The Archive\u2019s doors are sealed with query runes, but you\u2019ll manage.'],
         { after:()=>{ G.flags.metMargaret=true; G.items.pass=true; SFX.defeat(); toast('You got the Archive Pass!'); } });
       return talk(M, ['The Archive is past the East Gate. Odo will let you through.'], { choices:[
@@ -1001,11 +1003,11 @@ function interact(){
     if (id==='odo'){ const O='Odo, the gate guard';
       if (G.flags.gateOpen) return talk(O, ['The gate\u2019s open. Mind the bugs in there, they\u2019ve been rattling the shelves all morning.']);
       if (!G.items.pass) return talk(O, ['Halt! The Royal Archive is sealed. Nobody goes in without a pass from the Archivist.']);
-      return talk(O, ['An Archive Pass, signed by Margaret herself. Very well.', 'Stand back\u2026'], { after:openGate }); }
+      return talk(O, [`${HERO_NAME}, with an Archive Pass signed by Margaret herself. Very well.`, 'Stand back\u2026'], { after:openGate }); }
     if (id==='rex'){ const X='Rex, the apprentice'; if (G.solved.R) return talk(X, ['Five villagers! I\u2019ve written it on my hand: always, always use a WHERE.']);
       if (!G.flags.rexAsked) return talk(X, ['Oh no, oh no, oh no.', 'I\u2019m Rex, Margaret\u2019s apprentice. This morning I tried to fix the coin records and ran an UPDATE\u2026', '\u2026and forgot the WHERE. Now some villagers have no coins at all, and I don\u2019t even know how many!', 'There\u2019s a terminal by the trees. Could you count them for me?'], { after:()=>{ G.flags.rexAsked=true; } });
       return talk(X, ['The terminal\u2019s just to the east. Count the villagers with 0 coins. Please?']); }
-    if (id==='wisp'){ const W='Wisp'; if (G.solved.G) return talk(W, ['Unknown. At least it\u2019s something. COALESCE, they call it. Thank you, Spartan.']);
+    if (id==='wisp'){ const W='Wisp'; if (G.solved.G) return talk(W, ['Unknown. At least it\u2019s something. COALESCE, they call it. Thank you, ' + HERO_NAME + '.']);
       if (!G.flags.wispAsked) return talk(W, ['Ooooh\u2026 who am I? The Ledger says my job is\u2026 NULL.', 'Not zero. Not blank. Just\u2026 unknown. It\u2019s a lonely thing, being unknown.', 'There\u2019s a terminal by the trees. Could you show everyone\u2019s job, and write \u2018Unknown\u2019 where it\u2019s missing?'], { after:()=>{ G.flags.wispAsked=true; } });
       return talk(W, ['The terminal is south-east of here. Unknown is better than nothing\u2026']); }
 
@@ -1361,7 +1363,7 @@ function afterSolve(id){
   if (id==='P1' || id==='P2'){ rebuild(); SFX.hit(); toast('The rune door grinds open.'); }
   if (id==='P3') toast('The great chest unlocks.');
   if (id==='P4') toast(G.items.key ? 'The Bond Rune glows. The great door can be opened now.' : 'The Bond Rune glows. The great door still needs the Primary Key.');
-  if (id==='R'){ G.keywords+=10; hud(); talk('Rex, the apprentice', ['Five? FIVE?! Thank you. Here, ten keywords.', 'And I\u2019ll always write a WHERE from now on. Probably.']); }
+  if (id==='R'){ G.keywords+=10; hud(); talk('Rex, the apprentice', [`Five? FIVE?! Thank you, ${HERO_NAME}! Here, ten keywords.`, 'And I\u2019ll always write a WHERE from now on. Probably.']); }
   if (id==='G'){ G.maxHearts+=1; G.hearts=G.maxHearts; hud(); talk('Wisp', ['Unknown\u2026 at least it\u2019s something!', 'Take this. It was\u2026 I think it was mine.', '(Your heart container grows!)']); }
   if (id==='B1' || id==='B2') bossSolved && bossSolved(id);
 }
@@ -1449,7 +1451,7 @@ function startGame(fresh){
   Object.keys(talks).forEach(k=>delete talks[k]); Object.keys(drafts).forEach(k=>delete drafts[k]);
   if (!fresh && sv){ Object.assign(G, sv.G); Object.assign(talks, sv.talks||{}); Object.assign(drafts, sv.drafts||{}); }
   G.visited=G.visited||{}; titleOpen=false; $('title').hidden=true; document.body.classList.remove('paused'); hud(); initAudio();
-  if (!fresh && sv) enter(sv.place, sv.tx, sv.ty, sv.dir); else { enter('academy',7,8,'up'); setTimeout(()=>talk('', ['Your first morning at the Sparta Institute. Trainer Ada is waiting for you\u2026']),500); }
+  if (!fresh && sv) enter(sv.place, sv.tx, sv.ty, sv.dir); else { enter('academy',7,8,'up'); setTimeout(()=>talk('', [`Your first morning at the Sparta Institute, ${HERO_NAME}. Trainer Ada is waiting for you\u2026`]),500); }
 }
 function openMenu(){ if (titleOpen||endOpen||puzzleOpen) return; menuOpen=true; document.body.classList.add('paused'); Object.keys(keys).forEach(k=>keys[k]=false);
   const F=G.flags, q=[];
