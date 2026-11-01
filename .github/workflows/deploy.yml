@@ -1,22 +1,33 @@
-name: Deploy to GitHub Pages
+name: Test and deploy to GitHub Pages
+
+# Every push to main is built and tested, and the test report is always published at
+#   https://nishman89.github.io/sql-practice/test-report/
+# If the tests pass, the new site goes live with it. If they fail, the last version that passed stays live
+# (rebuilt from that commit), so nothing broken is ever published, and the run is marked as failed.
 
 on:
   push:
     branches: [main]
+  pull_request:          # pull requests are tested, but never published
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read          # to find the last commit that passed
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  build:
+  test:
+    name: Build and test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      passed: ${{ steps.result.outputs.passed }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,16 +35,125 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build        # runs the content checks first; a broken lesson stops the deploy here
-      - uses: actions/upload-pages-artifact@v3
+
+      - name: Build (runs the content checks first)
+        id: build
+        run: npm run build
+
+      - name: Unit tests
+        id: unit
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node --test --test-reporter=spec tests/unit/*.test.mjs 2>&1 | tee unit-tests.txt
+
+      - name: Install the test browser
+        if: steps.build.outcome == 'success'
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests (desktop, phone and accessibility)
+        id: e2e
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: npm run test:e2e
+
+      - name: Put the unit test results in the report
+        if: always()
+        run: |
+          mkdir -p playwright-report
+          if [ -f unit-tests.txt ]; then cp unit-tests.txt playwright-report/unit-tests.txt; else echo "The unit tests didn't run, because the build failed. See the Actions log." > playwright-report/unit-tests.txt; fi
+          if [ ! -f playwright-report/index.html ]; then
+            printf '%s\n' '<!doctype html><html lang="en"><meta charset="utf-8"><title>Test report</title>' \
+              '<h1>No browser test report</h1><p>The browser tests did not run, usually because the build failed.</p>' \
+              '<p>See the <a href="unit-tests.txt">unit test results</a>, and the GitHub Actions log for this run.</p></html>' > playwright-report/index.html
+          fi
+
+      - name: Keep the test report with this run
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          path: dist
+          name: test-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Work out the result
+        id: result
+        if: always()
+        run: |
+          passed=${{ steps.build.outcome == 'success' && steps.unit.outcome == 'success' && steps.e2e.outcome == 'success' }}
+          echo "passed=$passed" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Test results"
+            echo "| Step | Result |"
+            echo "|---|---|"
+            echo "| Build and content checks | ${{ steps.build.outcome }} |"
+            echo "| Unit tests | ${{ steps.unit.outcome }} |"
+            echo "| Browser tests | ${{ steps.e2e.outcome }} |"
+            echo ""
+            if [ "$passed" = "true" ]; then echo "**Everything passed.** The new version is being published."; else echo "**Something failed.** The last version that passed stays live."; fi
+            echo ""
+            echo "Report (after publishing): https://nishman89.github.io/sql-practice/test-report/ · unit tests: https://nishman89.github.io/sql-practice/test-report/unit-tests.txt"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
-    needs: build
+    name: Publish the site and the test report
+    needs: test
+    if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Choose which version of the site to publish
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ needs.test.outputs.passed }}" = "true" ]; then
+            echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            echo "The tests passed: publishing this commit."
+          else
+            sha=$(gh api "repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+            echo "The tests failed: keeping the last version that passed live (${sha:-none found})."
+          fi
+
+      - name: Build that version
+        if: steps.pick.outputs.sha != ''
+        run: |
+          git checkout --quiet "${{ steps.pick.outputs.sha }}"
+          npm ci
+          npm run build
+
+      - name: No version has passed yet
+        if: steps.pick.outputs.sha == ''
+        run: |
+          mkdir -p dist
+          echo '<!doctype html><html lang="en"><meta charset="utf-8"><title>SQL Practice Lab</title><p>The site is being fixed. See the <a href="test-report/">test report</a>.</p></html>' > dist/index.html
+
+      - name: Add the test report
+        uses: actions/download-artifact@v4
+        with:
+          name: test-report
+          path: dist/test-report
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Mark the run as failed if the tests failed
+        if: needs.test.outputs.passed != 'true'
+        run: |
+          echo "::error::The tests failed, so the last version that passed is still live. Report: https://nishman89.github.io/sql-practice/test-report/"
+          exit 1
