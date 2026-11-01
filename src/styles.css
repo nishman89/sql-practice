@@ -203,7 +203,7 @@ table.grid tr:nth-child(even) td{background:var(--mist)}
 .badge.fk{background:var(--paper);color:var(--ink);border:1.5px solid var(--ink)}
 .badge.none{visibility:hidden}
 .fklink{font-size:.8rem;color:var(--muted)}
-.linkish{background:none;border:0;padding:0;color:var(--pink);font-weight:600;text-decoration:underline}
+.linkish{background:none;border:0;padding:0;color:var(--pink-dark);font-weight:600;text-decoration:underline}
 .fklink button{background:none;border:0;padding:0;color:var(--pink);font-weight:600;text-decoration:underline}
 
 /* ERD svg */

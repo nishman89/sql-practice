@@ -593,6 +593,29 @@ used twice, or if a multiple-choice question doesn't have exactly four different
 
 ---
 
+## Testing
+
+Every push to `main` is tested before it's deployed: the GitHub Action builds the site, runs the unit tests, then the browser tests, and **only deploys if everything passes**. If something fails, the live site stays as it was, and the run has a **playwright-report** artifact showing what broke (with screenshots and a trace).
+
+```bash
+npm ci
+npx playwright install chromium   # once, to get the test browser
+npm run build                     # builds dist/ (and runs the content checks)
+npm test                          # unit tests, then browser tests
+npm run test:unit                 # just the unit tests (a few seconds)
+npm run test:e2e                  # just the browser tests (a few minutes)
+npx playwright test --ui          # pick and watch browser tests interactively
+```
+
+| Tests | Where | What they check |
+|---|---|---|
+| **Unit** (Node's built-in test runner) | `tests/unit/` | The SQL engine (running queries, marking answers, friendly messages for MySQL and T-SQL habits); every lesson, exercise, quiz question, dialect example, install guide and the capstone; the game's world database, all nine puzzles (and that tapping their pieces builds a correct answer), its marking, and that every map, terminal, chest and door link adds up; the build output and its size budgets; house style (British spellings, Institute not Academy) |
+| **Browser** (Playwright, desktop) | `tests/e2e/` | Navigation and progress; every lesson's exercises marked correct in the browser; quizzes passing and failing; free practice; the Creating tables builder (including the step 2 regression); the ERD maker; install guides; the full Northwind diagram; the game (title screen, Ada and the sealed door, terminals, hints, the story, saving and Continue, the Game tab's frame, How to play and the walkthrough); every in-site link |
+| **Browser** (Playwright, phone) | `tests/e2e/mobile.spec.mjs` | The phone menu, answering an exercise, no sideways scrolling, and full screen with a way back out |
+| **Accessibility** (axe) | `tests/e2e/accessibility.spec.mjs` | No serious or critical WCAG 2 A/AA problems on the main pages |
+
+The browser tests run against `dist/` served at `/sql-practice/` by `scripts/serve.mjs`, just like GitHub Pages. They serve the game's three.js and sql.js from `node_modules`, so a CDN outage can't break them, and they load the game with `?lowfx` (fewer pixels, no shadows or blur) because 3D without a graphics card is slow. A test fails if the page throws any JavaScript error.
+
 ## How it's built
 
 *For the full picture, read **[ARCHITECTURE.md](ARCHITECTURE.md)**.*
