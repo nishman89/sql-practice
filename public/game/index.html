@@ -168,7 +168,7 @@ const MAPS = {
     '#..............#',
     '#..............#',
     '#..............#',
-    '#######..#######'], npcs:[{id:'ada', x:11, y:4}], start:[7,8] },
+    '#######dd#######'], npcs:[{id:'ada', x:11, y:4}], start:[7,8] },
   village: { name:'Village: West', rows:[
     'TTTTTTTTTTTTTTTT',
     'T,,,RRRRRR,,,,,T',
@@ -522,6 +522,13 @@ function buildPlace(key){
       if (c==='X'){ setSolid(tx,ty); const done=!!G.opened[`${key}:${tx},${ty}`], wood=mat('#8a5230',0.55), gold=mat('#f2c14e',0.25);
         add(box(1,0.12,1,flagM),x,-0.06,z).castShadow=false; add(roundedBox(0.72,0.42,0.5,0.04,wood),x,0.21,z); [-0.25,0.25].forEach(dx=>add(box(0.06,0.44,0.52,gold),x+dx,0.22,z));
         const lid=new THREE.Group(); lid.position.set(x,0.42,z-0.25); world.add(lid); add(roundedBox(0.74,0.18,0.52,0.06,wood),0,0.09,0.25,lid); add(box(0.12,0.12,0.06,gold),0,0.04,0.52,lid); if (done) lid.rotation.x=-1.6;
+        continue; }
+      if (c==='d' && !open && ty===ROWS-1){ setSolid(tx,ty);                 // the Institute's front door: a glowing rune barrier
+        add(box(1,0.12,1,plankM),x,-0.06,z).castShadow=false;
+        if (tx===7){ const bar=new THREE.Mesh(new THREE.BoxGeometry(2,1.1,0.06), new THREE.MeshStandardMaterial({ color:'#ff6f9a', emissive:'#ff3f7a', emissiveIntensity:0.9, transparent:true, opacity:0.55,
+            map:tex(128,(g,s)=>{ g.fillStyle='#ffd3e1'; g.fillRect(0,0,s,s); g.strokeStyle='#e0336b'; g.lineWidth=6; for (let i=-s;i<s*2;i+=22){ g.beginPath(); g.moveTo(i,0); g.lineTo(i+s*0.6,s); g.stroke(); } g.beginPath(); g.arc(s/2,s/2,26,0,7); g.lineWidth=8; g.stroke(); }) }));
+          bar.userData.live=true; bar.castShadow=false; add(bar,x+0.5,0.6,z-0.2); animated.push(t=>{ bar.material.opacity=0.72+0.12*Math.sin(t*2.4); bar.material.emissiveIntensity=1.3+0.4*Math.sin(t*2.4); });
+          const glow=new THREE.PointLight('#ff4f86',0.9,3); glow.position.set(x+0.5,0.8,z-0.8); world.add(glow); }
         continue; }
       if (c==='d' && !open){ add(roundedBox(1,1.15,1,0.04,darkStoneM),x,0.57,z); setSolid(tx,ty);
         if (tx===7 || tx===0 || tx===15){ const rune=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.7,0.04), new THREE.MeshStandardMaterial({ color:'#ff6f9a', emissive:'#ff3f7a', emissiveIntensity:1.1, map:tex(128,(g,s)=>{ g.fillStyle='#3a2a4a'; g.fillRect(0,0,s,s); g.strokeStyle='#ffd3e1'; g.lineWidth=7; g.strokeRect(14,14,s-28,s-28); g.beginPath(); g.moveTo(s/2,24); g.lineTo(s/2,s-24); g.moveTo(34,s/2); g.lineTo(s-34,s/2); g.stroke(); g.beginPath(); g.arc(s/2,s/2,22,0,7); g.stroke(); }) }));
@@ -940,10 +947,13 @@ function interact(){
   if (t.person){ const id=t.person.userData.id;
     // The first chat is a greeting and a tip; after that, a new tip every time
     const n = talks[id] = (talks[id]||0) + 1, tips = ADVICE[id] || [''], tip = tips[(n-1) % tips.length];
-    if (id==='ada') return talk('Trainer Ada', n===1
-      ? ['Ah, you made it! Welcome to the Sparta Institute.', 'I\u2019m afraid your first day won\u2019t be a quiet one. This morning the Royal Ledger, the database that records everything in the kingdom, started to fall apart.',
-         'Head east through the village to the Square, and find Margaret, the Archivist. She\u2019ll know where the trouble started.', 'And a bit of advice before you go:', tip]
-      : G.flags.metMargaret ? [tip] : ['Margaret\u2019s in the Village Square, east of the village.', tip], { after:()=>{ G.flags.metAda=true; } });
+    if (id==='ada'){ const A='Trainer Ada', press=touchMode?'A':'Space';
+      if (n===1) return talk(A, ['Ah, you made it! Welcome to the Sparta Institute.', 'I\u2019m afraid your first day won\u2019t be a quiet one. This morning the Royal Ledger, the database that records everything in the kingdom, started to fall apart.',
+        'Every door in the kingdom is sealed with query runes now. Even ours: look at the front door.', `Before you go anywhere, prove you\u2019re ready. Walk up to the training terminal by the bookshelves and press ${press}. Answer it, and the door will open.`],
+        { after:()=>{ G.flags.metAda=true; } });
+      if (!G.solved.T0) return talk(A, [`The training terminal is on the left, by the bookshelves. Walk up to it and press ${press}.`, 'Show me every villager\u2019s name and job, and that door is yours.']);
+      if (!G.flags.metMargaret && !G.flags.toldMargaret) return talk(A, ['Well done! See, the door\u2019s open.', 'Now head east through the village to the Square, and find Margaret, the Archivist. She\u2019ll know where the trouble started.', 'And a bit of advice before you go:', tip], { after:()=>{ G.flags.toldMargaret=true; } });
+      return talk(A, G.flags.metMargaret ? [tip] : ['Margaret\u2019s in the Village Square, east of the village.', tip]); }
     if (id==='margaret'){ const M='Margaret, the Archivist';
       if (!G.flags.metMargaret) return talk(M, ['Ada sent you? Thank goodness. I\u2019m Margaret. I\u2019ve kept the Royal Ledger for fifty years.', 'Whole pages are corrupted. Wisp over there has forgotten his own job, and Rex\u2026 well, Rex has been Rex.',
         'The trouble started deep in the Royal Archive, past the old gate to the east.', 'Take this Archive Pass and show it to Odo, the guard. The Archive\u2019s doors are sealed with query runes, but you\u2019ll manage.'],
@@ -974,7 +984,7 @@ function interact(){
     return talk('A thin, dark wall', ['The wall looks thin, but it\u2019s too dark to see a way through.', 'Bram, at the market stall in the Square, might sell something that helps.']); }
   if (t.c==='K'){ if (G.items.key && G.solved.P4){ G.flags.bossDoor=true; SFX.hit(); rebuild(); save(); return talk('The great door', ['The Primary Key turns. The great door grinds open\u2026']); }
     return talk('The great door', [!G.items.key ? 'A huge lock. It needs the Primary Key.' : 'The key fits, but the Bond Rune must be solved first.']); }
-  if (t.c==='d') return talk('A rune door', ['It\u2019s sealed with a query rune. Answer the terminal in this room to open it.']);
+  if (t.c==='d') return talk('A rune door', [currentKey==='academy' ? 'A glowing rune barrier seals the door. Trainer Ada says the training terminal will open it.' : 'It\u2019s sealed with a query rune. Answer the terminal in this room to open it.']);
   if (t.c==='L'){ G.stone={ place:currentKey, tx:Math.round(heroPos.x+7.5), ty:Math.round(heroPos.y+5) }; G.hearts=G.maxHearts; hud(); SFX.defeat(); setTimeout(save,50); return talk('Ledger Stone', ['It hums and glows. Your progress is safe, and your hearts are restored.']); }
   if (t.c==='B'){ const [title,tip]=shelfTip(t.tx,t.ty); return talk('Bookshelf: \u201c'+title+'\u201d', ['You pull out a book and it falls open\u2026', tip]); }
   if (t.c==='D') return talk('A cottage door', ['You knock. Nobody seems to be home.']);
@@ -1036,7 +1046,7 @@ function attackBug(b){
 }
 canvas.addEventListener('pointerdown', e=>{ if (e.button>0 || paused()) return; if (!talkBox.hidden) return advance(); const t=pickTile(e); if (!t) return; if (t.enemy) return attackBug(t.enemy); goTo(t.tx,t.ty,t.thing); });
 let hoverThing=null;
-function exitAt(tx,ty){ if (currentKey==='academy' && ty>=10 && (tx===7||tx===8)) return { tx:7.5, ty:10, verb:'Go outside', exit:true };
+function exitAt(tx,ty){ if (currentKey==='academy' && ty>=10 && (tx===7||tx===8) && !tileSolid(7,10)) return { tx:7.5, ty:10, verb:'Go outside', exit:true };
   if (currentKey==='village' && tx>=15 && ty>=5 && ty<=8) return { tx:15, ty:7, verb:'To the Village Square', exit:true };
   if (currentKey==='square' && tx>=15 && ty>=2 && ty<=8) return { tx:15, ty:5, verb:'To the East Gate', exit:true };
   if (currentKey==='square' && tx<=0 && ty>=5 && ty<=8) return { tx:0, ty:5, verb:'Back to the village', exit:true };
@@ -1256,7 +1266,7 @@ const PUZZLES = {
   B2:{ title:'The Deadlock: right lock', story:'The right head hisses: <i>\u201cName the halls where we gathered in strength: more than two of us.\u201d</i>', task:'For each <b>room</b> in Monsters, show how many monsters are there, but only rooms with <b>more than 2</b>.', sol:'SELECT room, COUNT(*) FROM Monsters GROUP BY room HAVING COUNT(*) > 2;', pieces:['SELECT','room',',','COUNT(*)','FROM','Monsters','GROUP BY','room','HAVING','COUNT(*)','>','2',';'], hint:'Group by room, then filter the groups with HAVING COUNT(*) > 2.' },
 };
 const TERMINALS = { 'academy:3,3':'T0', 'gate:11,6':'R', 'square:13,8':'G', 'archive:5,4':'P1', 'north:12,3':'P2', 'east:3,3':'P3', 'ante:4,3':'P4', 'boss:3,8':'B1', 'boss:12,8':'B2' };
-const RUNE = { archive:'P1', north:'P2' };
+const RUNE = { academy:'T0', archive:'P1', north:'P2' };
 let SQLlib=null, worldDb=null, puzzleOpen=false, curPz=null, wrongRuns=0; const drafts={};
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.append(s); }); }
 async function ensureDb(){ if (worldDb) return worldDb; if (!window.initSqlJs) await loadScript('https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-asm.js');
@@ -1300,7 +1310,7 @@ function runPuzzle(){
 let pendingSolve=null;
 function closePuzzle(){ save(); $('pz').hidden=true; puzzleOpen=false; document.body.classList.remove('puzzling'); const id=pendingSolve; pendingSolve=null; if (id) afterSolve(id); }
 function afterSolve(id){
-  if (id==='T0') toast('Ada would be proud. +3 keywords');
+  if (id==='T0'){ rebuild(); SFX.hit(); toast('The rune barrier fades. The Institute\u2019s door is open!'); }
   if (id==='P1' || id==='P2'){ rebuild(); SFX.hit(); toast('The rune door grinds open.'); }
   if (id==='P3') toast('The great chest unlocks.');
   if (id==='P4') toast(G.items.key ? 'The Bond Rune glows. The great door can be opened now.' : 'The Bond Rune glows. The great door still needs the Primary Key.');
