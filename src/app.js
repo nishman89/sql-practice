@@ -229,7 +229,7 @@ const FOUND = {
   capstone:{need:'Tick every task in the checklist when it\'s done (exercise 3 is optional).', prog:()=>{ const req=CAPSTONE_TASKS.filter(t=>!t[2]); return [req.filter(t=>(P.capstone||{})[t[0]]).length, req.length]; }, label:'Project'},
   databases:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.dbDone?1:0,1], label:'Intro and quiz'},
   flavours:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.flavDone?1:0,1], label:'Intro and quiz'},
-  erd:{need:'Answer all three questions in Check yourself correctly.', prog:()=>[P.quizDone?1:0,1], label:'Diagram and quiz'},
+  erd:{need:'Answer all four questions in Check yourself correctly.', prog:()=>[P.quizDone?1:0,1], label:'Diagram and quiz'},
   build:{need:'Complete all six steps.', prog:()=>[BUILD_STEPS.filter((s,i)=>P.buildDone[i]).length, BUILD_STEPS.length], label:'6 guided steps'},
   map:{need:'Select at least three tables in the diagram to look inside them.', prog:()=>[Math.min(3,(P.mapTables||[]).length),3], label:'Explore the diagram'}
 };
@@ -603,6 +603,11 @@ function drawFlavours(){
 }
 
 /* ---------- 1. ERD lesson ---------- */
+// The quiz uses a different pair of tables, so learners read the diagram rather than remember the example
+const QUIZ_MODEL = [
+  {name:'Teams', cols:[{name:'team_id',type:'INTEGER',pk:true,notnull:true},{name:'team_name',type:'TEXT',notnull:true},{name:'city',type:'TEXT'}], fks:[]},
+  {name:'Players', cols:[{name:'player_id',type:'INTEGER',pk:true,notnull:true},{name:'player_name',type:'TEXT',notnull:true},{name:'team_id',type:'INTEGER',notnull:true,fk:{}}], fks:[{table:'Teams',parent:'Teams',from:'team_id',to:'team_id'}]}
+];
 const LESSON_MODEL = [
   {name:'Customers', cols:[{name:'customer_id',type:'INTEGER',pk:true,notnull:true},{name:'customer_name',type:'TEXT',notnull:true},{name:'height',type:'REAL'},{name:'is_happy',type:'INTEGER'}], fks:[]},
   {name:'Orders', cols:[{name:'order_id',type:'INTEGER',pk:true,notnull:true},{name:'order_number',type:'INTEGER',notnull:true},{name:'customer_id',type:'INTEGER',fk:{}}], fks:[{table:'Customers',parent:'Customers',from:'customer_id',to:'customer_id'}]}
@@ -617,13 +622,15 @@ function drawLesson(){
     svg.append(sv('rect',{x:102,y:4,width:14,height:26,rx:2,fill:'var(--erd-head)'}), g);
     lg.append(h('div',{}, svg, h('b',{},t), h('span',{},s)));
   }
+  renderERD($('#erdQuizFig'), QUIZ_MODEL, {testPrefix:'quiz', maxScale:1.2, label:'ERD of Teams and Players, joined on team_id. Players.team_id is NOT NULL.'});
   const Q=[
-    {q:'Which table holds the foreign key?', a:['Customers','Orders','Both of them'], c:1, why:'The foreign key always sits on the "many" side. Orders.customer_id points at Customers.'},
-    {q:'How many orders can one customer have?', a:['Exactly one','Zero or one','Zero or many'], c:2, why:'The crow\'s foot with a circle, next to Orders, means zero or many.'},
-    {q:'Why can no two customers share a customer_id?', a:['It\'s the primary key','It\'s a foreign key','It\'s an INT column'], c:0, why:'Primary keys must be unique and can\'t be NULL, so every row is identifiable.'}
+    {q:'Which table holds the foreign key?', a:['Teams','Players','Both of them'], c:1, why:'Players.team_id is marked FK: it points at the team each player belongs to. The foreign key sits on the "many" side.'},
+    {q:'How many players can one team have?', a:['Exactly one','Zero or one','Zero or many'], c:2, why:'The crow\'s foot with a circle, next to Players, means zero or many: a new team may have no players yet.'},
+    {q:'How many teams does each player belong to?', a:['Exactly one','Zero or one','Zero or many'], c:0, why:'The two bars next to Teams mean exactly one. Players.team_id is NOT NULL, so every player must have a team.'},
+    {q:'Which column uniquely identifies each player?', a:['player_name','player_id','team_id'], c:1, why:'player_id is the primary key (PK): unique, and never empty. Two players could share a name, and many share a team.'}
   ];
   const f=$('#erdQuiz'); f.innerHTML='';
-  P.quiz=P.quiz||{};
+  if (P.quizVer!==2){ P.quiz={}; P.quizDone=false; P.quizVer=2; }   // the questions changed, so start them afresh
   Q.forEach((item,qi)=>{
     const fs=h('fieldset',{class:'q','data-testid':`check-question-${qi+1}`,'data-answer':'abc'[item.c]}, h('legend',{},`${qi+1}. ${item.q}`));
     const fb=h('div',{class:'fb','aria-live':'polite','data-testid':`check-question-${qi+1}-feedback`});
@@ -638,7 +645,7 @@ function drawLesson(){
       $$('label',fs).forEach((l,i)=>{ l.classList.remove('right','wrong'); if (i===ai) l.classList.add(ai===item.c?'right':'wrong'); });
       $$('input',fs)[ai].checked=true;
       fb.className='fb '+(ai===item.c?'good':'bad');
-      fb.textContent=(ai===item.c?'Correct. ':'Not quite. ')+(ai===item.c?item.why:'Look at the diagram again and try another answer.');
+      fb.textContent=(ai===item.c?'Correct. ':'Not quite. ')+(ai===item.c?item.why:'Look at the Teams and Players diagram again and try another answer.');
       if (!silent){ P.quiz[qi]=ai; P.quizDone = Q.every((x,i)=>P.quiz[i]===x.c); save(); refreshChrome(); }
     }
     if (P.quiz[qi]!=null) mark(P.quiz[qi], true);

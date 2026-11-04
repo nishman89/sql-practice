@@ -236,7 +236,7 @@ The Archive:  Reading Room ──── North Hall ──── East Hall
     </div>
 
     <div class="rule"></div>
-    <h2 class="dot">Reading the lines</h2>
+    <h2 class="dot">What the lines mean: crow’s foot notation</h2>
     <div class="prose">
       <p>Each end of a relationship line carries a symbol, called crow's foot notation. The symbol next to a table says how many rows of <em>that</em> table can match one row at the other end.</p>
     </div>
@@ -246,15 +246,9 @@ The Archive:  Reading Room ──── North Hall ──── East Hall
     </div>
 
     <div class="rule"></div>
-    <h2 class="dot">Three kinds of relationship</h2>
-    <div class="rels">
-      <article><h3>One to many</h3><p>The most common. One customer, many orders. The foreign key always lives on the "many" side, in <code>Orders</code>.</p></article>
-      <article><h3>One to one</h3><p>Each row matches at most one row in the other table, for example a user and their profile settings. Often merged into one table.</p></article>
-      <article><h3>Many to many</h3><p>An order holds many products, and a product appears on many orders. You can't link them directly, so a junction table sits in between. You'll build one in the Normalisation lesson, and meet another in Northwind later on.</p></article>
-    </div>
-
-    <div class="rule"></div>
     <h2 class="dot">Check yourself</h2>
+    <p>Here are two different tables. Use this diagram to answer the questions.</p>
+    <figure class="erd-fig quiz-fig" data-testid="check-yourself-erd"><div id="erdQuizFig"></div><figcaption>Teams and Players. <code>Players.team_id</code> is <code>NOT NULL</code>.</figcaption></figure>
     <form class="quiz" id="erdQuiz" onsubmit="return false" data-testid="check-yourself"></form>
     <p style="margin-top:24px"><button class="btn primary" data-go="build">Create these tables yourself</button></p>
   </section>

@@ -819,3 +819,6 @@ body.game-full{overflow:hidden}
 .ans[open]>summary{margin-bottom:6px}
 .ans code{display:block;white-space:pre-wrap;word-break:break-word;background:var(--code-bg, #2a2230);color:#f6eef2;border-radius:8px;padding:8px 10px;font-size:.85rem}
 .guide-check{padding-left:22px}
+
+/* ERD lesson: the quiz's own diagram */
+.quiz-fig{max-width:640px;margin:8px 0 18px}

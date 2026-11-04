@@ -426,6 +426,9 @@ ${C("SELECT COUNT(*) AS 'Number of Customers'\nFROM Customers\nWHERE City = 'Par
 <h3>Column aliases</h3>
 <p>An <strong>alias</strong> renames a column in your result. It only changes the heading you see, never the table itself. Without one, a calculated column is headed with the calculation, such as <code>COUNT(*)</code>.</p>
 ${C("SELECT CompanyName AS Company, City AS Town\nFROM Customers;")}
+<p><strong>Tables can have aliases too.</strong> A table alias is a short name for a table, given in <code>FROM</code>, which you then put in front of its columns. It saves typing, and becomes really useful once a query uses more than one table.</p>
+${C("SELECT c.CompanyName, c.City\nFROM Customers AS c\nWHERE c.Country = 'France';")}
+<p>You’ll use table aliases properly in <a href="#/lesson/multijoin">Table aliases and multiple joins</a>, in Unit 4.</p>
 <p>If the alias has a space, put it in quotes. <code>AS</code> itself is optional (<code>City Town</code> works too), but writing it makes the query easier to read:</p>
 ${C("SELECT CompanyName AS 'Company Name',\n       City Town\nFROM Customers;")}
 <p><strong>Where can you use an alias?</strong> Look at the diagram above. <code>ORDER BY</code> runs after <code>SELECT</code>, so it can use an alias (you'll see this in <a href="#/lesson/sorting">Sorting data</a>). <code>WHERE</code> runs <em>before</em> <code>SELECT</code>, so in MySQL and SQL Server the alias doesn't exist yet and <code>WHERE</code> can't use it. SQLite is more relaxed and allows it, but don't rely on that: in <code>WHERE</code>, use the column itself.</p>
