@@ -690,10 +690,11 @@ const BUILD_STEPS=[
       [`Orders has at least 6 rows (now ${no})`, no>=6]
     ]; } },
   { short:'Join', title:'Query across both tables',
-    why:'A JOIN matches rows where Orders.customer_id equals Customers.customer_id, so you can see each order next to its customer\'s name.',
+    why:'First look at each table on its own with a simple SELECT. A JOIN then matches rows where Orders.customer_id equals Customers.customer_id, so you can see each order next to its customer\'s name.',
+    whyHtml:'First look at each table on its own with a simple <code>SELECT</code>: notice that <code>Orders</code> only knows a <code>customer_id</code>, not the customer\'s name. A <code>JOIN</code> then matches rows where <code>Orders.customer_id</code> equals <code>Customers.customer_id</code>, so you can see each order next to its customer\'s name.</p><p class="why">If you\'re not familiar with joins, don\'t be scared! We\'ll cover them in more detail in <a href="#/lesson/joinsintro">Unit 4: Combining tables</a>.',
     starter:'-- Find all orders placed by Nish Mandal,\n-- showing order_id, order_number and customer_name\n\n',
     same:true, diffNote:'Joins are written the same way in all three.',
-    example:`SELECT Orders.order_id, Orders.order_number, Customers.customer_name\nFROM Orders\nJOIN Customers ON Orders.customer_id = Customers.customer_id\nWHERE Customers.customer_name = 'Nish Mandal';`,
+    example:`-- First, each table on its own\nSELECT * FROM Customers;\n\nSELECT * FROM Orders;\n\n-- Then both together: each order next to its customer's name\nSELECT Orders.order_id, Orders.order_number, Customers.customer_name\nFROM Orders\nJOIN Customers ON Orders.customer_id = Customers.customer_id\nWHERE Customers.customer_name = 'Nish Mandal';`,
     checks:()=>{ const r=buildLast.rep; const sqlRan=(r&&r.ran.join(' '))||''; const last=r&&r.results[r.results.length-1];
       const hasNish=!!(last&&last.values.length&&last.values.every(row=>row.some(v=>v==='Nish Mandal')));
       return [
@@ -731,7 +732,8 @@ function renderBuild(){
   });
   const i=P.buildStep, s=BUILD_STEPS[i];
   const card=$('#stepCard'); card.innerHTML='';
-  card.append(h('h2',{}, `${i+1}. ${s.title}`), h('p',{class:'why'}, s.why));
+  const why=h('p',{class:'why'}, s.whyHtml ? '' : s.why); card.append(h('h2',{}, `${i+1}. ${s.title}`), why);
+  if (s.whyHtml){ const tmp=document.createElement('div'); tmp.innerHTML='<p class="why">'+s.whyHtml+'</p>'; why.replaceWith(...tmp.childNodes); }   // a step can use formatting and links
   const checks=stepChecks(i); const allOk=checks.every(c=>c[1]);
   if (allOk && !P.buildDone[i]){ P.buildDone[i]=true; save(); refreshChrome(); setTimeout(renderBuild); }
   const ul=h('ul',{class:'checks','aria-label':'Step checklist','data-testid':'step-checklist'});
