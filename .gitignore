@@ -5,3 +5,5 @@ dist/
 # test output
 test-results/
 playwright-report/
+reports/
+blob-report/

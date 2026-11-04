@@ -20,3 +20,5 @@ export const test = base.extend({
 });
 export { expect };
 export const id = (page, testid) => page.getByTestId(testid);
+// A screenshot for the test report, e.g. await shot(page, 'The score');
+export async function shot(page, label){ await test.info().attach(label, { body: await page.screenshot(), contentType: 'image/png' }); }

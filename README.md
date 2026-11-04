@@ -679,7 +679,8 @@ npm run build                       # builds dist/: the browser tests run agains
 | `npx playwright test tests/e2e/quizzes.spec.mjs` | One test file | |
 | `npx playwright test -g "Creating tables"` | Tests whose name matches | |
 | `npx playwright test --ui` | Pick tests and watch them run, step by step | |
-| `npx playwright show-report` | Open the last browser test report | |
+| `npx playwright show-report` | Open the last browser test report (the dashboard, with the technical report at `details.html`) | |
+| `npm run report` | Rebuild the dashboard from the last results | |
 | `npm run serve` | Serve `dist/` at http://localhost:4173/sql-practice/ to look around yourself | |
 
 Rebuild (`npm run build`) after changing anything in `src/`, `public/` or `data/`, because the browser tests use `dist/`.
@@ -741,8 +742,20 @@ Changing the workflow file needs a GitHub token with the **Workflows** permissio
 
 ### Reading the report
 
-- **The browser test report** (`/test-report/`) lists every test, grouped by file, with filters for failed, flaky and passed. Click a failed test to see the error, a **screenshot** of the page at that moment, and a **trace**: a step-by-step replay you can open at https://trace.playwright.dev.
-- **The unit test results** (`/test-report/unit-tests.txt`) list every unit test and show any failure's expected and actual values.
+The report at **`/test-report/`** is a dashboard written for anyone, not just developers. It's made by `scripts/report.mjs`, which runs automatically at the end of `npm run test:e2e` (or on its own with `npm run report`), from the results the tests save in `reports/`.
+
+| Part | What it shows |
+|---|---|
+| **Overview** | Passed or failed, the date, the commit and a link to the GitHub run, and cards for unit tests, browser tests, accessibility and site size |
+| **History** | A chart of the last 30 runs: bars for the share of tests passing (red for a failed run), and a line for accessibility issues. Each run reads the previous history from the live site (`/test-report/history.json`) and adds itself |
+| **Unit tests** | Grouped by area (course content, the SQL engine, the game's logic, the build), each with a plain-English description, the course's numbers (lessons, exercises, quiz questions…), and every test, with any failure shown in full |
+| **In the browser** and **On a phone** | Grouped by area, each described, with every test's time, named steps for the key tests, the error for any failure, and screenshots of key moments (the quiz result, free practice, the game, phone layouts) |
+| **Accessibility** | Page by page: how many checks passed, **every issue** (including moderate and minor ones that don't fail the build) with its severity, WCAG guideline, the element affected and a "How to fix it" link; anything to check by hand; and everything that passed |
+| **Size** | Each published file against its budget |
+
+For the technical detail, **`/test-report/details.html`** is Playwright's own report: every test with a step-by-step **trace** (open it at https://trace.playwright.dev) and screenshots. The plain unit test log is **`/test-report/unit-tests.txt`**.
+
+To add a screenshot to the report from a browser test, `import { shot } from './fixtures.mjs'` and call `await shot(page, 'What it shows')`. To name a test's steps, wrap them in `await test.step('What this step does', async () => { … })`.
 
 ### Troubleshooting
 

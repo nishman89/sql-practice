@@ -9,7 +9,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 2 : undefined,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }], ['github']] : [['list']],
+  // the JSON results feed the test dashboard (scripts/report.mjs); the HTML report becomes its 'full technical report'
+  reporter: [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'reports/e2e.json' }], ...(process.env.CI ? [['github']] : [])],
   use: {
     baseURL: 'http://localhost:4173/sql-practice/',
     trace: 'retain-on-failure',

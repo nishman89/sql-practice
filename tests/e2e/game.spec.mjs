@@ -1,6 +1,6 @@
 // The Lost Ledger. The game draws with WebGL, which is slow without a graphics card, so these tests
 // use the game's test handle (window.PROTO) to move around, and allow plenty of time.
-import { test, expect, id } from './fixtures.mjs';
+import { test, expect, id, shot } from './fixtures.mjs';
 test.setTimeout(120_000);
 test.describe.configure({ mode: 'serial' });   // one game at a time: 3D without a graphics card is slow
 const GAME = 'game/index.html?lowfx';
@@ -22,7 +22,8 @@ test.describe('the game', () => {
   test('starts on the title screen, with How to play', async ({ page }) => {
     await page.goto(GAME); await page.evaluate(() => localStorage.clear()); await page.reload();
     await expect(page.locator('#title h1')).toHaveText('The Lost Ledger'); await expect(page.locator('#title .kicker')).toContainText('starring Nish the Great'); await expect(page.locator('#tContinue')).toBeHidden();
-    await page.locator('#tHow').click(); await expect(page.locator('#manual h2')).toHaveText('How to play'); await page.locator('#manClose').click();
+    await shot(page, 'The title screen');
+    await page.locator('#tHow').click(); await expect(page.locator('#manual h2')).toHaveText('How to play'); await shot(page, 'How to play'); await page.locator('#manClose').click();
     await expect(page.locator('#title')).toBeVisible();
   });
   test('Ada sends you to the training terminal, and the door stays sealed until it\u2019s solved', async ({ page }) => {
@@ -37,14 +38,12 @@ test.describe('the game', () => {
     expect((await P(page, 'PROTO.pos()')).place, 'the sealed door keeps you in').toBe('academy');
   });
   test('a terminal marks a wrong answer, then a right one, and opens the door', async ({ page }) => {
-    await newGame(page);
-    await solveAt(page, 'academy', 3, 4, 'up', 'SELECT name FROM Villagers;');
-    await expect(page.locator('#pzVerdict')).toContainText('Not quite'); await expect(page.locator('#pzDone')).toHaveText('Leave');
-    await page.locator('#pzInput').fill('SELECT name, job FROM Villagers;'); await page.locator('#pzRun').click();
-    await expect(page.locator('#pzVerdict')).toContainText('The rune glows'); await expect(page.locator('#pzDone')).toHaveText(/Complete/);
-    await expect(page.locator('#pzOut tr')).toHaveCount(13);
-    await page.locator('#pzDone').click(); await expect(page.locator('#pz')).toBeHidden();
-    expect(await P(page, 'PROTO.G().solved.T0')).toBe(true);
+    await test.step('Start a new game', () => newGame(page));
+    await test.step('Answer the training terminal wrongly: it says "Not quite"', async () => { await solveAt(page, 'academy', 3, 4, 'up', 'SELECT name FROM Villagers;');
+      await expect(page.locator('#pzVerdict')).toContainText('Not quite'); await expect(page.locator('#pzDone')).toHaveText('Leave'); });
+    await test.step('Answer it correctly: the rune glows, with all 12 villagers', async () => { await page.locator('#pzInput').fill('SELECT name, job FROM Villagers;'); await page.locator('#pzRun').click();
+      await expect(page.locator('#pzVerdict')).toContainText('The rune glows'); await expect(page.locator('#pzDone')).toHaveText(/Complete/); await expect(page.locator('#pzOut tr')).toHaveCount(13); await shot(page, 'A solved terminal'); });
+    await test.step('Press Complete: the puzzle is recorded as solved', async () => { await page.locator('#pzDone').click(); await expect(page.locator('#pz')).toBeHidden(); expect(await P(page, 'PROTO.G().solved.T0')).toBe(true); });
   });
   test('the hint unlocks after two wrong tries, or with a hint scroll', async ({ page }) => {
     await newGame(page); await solveAt(page, 'academy', 3, 4, 'up', 'SELECT 1;');

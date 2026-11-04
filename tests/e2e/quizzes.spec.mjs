@@ -1,4 +1,4 @@
-import { test, expect, id } from './fixtures.mjs';
+import { test, expect, id, shot } from './fixtures.mjs';
 import { loadSite } from '../unit/helpers.mjs';
 const s = await loadSite();
 const quiz = s.QUIZZES.find(q => q.id === 'unit-1');
@@ -17,9 +17,10 @@ test.describe('quizzes', () => {
     for (const q of s.QUIZZES) await expect(id(page, `quiz-card-${q.id}`)).toBeVisible();
   });
   test('all right answers pass, at 100%', async ({ page }) => {
-    await page.goto('#/quiz'); await id(page, `open-quiz-${quiz.id}`).click(); await id(page, 'start-quiz').click();
-    await answerAll(page, true); await id(page, 'submit-answers').click();
-    await expect(id(page, 'score-percent')).toContainText('100'); await expect(id(page, 'quiz-verdict')).toBeVisible();
+    await test.step('Open the Foundations quiz and start it', async () => { await page.goto('#/quiz'); await id(page, `open-quiz-${quiz.id}`).click(); await id(page, 'start-quiz').click(); });
+    await test.step(`Answer all ${quiz.questions.length} questions correctly`, () => answerAll(page, true));
+    await test.step('Submit, and check the score is 100%', async () => { await id(page, 'submit-answers').click();
+      await expect(id(page, 'score-percent')).toContainText('100'); await expect(id(page, 'quiz-verdict')).toBeVisible(); await shot(page, 'The result: 100%'); });
   });
   test('all wrong answers fail, with explanations to review', async ({ page }) => {
     await page.goto('#/quiz'); await id(page, `open-quiz-${quiz.id}`).click(); await id(page, 'start-quiz').click();

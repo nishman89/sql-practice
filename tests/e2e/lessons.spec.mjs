@@ -5,7 +5,7 @@ const s = await loadSite();
 
 for (const [lessonId, L] of Object.entries(s.LESSONS)){
   if (!(L.ex||[]).length) continue;
-  test(`${lessonId}: every exercise\u2019s model answer is marked correct`, async ({ page }) => {
+  test(`${L.title}: all ${L.ex.length} exercise${L.ex.length===1?'':'s'} marked correct`, async ({ page }) => {
     await page.goto(`#/lesson/${lessonId}`);
     await expect(id(page, 'lesson-title')).toHaveText(L.title);
     for (let k = 1; k <= L.ex.length; k++){

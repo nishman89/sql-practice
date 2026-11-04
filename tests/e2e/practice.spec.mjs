@@ -1,13 +1,13 @@
-import { test, expect, id } from './fixtures.mjs';
+import { test, expect, id, shot } from './fixtures.mjs';
 
 test.describe('free practice', () => {
   test('a query shows its results', async ({ page }) => {
-    await page.goto('#/free'); await id(page, 'free-editor-input').fill('SELECT ProductName, UnitPrice FROM Products WHERE UnitPrice > 50;');
-    await id(page, 'free-run').click(); await expect(id(page, 'free-result-table').locator('tbody tr')).toHaveCount(7);
+    await test.step('Type a query into free practice', async () => { await page.goto('#/free'); await id(page, 'free-editor-input').fill('SELECT ProductName, UnitPrice FROM Products WHERE UnitPrice > 50;'); });
+    await test.step('Run it, and check the 7 products over 50 are shown', async () => { await id(page, 'free-run').click(); await expect(id(page, 'free-result-table').locator('tbody tr')).toHaveCount(7); await shot(page, 'The results'); });
   });
   test('a T-SQL habit gets a friendly explanation', async ({ page }) => {
     await page.goto('#/free'); await id(page, 'free-editor-input').fill('SELECT TOP 5 ProductName FROM Products;');
-    await id(page, 'free-run').click(); await expect(id(page, 'free-query-error')).toContainText('LIMIT');
+    await id(page, 'free-run').click(); await expect(id(page, 'free-query-error')).toContainText('LIMIT'); await shot(page, 'The explanation');
   });
   test('the table buttons cover all 13 Northwind tables', async ({ page }) => {
     await page.goto('#/free'); await expect(page.locator('[data-testid^="free-insert-table-"]')).toHaveCount(13);

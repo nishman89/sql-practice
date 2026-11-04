@@ -1,5 +1,5 @@
 // On a phone (Pixel 7): the menu, lessons and the game's full screen.
-import { test, expect, id } from './fixtures.mjs';
+import { test, expect, id, shot } from './fixtures.mjs';
 test.describe('on a phone', () => {
   test('the menu button opens the site menu and navigates', async ({ page }) => {
     await page.goto('#/path'); await id(page, 'mobile-menu').locator('summary').click();
@@ -13,6 +13,7 @@ test.describe('on a phone', () => {
     for (const r of ['#/path','#/lesson/joinsintro','#/quiz','#/free','#/install','#/game']){
       await page.goto(r); await page.waitForTimeout(300);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), r).toBe(true);
+      if (['#/path','#/lesson/joinsintro','#/quiz'].includes(r)) await shot(page, `Phone: ${r.replace('#/','') || 'home'}`);
     }
   });
   test('full screen fills the screen, and the game offers a way back out', async ({ page }) => {
