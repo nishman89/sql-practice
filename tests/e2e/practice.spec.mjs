@@ -27,6 +27,22 @@ test.describe('Creating tables (the step-by-step builder)', () => {
     await expect(id(page, 'build-step-2')).toHaveAttribute('data-done', 'true');
   });
 });
+// Every code editor: the text you type must stand out from its background (a past bug left the ERD maker's names nearly invisible)
+test.describe('code editors are readable', () => {
+  for (const [name, route, sel] of [['free practice','#/free','#fEditor'],['a lesson','#/lesson/select','#lEditor'],['Creating tables','#/lesson/build','#buildEditor'],['the ERD maker','#/erd-maker','#erdmEditor']]){
+    test(`${name}: plain text contrasts with the editor`, async ({ page }) => {
+      await page.goto(route); if (route === '#/lesson/select') await id(page, 'tab-exercise-1').click();
+      const ratio = await page.evaluate((sel) => {
+        const host = document.querySelector(sel), ta = host.querySelector('textarea'); ta.value = 'Customers'; ta.dispatchEvent(new Event('input', { bubbles: true }));
+        const code = host.querySelector('pre, code') || ta, rgb = c => c.match(/[\d.]+/g).slice(0,3).map(Number);
+        let el = host, bg = 'rgba(0, 0, 0, 0)'; while (el && /rgba\(0, 0, 0, 0\)|transparent/.test(bg)) { bg = getComputedStyle(el).backgroundColor; el = el.parentElement; }
+        const lum = ([r,g,b]) => { const f = v => { v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); };
+        const a = lum(rgb(getComputedStyle(code).color)), b = lum(rgb(bg)); return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
+      }, sel);
+      expect(ratio, 'contrast between the editor\u2019s text and background').toBeGreaterThan(4.5);
+    });
+  }
+});
 test.describe('the ERD maker', () => {
   test('draws a diagram from CREATE TABLE statements', async ({ page }) => {
     await page.goto('#/erd-maker'); await expect(id(page, 'erdmaker-diagram').locator('svg')).toBeVisible();
